@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Filter, RefreshCw, ScrollText } from "lucide-react";
 import { usageApi } from "@/lib/http/apis";
 import type { UsageLogItem, UsageLogsResponse } from "@/lib/http/apis/usage";
+import { ConfirmModal } from "@/modules/ui/ConfirmModal";
+import { Button } from "@/modules/ui/Button";
 import { useToast } from "@/modules/ui/ToastProvider";
 import { Select } from "@/modules/ui/Select";
 import { SearchableSelect } from "@/modules/ui/SearchableSelect";
@@ -93,6 +95,8 @@ export function RequestLogsPage() {
   const [modelQuery, setModelQuery] = useState("");
   const [channelQuery, setChannelQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [clearingLogs, setClearingLogs] = useState(false);
 
   const fetchInFlightRef = useRef(false);
 
@@ -204,6 +208,27 @@ export function RequestLogsPage() {
       time: new Date(lastUpdatedAt).toLocaleTimeString(),
     });
   }, [lastUpdatedAt, loading, t]);
+
+  const handleClearDatabaseLogs = useCallback(async () => {
+    setClearingLogs(true);
+    try {
+      const result = await usageApi.clearUsageLogs();
+      await fetchLogs(1, pageSize);
+      notify({
+        type: "success",
+        message: t("request_logs.clear_database_logs_success", {
+          count: result.deleted_logs,
+        }),
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : t("request_logs.clear_database_logs_failed");
+      notify({ type: "error", message });
+    } finally {
+      setClearingLogs(false);
+    }
+  }, [fetchLogs, notify, pageSize, t]);
+
   return (
     <section className="flex flex-1 flex-col">
       <h1 className="sr-only">{t("request_logs.title")}</h1>
@@ -218,6 +243,14 @@ export function RequestLogsPage() {
           </h2>
           <div className="flex flex-wrap items-center gap-2">
             <RequestLogsTimeRangeSelector value={timeRange} onChange={setTimeRange} />
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setConfirmClearOpen(true)}
+              disabled={loading || clearingLogs}
+            >
+              {t("request_logs.clear_database_logs")}
+            </Button>
             <button
               type="button"
               onClick={() => fetchLogs(1, pageSize)}
@@ -368,6 +401,18 @@ export function RequestLogsPage() {
         logId={errorModalLogId}
         model={errorModalModel}
         onClose={() => setErrorModalOpen(false)}
+      />
+      <ConfirmModal
+        open={confirmClearOpen}
+        title={t("request_logs.clear_database_logs")}
+        description={t("request_logs.clear_database_logs_confirm")}
+        confirmText={t("request_logs.clear_database_logs_confirm_button")}
+        busy={clearingLogs}
+        onClose={() => setConfirmClearOpen(false)}
+        onConfirm={() => {
+          setConfirmClearOpen(false);
+          void handleClearDatabaseLogs();
+        }}
       />
     </section>
   );
