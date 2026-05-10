@@ -488,6 +488,7 @@ describe("ApiKeysPage", () => {
         note: "Primary route",
         "default-model": "gpt-5.4",
         "allowed-channel-groups": ["pro", "team-a"],
+        "route-path": "/pro/cs_codex",
         "endpoint-path": "/openai/v2",
         "usage-auto-interval": 45,
       },
@@ -521,7 +522,9 @@ describe("ApiKeysPage", () => {
     expect(parsed.searchParams.get("app")).toBe("codex");
     expect(parsed.searchParams.get("apiKey")).toBe("sk-group-1234567890");
     expect(parsed.searchParams.get("name")).toBe("Preset Codex");
-    expect(parsed.searchParams.get("endpoint")).toBe("http://localhost:3000/pro/openai/v2");
+    expect(parsed.searchParams.get("endpoint")).toBe(
+      "http://localhost:3000/pro/cs_codex/openai/v2",
+    );
     expect(parsed.searchParams.get("model")).toBe("gpt-5.4");
     expect(parsed.searchParams.get("usageAutoInterval")).toBe("45");
 
@@ -554,6 +557,7 @@ describe("ApiKeysPage", () => {
         note: "Role defaults",
         "default-model": "claude-sonnet-4-5",
         "allowed-channel-groups": ["team-a"],
+        "route-path": "/team-a/cs_claude",
         "endpoint-path": "",
         "usage-auto-interval": 60,
         "api-key-field": "ANTHROPIC_AUTH_TOKEN",
@@ -594,6 +598,7 @@ describe("ApiKeysPage", () => {
     const parsed = new URL(openedUrl);
     expect(parsed.searchParams.get("app")).toBe("claude");
     expect(parsed.searchParams.get("name")).toBe("Preset Claude");
+    expect(parsed.searchParams.get("endpoint")).toBe("http://localhost:3000/team-a/cs_claude");
     expect(parsed.searchParams.get("model")).toBe("claude-sonnet-4-5");
     expect(parsed.searchParams.get("haikuModel")).toBe("claude-haiku-4-5");
     expect(parsed.searchParams.get("sonnetModel")).toBe("claude-sonnet-4-5");
@@ -634,6 +639,7 @@ describe("ApiKeysPage", () => {
         note: "Team route",
         "default-model": "gpt-5.4",
         "allowed-channel-groups": ["team-a"],
+        "route-path": "/team-a/cs_team",
         "endpoint-path": "/v1",
         "usage-auto-interval": 30,
       },
@@ -679,7 +685,7 @@ describe("ApiKeysPage", () => {
     const openedUrl = String(openSpy.mock.calls.at(-1)?.[0] ?? "");
     const parsed = new URL(openedUrl);
     expect(parsed.searchParams.get("name")).toBe("Team Codex");
-    expect(parsed.searchParams.get("endpoint")).toBe("http://localhost:3000/team-a/v1");
+    expect(parsed.searchParams.get("endpoint")).toBe("http://localhost:3000/team-a/cs_team/v1");
     expect(parsed.searchParams.get("model")).toBe("gpt-5.4");
 
     openSpy.mockRestore();

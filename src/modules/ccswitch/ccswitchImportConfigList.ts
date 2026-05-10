@@ -26,6 +26,7 @@ export interface CcSwitchImportConfigListItem {
   defaultModel: string;
   modelMappings: CcSwitchModelMapping[];
   allowedChannelGroups: string[];
+  routePath: string;
   endpointPath: string;
   usageAutoInterval: number;
   apiKeyField?: CcSwitchClaudeAuthField;
@@ -114,6 +115,47 @@ const createConfigId = () => {
   return `ccswitch-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
+const normalizeRouteSegment = (value: unknown): string =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "")
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const routeTokenFromSeed = (seed: string): string => {
+  const parts = seed
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  const normalized = parts.join("");
+  const suffix = parts.at(-1) ?? "";
+  const tokenSource = suffix.length >= 6 ? suffix : normalized;
+  const token = tokenSource.slice(-12);
+  if (token) return token;
+  return Math.random().toString(36).slice(2, 14) || "route";
+};
+
+export function createCcSwitchRoutePath(group: string, seed: string = createConfigId()): string {
+  const groupSegment = normalizeRouteSegment(group);
+  if (!groupSegment) return "";
+  return `/${groupSegment}/cs_${routeTokenFromSeed(seed)}`;
+}
+
+export function ensureCcSwitchRoutePath(
+  routePath: string | undefined,
+  group: string,
+  seed: string,
+): string {
+  const groupSegment = normalizeRouteSegment(group);
+  if (!groupSegment) return "";
+  const normalizedRoutePath = normalizeCcSwitchEndpointPath(routePath);
+  if (normalizedRoutePath.toLowerCase().startsWith(`/${groupSegment}/`)) {
+    return normalizedRoutePath;
+  }
+  return createCcSwitchRoutePath(groupSegment, seed);
+}
+
 export function deriveCcSwitchImportSettingsFromConfigList(
   configs: readonly CcSwitchImportConfigListItem[],
 ) {
@@ -167,8 +209,10 @@ export function createCcSwitchImportConfig(
       ? modelMappings.find((mapping) => mapping.role === "main")?.targetModel
       : modelMappings.find((mapping) => mapping.requestModel)?.requestModel;
 
+  const id = String(input.id ?? "").trim() || createConfigId();
+
   return {
-    id: String(input.id ?? "").trim() || createConfigId(),
+    id,
     clientType: input.clientType,
     providerName: String(input.providerName ?? "").trim() || defaultProviderName(input.clientType),
     note: String(input.note ?? "").trim(),
@@ -178,6 +222,7 @@ export function createCcSwitchImportConfig(
       String(defaults.defaultModel ?? "").trim(),
     modelMappings,
     allowedChannelGroups: normalizeChannelGroups(input.allowedChannelGroups),
+    routePath: normalizeCcSwitchEndpointPath(input.routePath),
     endpointPath: normalizeCcSwitchEndpointPath(input.endpointPath ?? defaults.endpointPath),
     usageAutoInterval: normalizeUsageAutoInterval(
       input.usageAutoInterval,
