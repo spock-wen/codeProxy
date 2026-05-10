@@ -243,6 +243,81 @@ describe("ChannelGroupsPage", () => {
     expect(screen.queryByLabelText("gpt-should-not-leak")).not.toBeInTheDocument();
   });
 
+  test("uses the auth-file channel source as model owner when live Kimi models report moonshot", async () => {
+    mockedApiGet.mockImplementation((path: string) => {
+      if (path === "/routing-config") {
+        return Promise.resolve({
+          strategy: "round-robin",
+          "include-default-group": true,
+          "channel-groups": [],
+          "path-routes": [],
+        });
+      }
+      if (path === "/channel-groups") {
+        return Promise.resolve({
+          items: [
+            {
+              name: "Kimi Pool",
+              channels: ["kimi"],
+              "channel-details": [{ name: "kimi", source: "kimi", display_tags: ["kimi"] }],
+            },
+          ],
+        });
+      }
+      if (path.startsWith("/models?")) {
+        return Promise.resolve({
+          data: [{ id: "kimi-k2" }, { id: "kimi-k2-thinking" }, { id: "kimi-k2.5" }],
+        });
+      }
+      if (path === "/auth-files") {
+        return Promise.resolve({
+          files: [{ name: "kimi-account.json", type: "kimi", disabled: false }],
+        });
+      }
+      if (path === "/auth-files/models") {
+        return Promise.resolve({
+          models: [
+            { id: "kimi-k2", display_name: "Kimi K2", owned_by: "moonshot" },
+            { id: "kimi-k2-thinking", display_name: "Kimi K2 Thinking", owned_by: "moonshot" },
+            { id: "kimi-k2.5", display_name: "Kimi K2.5", owned_by: "moonshot" },
+          ],
+        });
+      }
+      if (path === "/model-configs?scope=library") {
+        return Promise.resolve({ data: [] });
+      }
+      if (
+        path === "/gemini-api-key" ||
+        path === "/claude-api-key" ||
+        path === "/codex-api-key" ||
+        path === "/opencode-go-api-key" ||
+        path === "/vertex-api-key" ||
+        path === "/openai-compatibility"
+      ) {
+        return Promise.resolve([]);
+      }
+      return Promise.resolve({});
+    });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "新增分组" }));
+    await user.type(screen.getByPlaceholderText("pro"), "kimi");
+    await user.type(screen.getByPlaceholderText("/pro"), "/kimi");
+    await user.click(screen.getByRole("combobox", { name: "选择渠道" }));
+    await user.click(await screen.findByRole("option", { name: "kimi" }));
+    await user.click(screen.getByRole("combobox", { name: "选择渠道" }));
+    await user.click(screen.getByRole("tab", { name: "模型列表" }));
+
+    const table = await screen.findByRole("table", { name: "允许模型" });
+    expect(await within(table).findByLabelText("kimi-k2")).toBeInTheDocument();
+    expect(within(table).getByLabelText("kimi-k2-thinking")).toBeInTheDocument();
+    expect(within(table).getByLabelText("kimi-k2.5")).toBeInTheDocument();
+    expect(within(table).getAllByText("kimi")).toHaveLength(3);
+    expect(within(table).queryByText("moonshot")).not.toBeInTheDocument();
+  });
+
   test("shows channel tags in the selector options and selected rows", async () => {
     mockedApiGet.mockImplementation((path: string) => {
       if (path === "/routing-config") {

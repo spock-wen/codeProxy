@@ -310,7 +310,7 @@ const loadAuthFileModelItems = async (
         for (const model of liveModels) {
           addModel(map, {
             id: model.id,
-            owned_by: model.owned_by || owner || undefined,
+            owned_by: owner || group || model.owned_by || undefined,
             description: model.display_name,
             source: "auth-file",
           });
