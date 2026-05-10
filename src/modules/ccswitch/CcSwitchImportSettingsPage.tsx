@@ -5,10 +5,7 @@ import iconClaude from "@/assets/icons/claude.svg";
 import iconCodex from "@/assets/icons/codex.svg";
 import iconGemini from "@/assets/icons/gemini.svg";
 import { detectApiBaseFromLocation } from "@/lib/connection";
-import {
-  channelGroupsApi,
-  type ChannelGroupChannelDetail,
-} from "@/lib/http/apis/channel-groups";
+import { channelGroupsApi, type ChannelGroupChannelDetail } from "@/lib/http/apis/channel-groups";
 import {
   normalizeProviderKey,
   readAuthFilesModelOwnerGroupMap,
@@ -187,7 +184,7 @@ export function CcSwitchImportSettingsPage() {
                   {t(client.labelKey)}
                 </div>
                 <div className="font-mono text-[11px] text-slate-500 dark:text-white/45">
-                  {row.endpointPath || t("ccswitch.import_endpoint_root")}
+                  {row.routePath || row.endpointPath || t("ccswitch.import_endpoint_root")}
                 </div>
               </div>
             </div>

@@ -26,6 +26,7 @@ describe("ccSwitchImportConfigsApi", () => {
         note: "kimicode",
         defaultModel: "kimi-k2.5",
         allowedChannelGroups: ["kimicode"],
+        routePath: "/kimicode/cs_kimi",
         endpointPath: "/v1",
         usageAutoInterval: 30,
         apiKeyField: "ANTHROPIC_API_KEY",
@@ -40,6 +41,7 @@ describe("ccSwitchImportConfigsApi", () => {
       expect.objectContaining({
         id: "kimi-code",
         "client-type": "claude",
+        "route-path": "/kimicode/cs_kimi",
         "model-mappings": [
           { role: "main", "request-model": "kimi-k2.5", "target-model": "kimi-k2.5" },
           {

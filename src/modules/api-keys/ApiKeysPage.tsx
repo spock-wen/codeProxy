@@ -10,7 +10,6 @@ import {
   type ApiKeyPermissionProfile,
 } from "@/lib/http/apis/api-key-permission-profiles";
 import { ccSwitchImportConfigsApi } from "@/lib/http/apis/ccswitch-import-configs";
-import type { ChannelGroupItem } from "@/lib/http/apis/channel-groups";
 import { detectApiBaseFromLocation } from "@/lib/connection";
 import { useOptionalAuth } from "@/modules/auth/AuthProvider";
 import {
@@ -101,7 +100,7 @@ export function ApiKeysPage() {
   const [saving, setSaving] = useState(false);
   const [permissionProfiles, setPermissionProfiles] = useState<ApiKeyPermissionProfile[]>([]);
   const [form, setForm] = useState<ApiKeyFormValues>(() => makeEmptyApiKeyForm());
-  const { channelGroupItems, channelGroupByName, fetchModelOptions, refreshPermissionOptions } =
+  const { channelGroupItems, channelGroupByName, refreshPermissionOptions } =
     useApiKeyPermissionOptions();
   const {
     usageViewKey,
@@ -455,7 +454,7 @@ export function ApiKeysPage() {
         ? groupItem["path-routes"][0]
         : "";
       const baseApiUrl = auth?.state.apiBase || detectApiBaseFromLocation();
-      const baseUrl = appendRoutePath(baseApiUrl, routePath || "");
+      const baseUrl = appendRoutePath(baseApiUrl, config.routePath || routePath || "");
 
       const settings =
         ccSwitchImportConfigs.length > 0

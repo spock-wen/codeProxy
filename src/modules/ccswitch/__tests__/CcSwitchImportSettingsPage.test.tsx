@@ -85,10 +85,7 @@ describe("CcSwitchImportSettingsPage", () => {
       { name: "pro", description: "Pro route", "path-routes": ["/pro"] },
       { name: "team-a", description: "Team A route", "path-routes": ["/team-a"] },
     ]);
-    listAvailableModels.mockResolvedValue([
-      { id: "deepseek-v4-flash" },
-      { id: "kimi-k2" },
-    ]);
+    listAvailableModels.mockResolvedValue([{ id: "deepseek-v4-flash" }, { id: "kimi-k2" }]);
     getModelConfigs.mockResolvedValue([]);
     listConfigs.mockResolvedValue([]);
     replaceConfigs.mockResolvedValue(undefined);
@@ -148,16 +145,20 @@ describe("CcSwitchImportSettingsPage", () => {
     const origin = window.location.origin;
 
     expect(within(dialog).queryByLabelText(/codex endpoint path/i)).not.toBeInTheDocument();
-    expect(within(dialog).queryByRole("combobox", { name: /default model/i })).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("combobox", { name: /default model/i }),
+    ).not.toBeInTheDocument();
     expect(within(dialog).queryByText(/for codex cli/i)).not.toBeInTheDocument();
-    expect(within(dialog).getByText(/select a channel group to load available models/i)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/select a channel group to load available models/i),
+    ).toBeInTheDocument();
     expect(within(dialog).queryByDisplayValue("gpt-5.5")).not.toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("combobox", { name: /select channel group/i }));
     await user.click(await screen.findByRole("option", { name: /pro.*\/pro/i }));
 
     expect(within(dialog).getByTestId("ccswitch-config-endpoint-preview")).toHaveTextContent(
-      `${origin}/pro/v1`,
+      new RegExp(`^${origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/pro/cs_[a-z0-9]+/v1$`),
     );
 
     const requestModelInput = await within(dialog).findByLabelText(
@@ -183,6 +184,7 @@ describe("CcSwitchImportSettingsPage", () => {
           note: "Pro preset",
           defaultModel: "gpt-5.5",
           allowedChannelGroups: ["pro"],
+          routePath: expect.stringMatching(/^\/pro\/cs_[a-z0-9]+$/),
           endpointPath: "/v1",
           modelMappings: expect.arrayContaining([
             {
@@ -452,7 +454,9 @@ describe("CcSwitchImportSettingsPage", () => {
     await user.click(within(dialog).getByRole("combobox", { name: /select channel group/i }));
     await user.click(await screen.findByRole("option", { name: /team-a.*\/team-a/i }));
 
-    expect(endpointPreview).toHaveTextContent(`${origin}/team-a/v1`);
+    expect(endpointPreview).toHaveTextContent(
+      new RegExp(`^${origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/team-a/cs_[a-z0-9]+/v1$`),
+    );
   });
 
   test("creates a Claude Code config with main and family default models", async () => {
@@ -496,6 +500,7 @@ describe("CcSwitchImportSettingsPage", () => {
           providerName: "Relay Claude",
           defaultModel: "claude-sonnet-4-5",
           allowedChannelGroups: ["pro"],
+          routePath: expect.stringMatching(/^\/pro\/cs_[a-z0-9]+$/),
           apiKeyField: "ANTHROPIC_AUTH_TOKEN",
           modelMappings: expect.arrayContaining([
             {

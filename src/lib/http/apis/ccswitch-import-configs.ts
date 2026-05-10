@@ -42,8 +42,7 @@ const normalizeModelMappings = (value: unknown): CcSwitchModelMapping[] => {
       const requestModel =
         normalizeString(
           record["request-model"] ?? record.requestModel ?? record.request ?? record.alias,
-        ) ??
-        (normalizedRole ? normalizedRole : targetModel);
+        ) ?? (normalizedRole ? normalizedRole : targetModel);
       if (!targetModel || !requestModel) return null;
       return {
         ...(normalizedRole ? { role: normalizedRole } : {}),
@@ -76,6 +75,7 @@ export function normalizeCcSwitchImportConfigs(raw: unknown): CcSwitchImportConf
         allowedChannelGroups: normalizeStringList(
           record["allowed-channel-groups"] ?? record.allowedChannelGroups,
         ),
+        routePath: normalizeString(record["route-path"] ?? record.routePath),
         endpointPath: normalizeString(record["endpoint-path"]),
         usageAutoInterval: normalizeNumber(record["usage-auto-interval"]),
         apiKeyField:
@@ -101,6 +101,7 @@ const serializeCcSwitchImportConfig = (config: CcSwitchImportConfigListItem) => 
     "target-model": mapping.targetModel,
   })),
   "allowed-channel-groups": [...config.allowedChannelGroups],
+  "route-path": config.routePath,
   "endpoint-path": config.endpointPath,
   "usage-auto-interval": config.usageAutoInterval,
   ...(config.clientType === "claude" && config.apiKeyField

@@ -25,10 +25,11 @@ import {
   normalizeCcSwitchClaudeAuthField,
   type CcSwitchClaudeAuthField,
 } from "@/modules/ccswitch/ccswitchImportSettings";
-import type {
-  CcSwitchClaudeModelRole,
-  CcSwitchImportConfigListItem,
-  CcSwitchModelMapping,
+import {
+  ensureCcSwitchRoutePath,
+  type CcSwitchClaudeModelRole,
+  type CcSwitchImportConfigListItem,
+  type CcSwitchModelMapping,
 } from "@/modules/ccswitch/ccswitchImportConfigList";
 
 export interface CcSwitchChannelGroupOption {
@@ -72,7 +73,9 @@ const normalizeRoutePath = (path: string | undefined): string => {
 };
 
 const appendUrlPath = (baseUrl: string, path: string): string => {
-  const normalizedBase = String(baseUrl ?? "").trim().replace(/\/+$/, "");
+  const normalizedBase = String(baseUrl ?? "")
+    .trim()
+    .replace(/\/+$/, "");
   const normalizedPath = normalizeRoutePath(path);
   if (!normalizedBase) return normalizedPath;
   if (!normalizedPath) return normalizedBase;
@@ -148,9 +151,7 @@ function reconcileClaudeMappings(
   fallbackModel: string,
 ): CcSwitchModelMapping[] {
   const currentByRole = new Map(
-    currentMappings
-      .filter((mapping) => mapping.role)
-      .map((mapping) => [mapping.role, mapping]),
+    currentMappings.filter((mapping) => mapping.role).map((mapping) => [mapping.role, mapping]),
   );
 
   return CLAUDE_ROLE_ORDER.map((role) => {
@@ -184,8 +185,11 @@ function resolveGenericDefaultModel(
   ) {
     return normalizedFallback;
   }
-  return modelMappings.find((mapping) => !mapping.role && mapping.requestModel.trim())
-    ?.requestModel.trim() || "";
+  return (
+    modelMappings
+      .find((mapping) => !mapping.role && mapping.requestModel.trim())
+      ?.requestModel.trim() || ""
+  );
 }
 
 function reconcileModelMappings(draft: ConfigDraft, models: readonly string[]): ConfigDraft {
@@ -216,6 +220,7 @@ function modelOptions(models: readonly string[]): SearchableSelectOption[] {
 function prepareDraftForSave(draft: ConfigDraft): ConfigDraft {
   const endpointPath = DEFAULT_CC_SWITCH_IMPORT_SETTINGS[draft.clientType].endpointPath;
   const selectedGroup = draft.allowedChannelGroups[0] ?? "";
+  const routePath = ensureCcSwitchRoutePath(draft.routePath, selectedGroup, draft.id);
   const normalizedMappings = draft.modelMappings
     .map((mapping) => {
       const targetModel = mapping.targetModel.trim();
@@ -235,6 +240,7 @@ function prepareDraftForSave(draft: ConfigDraft): ConfigDraft {
   return {
     ...draft,
     allowedChannelGroups: selectedGroup ? [selectedGroup] : [],
+    routePath,
     endpointPath,
     defaultModel,
     modelMappings: normalizedMappings,
@@ -269,7 +275,8 @@ export function CcSwitchImportConfigModal({
     if (!open) return;
     setDraft({
       ...value,
-      endpointPath: DEFAULT_CC_SWITCH_IMPORT_SETTINGS[value.clientType].endpointPath,
+      endpointPath:
+        value.endpointPath || DEFAULT_CC_SWITCH_IMPORT_SETTINGS[value.clientType].endpointPath,
     });
     setAvailableModels([]);
   }, [open, value]);
@@ -444,8 +451,11 @@ export function CcSwitchImportConfigModal({
       }),
     [channelGroupOptions],
   );
+  const previewRoutePath = selectedGroup
+    ? ensureCcSwitchRoutePath(draft.routePath, selectedGroup, draft.id)
+    : "";
   const fullBaseUrl = appendUrlPath(
-    appendUrlPath(baseUrl, selectedGroupOption?.routePath ?? ""),
+    appendUrlPath(baseUrl, previewRoutePath),
     DEFAULT_CC_SWITCH_IMPORT_SETTINGS[draft.clientType].endpointPath,
   );
   const currentModelOptions = useMemo(() => modelOptions(availableModels), [availableModels]);
@@ -496,7 +506,8 @@ export function CcSwitchImportConfigModal({
         ...current,
         modelMappings,
         defaultModel:
-          modelMappings.find((mapping) => !mapping.role && mapping.requestModel.trim())
+          modelMappings
+            .find((mapping) => !mapping.role && mapping.requestModel.trim())
             ?.requestModel.trim() ?? "",
       };
     });
@@ -557,6 +568,7 @@ export function CcSwitchImportConfigModal({
                 setDraft((current) => ({
                   ...current,
                   allowedChannelGroups: next ? [next] : [],
+                  routePath: next ? ensureCcSwitchRoutePath("", next, current.id) : "",
                   modelMappings: [],
                   defaultModel: "",
                 }))
