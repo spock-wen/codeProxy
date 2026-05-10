@@ -34,9 +34,12 @@ export class ApiClient {
 
   private managementKey = "";
 
+  private authSuspended = false;
+
   setConfig(config: ApiClientConfig): void {
     this.apiBase = computeManagementApiBase(config.apiBase);
     this.managementKey = config.managementKey.trim();
+    this.authSuspended = false;
   }
 
   private buildUrl(path: string, params?: RequestOptions["params"]): string {
@@ -153,6 +156,23 @@ export class ApiClient {
     return message;
   }
 
+  private shouldSuspendAuth(status: number, message: string): boolean {
+    if (status === 401) return true;
+    return status === 403 && /IP banned due to too many failed attempts/i.test(message);
+  }
+
+  private suspendAuth(): void {
+    if (this.authSuspended) return;
+    this.authSuspended = true;
+    window.dispatchEvent(new Event("unauthorized"));
+  }
+
+  private assertAuthActive(): void {
+    if (this.authSuspended) {
+      throw new Error("Management session is no longer valid. Please sign in again.");
+    }
+  }
+
   private applyVersionHeaders(response: Response): void {
     const version = this.readHeader(response.headers, VERSION_HEADER_KEYS);
     const buildDate = this.readHeader(response.headers, BUILD_DATE_HEADER_KEYS);
@@ -198,6 +218,7 @@ export class ApiClient {
       responseType?: ResponseType;
     } = {},
   ): Promise<T> {
+    this.assertAuthActive();
     const { controller, cleanup } = this.createAbortController(options);
 
     try {
@@ -210,14 +231,14 @@ export class ApiClient {
         headers,
       });
 
-      if (response.status === 401) {
-        window.dispatchEvent(new Event("unauthorized"));
-      }
-
       this.applyVersionHeaders(response);
 
       if (!response.ok) {
-        throw new Error(await this.buildErrorMessage(response));
+        const message = await this.buildErrorMessage(response);
+        if (this.shouldSuspendAuth(response.status, message)) {
+          this.suspendAuth();
+        }
+        throw new Error(message);
       }
 
       if (response.status === 204) {
@@ -322,6 +343,7 @@ export class ApiClient {
   }
 
   async downloadToFile(path: string, preferredFilename: string, options?: RequestOptions): Promise<void> {
+    this.assertAuthActive();
     const { controller, cleanup } = this.createAbortController(options);
 
     try {
@@ -333,13 +355,14 @@ export class ApiClient {
         signal: controller.signal,
       });
 
-      if (response.status === 401) {
-        window.dispatchEvent(new Event("unauthorized"));
-      }
       this.applyVersionHeaders(response);
 
       if (!response.ok) {
-        throw new Error(await this.buildErrorMessage(response));
+        const message = await this.buildErrorMessage(response);
+        if (this.shouldSuspendAuth(response.status, message)) {
+          this.suspendAuth();
+        }
+        throw new Error(message);
       }
 
       const filename = this.extractDownloadFilename(response.headers, preferredFilename);
