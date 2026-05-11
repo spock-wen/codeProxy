@@ -4,6 +4,7 @@ import type { TagDisplayFields } from "@/lib/http/types";
 export interface ChannelGroupChannelDetail extends TagDisplayFields {
   name: string;
   source?: string;
+  disabled?: boolean;
 }
 
 export interface ChannelGroupItem {
@@ -40,6 +41,7 @@ const normalizeChannelDetail = (value: unknown): ChannelGroupChannelDetail | nul
   return {
     name,
     source: typeof detail.source === "string" ? detail.source.trim() : undefined,
+    disabled: detail.disabled === true,
     default_tags: normalizeStringList(detail.default_tags),
     custom_tags: normalizeStringList(detail.custom_tags),
     hidden_default_tags: normalizeStringList(detail.hidden_default_tags),

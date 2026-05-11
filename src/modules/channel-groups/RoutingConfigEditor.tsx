@@ -217,6 +217,10 @@ function readChannelDisplayTags(detail?: ChannelGroupChannelDetail | null): stri
     .filter((tag, index, list) => Boolean(tag) && list.indexOf(tag) === index);
 }
 
+function isDisabledChannel(detail?: ChannelGroupChannelDetail | null): boolean {
+  return detail?.disabled === true;
+}
+
 function renderChannelTags(tags: string[]) {
   if (tags.length === 0) return null;
   return (
@@ -839,41 +843,51 @@ export function RoutingConfigEditor({
         key: "channel",
         label: t("channel_groups_page.table_channels"),
         cellClassName: "min-w-0 whitespace-nowrap",
-        render: (channel) => (
-          <OverflowTooltip content={channel.name} className="block min-w-0">
-            <span className="block min-w-0">
-              <span
-                className={`flex min-w-0 items-center gap-2 truncate text-sm ${
-                  draftStaleChannelIds.has(channel.id)
-                    ? "text-rose-700 dark:text-rose-200"
-                    : "text-slate-900 dark:text-white"
-                }`}
-              >
-                <span className="truncate">{channel.name}</span>
-                {draftStaleChannelIds.has(channel.id) ? (
-                  <span className="inline-flex shrink-0 items-center rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
-                    {t("channel_groups_page.deleted_badge")}
+        render: (channel) => {
+          const detail = availableChannelDetails[normalizeChannelName(channel.name)];
+          const displayTags = readChannelDisplayTags(detail);
+          const isStale = draftStaleChannelIds.has(channel.id);
+          const isDisabled = isDisabledChannel(detail);
+          return (
+            <OverflowTooltip content={channel.name} className="block min-w-0">
+              <span className="block min-w-0">
+                <span
+                  className={`flex min-w-0 items-center gap-2 truncate text-sm ${
+                    isStale
+                      ? "text-rose-700 dark:text-rose-200"
+                      : isDisabled
+                        ? "text-slate-500 dark:text-white/45"
+                        : "text-slate-900 dark:text-white"
+                  }`}
+                >
+                  <span className="truncate">{channel.name}</span>
+                  {isStale ? (
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
+                      {t("channel_groups_page.deleted_badge")}
+                    </span>
+                  ) : null}
+                  {!isStale && isDisabled ? (
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-white/10 dark:text-white/55">
+                      {t("channel_groups_page.disabled_badge")}
+                    </span>
+                  ) : null}
+                </span>
+                {displayTags.length > 0 ? (
+                  <span className="mt-1 flex flex-wrap gap-1">
+                    {displayTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </span>
                 ) : null}
               </span>
-              {readChannelDisplayTags(availableChannelDetails[normalizeChannelName(channel.name)])
-                .length > 0 ? (
-                <span className="mt-1 flex flex-wrap gap-1">
-                  {readChannelDisplayTags(
-                    availableChannelDetails[normalizeChannelName(channel.name)],
-                  ).map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </span>
-              ) : null}
-            </span>
-          </OverflowTooltip>
-        ),
+            </OverflowTooltip>
+          );
+        },
       },
       {
         key: "priority",

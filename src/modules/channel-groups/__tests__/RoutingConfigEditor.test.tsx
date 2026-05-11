@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import i18n from "@/i18n";
+import type { ChannelGroupChannelDetail } from "@/lib/http/apis/channel-groups";
 import { DEFAULT_VISUAL_VALUES, type VisualConfigValues } from "@/modules/config/visual/types";
 import {
   RoutingConfigEditor,
@@ -31,9 +32,13 @@ vi.mock("goey-toast", () => ({
 function Harness({
   initialValues,
   loadModelsForChannels,
+  availableChannels = ["Team A Claude", "Main Codex", "Backup Claude"],
+  availableChannelDetails,
 }: {
   initialValues?: VisualConfigValues;
   loadModelsForChannels?: (channels: string[]) => Promise<Array<string | RoutingModelOption>>;
+  availableChannels?: string[];
+  availableChannelDetails?: Record<string, ChannelGroupChannelDetail>;
 }) {
   const [values, setValues] = useState<VisualConfigValues>({
     ...DEFAULT_VISUAL_VALUES,
@@ -47,7 +52,8 @@ function Harness({
       <ToastProvider>
         <RoutingConfigEditor
           values={values}
-          availableChannels={["Team A Claude", "Main Codex", "Backup Claude"]}
+          availableChannels={availableChannels}
+          availableChannelDetails={availableChannelDetails}
           loadModelsForChannels={loadModelsForChannels}
           onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
         />
@@ -483,5 +489,61 @@ describe("RoutingConfigEditor", () => {
         description: expect.stringContaining("Legacy Claude"),
       }),
     );
+  });
+
+  test("shows disabled auth-file channels as disabled instead of deleted", async () => {
+    await i18n.changeLanguage("zh-CN");
+    const user = userEvent.setup();
+
+    render(
+      <Harness
+        availableChannels={["Main Codex", "GptPlus8"]}
+        availableChannelDetails={{
+          "main codex": {
+            name: "Main Codex",
+            source: "codex",
+            default_tags: [],
+            custom_tags: [],
+            hidden_default_tags: [],
+            display_tags: ["codex"],
+          },
+          gptplus8: {
+            name: "GptPlus8",
+            source: "codex",
+            disabled: true,
+            default_tags: [],
+            custom_tags: [],
+            hidden_default_tags: [],
+            display_tags: ["codex"],
+          },
+        }}
+        initialValues={{
+          ...DEFAULT_VISUAL_VALUES,
+          routingChannelGroups: [
+            {
+              id: "group-mixed",
+              name: "chatgpt-mix",
+              description: "pro 和 plus 账号池的混合池",
+              strategy: "round-robin",
+              allowedModels: [],
+              channels: [
+                { id: "channel-deleted", name: "GptPlus6", priority: "20" },
+                { id: "channel-disabled", name: "GptPlus8", priority: "" },
+                { id: "channel-valid", name: "Main Codex", priority: "" },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /异常/ }));
+
+    expect(screen.getByText("1 个已删除渠道")).toBeInTheDocument();
+    expect(screen.getAllByText("GptPlus6").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("GptPlus8").length).toBeGreaterThan(0);
+    const disabledRow = screen.getByRole("row", { name: /GptPlus8/ });
+    expect(within(disabledRow).getByText("已禁用")).toBeInTheDocument();
+    expect(within(disabledRow).queryByText("已删除")).not.toBeInTheDocument();
   });
 });
