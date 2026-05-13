@@ -58,6 +58,53 @@ function appendRoutePath(baseUrl: string, path: string): string {
   return `${normalizedBase}${normalizedPath}`;
 }
 
+function normalizeModelList(models: readonly unknown[] | undefined): string[] {
+  if (!Array.isArray(models)) return [];
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  models.forEach((model) => {
+    const value = String(model ?? "").trim();
+    if (!value || seen.has(value)) return;
+    seen.add(value);
+    normalized.push(value);
+  });
+
+  return normalized;
+}
+
+function getCcSwitchImportRequestModels(config: CcSwitchImportConfigListItem): string[] {
+  const models: string[] = [];
+  const addModel = (model: unknown) => {
+    const value = String(model ?? "").trim();
+    if (value) models.push(value);
+  };
+
+  addModel(config.defaultModel);
+
+  if (config.clientType === "claude") {
+    config.modelMappings.forEach((mapping) => {
+      if (!mapping.role) return;
+      const requestModel = mapping.requestModel.trim();
+      const targetModel = mapping.targetModel.trim();
+      addModel(!requestModel || requestModel === mapping.role ? targetModel : requestModel);
+    });
+  }
+
+  return normalizeModelList(models);
+}
+
+function ccSwitchConfigMatchesAllowedModels(
+  config: CcSwitchImportConfigListItem,
+  allowedModels: readonly string[],
+): boolean {
+  if (allowedModels.length === 0) return true;
+  const allowed = new Set(allowedModels);
+  const requestModels = getCcSwitchImportRequestModels(config);
+  if (requestModels.length === 0) return true;
+  return requestModels.every((model) => allowed.has(model));
+}
+
 async function copyTextToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
@@ -423,9 +470,12 @@ export function ApiKeysPage() {
           .toLowerCase(),
       )
       .filter(Boolean);
+    const entryModels = normalizeModelList(ccSwitchImportEntry["allowed-models"]);
     return ccSwitchImportConfigs.filter((config) => {
-      if (entryGroups.length === 0) return true;
-      return config.allowedChannelGroups.some((g) => entryGroups.includes(g));
+      const matchesGroups =
+        entryGroups.length === 0 ||
+        config.allowedChannelGroups.some((g) => entryGroups.includes(g));
+      return matchesGroups && ccSwitchConfigMatchesAllowedModels(config, entryModels);
     });
   }, [ccSwitchImportEntry, ccSwitchImportConfigs]);
 
