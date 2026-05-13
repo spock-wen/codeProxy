@@ -90,6 +90,10 @@ describe("QuickImportTabContent", () => {
     const codexSection = await screen.findByRole("region", { name: /codex quick imports/i });
     const claudeSection = await screen.findByRole("region", { name: /claude quick imports/i });
 
+    expect(screen.getByRole("heading", { name: /cc switch card presets/i })).toBeInTheDocument();
+    expect(
+      screen.queryByText(/only codex and claude presets are shown here for now/i),
+    ).not.toBeInTheDocument();
     expect(within(codexSection).getByRole("button", { name: /team codex/i })).toBeInTheDocument();
     expect(within(claudeSection).getByRole("button", { name: /team claude/i })).toBeInTheDocument();
     expect(screen.queryByText("Team Gemini")).not.toBeInTheDocument();
@@ -109,5 +113,27 @@ describe("QuickImportTabContent", () => {
     expect(parsed.searchParams.get("name")).toBe("Team Codex");
     expect(parsed.searchParams.get("apiKey")).toBe("sk-lookup-key");
     expect(parsed.searchParams.get("endpoint")).toMatch(/\/pro\/cs_codex\/v1$/);
+  });
+
+  test("hides quick import groups that do not have presets", async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({ "ccswitch-import-configs": [quickImportConfigs[0]] }), {
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <QuickImportTabContent apiKey="sk-lookup-key" />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    const codexSection = await screen.findByRole("region", { name: /codex quick imports/i });
+
+    expect(within(codexSection).getByRole("button", { name: /team codex/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /claude quick imports/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/no claude presets yet/i)).not.toBeInTheDocument();
   });
 });
