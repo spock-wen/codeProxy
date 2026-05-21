@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type RefObject, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type RefObject, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BarChart3,
   CircleHelp,
+  ClipboardPaste,
   Download,
   Eye,
   Plus,
@@ -43,6 +44,142 @@ import {
 } from "@/modules/auth-files/helpers/authFilesPageUtils";
 import type { QuotaItem, QuotaState } from "@/modules/quota/quota-helpers";
 import type { QuotaProvider } from "@/modules/quota/quota-fetch";
+
+const MAX_FILENAME_PART_LENGTH = 72;
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const sanitizeFilenamePart = (value: unknown): string => {
+  const text = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return text.slice(0, MAX_FILENAME_PART_LENGTH).replace(/^-+|-+$/g, "");
+};
+
+const readStringField = (record: Record<string, unknown>, keys: string[]): string => {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return "";
+};
+
+const findJsonValueEnd = (input: string, start: number): number => {
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let index = start; index < input.length; index += 1) {
+    const char = input[index];
+    if (inString) {
+      if (escaping) {
+        escaping = false;
+      } else if (char === "\\") {
+        escaping = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === "{" || char === "[") {
+      depth += 1;
+      continue;
+    }
+    if (char === "}" || char === "]") {
+      depth -= 1;
+      if (depth === 0) return index + 1;
+    }
+  }
+
+  throw new Error("incomplete json");
+};
+
+const parsePastedJsonValues = (input: string): unknown[] => {
+  const values: unknown[] = [];
+  let index = 0;
+
+  while (index < input.length) {
+    while (index < input.length && (/[\s,]/u.test(input[index]) || input[index] === "\uFEFF")) {
+      index += 1;
+    }
+    if (index >= input.length) break;
+    const startChar = input[index];
+    if (startChar !== "{" && startChar !== "[") {
+      throw new Error("invalid json start");
+    }
+    const end = findJsonValueEnd(input, index);
+    values.push(JSON.parse(input.slice(index, end)) as unknown);
+    index = end;
+  }
+
+  return values;
+};
+
+const parsePastedAuthJsonRecords = (input: string): Record<string, unknown>[] => {
+  const values = parsePastedJsonValues(input.trim());
+  const records: Record<string, unknown>[] = [];
+
+  values.forEach((value) => {
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (!isPlainObject(item)) throw new Error("json array item is not object");
+        records.push(item);
+      });
+      return;
+    }
+    if (!isPlainObject(value)) throw new Error("json value is not object");
+    records.push(value);
+  });
+
+  return records;
+};
+
+const buildPastedAuthFileName = (
+  record: Record<string, unknown>,
+  index: number,
+  usedNames: Set<string>,
+): string => {
+  const provider = sanitizeFilenamePart(readStringField(record, ["type", "provider"])) || "auth";
+  const identifier =
+    sanitizeFilenamePart(
+      readStringField(record, [
+        "account_id",
+        "chatgpt_account_id",
+        "auth_index",
+        "authIndex",
+        "id",
+      ]),
+    ) || `import-${index + 1}`;
+  const base = `${provider}-${identifier}`.replace(/^-+|-+$/g, "") || `auth-import-${index + 1}`;
+  let name = `${base}.json`;
+  let suffix = 2;
+  while (usedNames.has(name)) {
+    name = `${base}-${suffix}.json`;
+    suffix += 1;
+  }
+  usedNames.add(name);
+  return name;
+};
+
+const buildPastedAuthFiles = (input: string): File[] => {
+  const records = parsePastedAuthJsonRecords(input);
+  if (records.length === 0) return [];
+  const usedNames = new Set<string>();
+  return records.map((record, index) => {
+    const name = buildPastedAuthFileName(record, index, usedNames);
+    return new File([JSON.stringify(record, null, 2)], name, { type: "application/json" });
+  });
+};
 
 interface AuthFilesFilesTabProps {
   fileInputRef: RefObject<HTMLInputElement | null>;
@@ -192,6 +329,9 @@ export function AuthFilesFilesTab({
   const { t } = useTranslation();
   const [modelOwnerDialogOpen, setModelOwnerDialogOpen] = useState(false);
   const [draftModelOwner, setDraftModelOwner] = useState(selectedModelOwner);
+  const [jsonImportOpen, setJsonImportOpen] = useState(false);
+  const [jsonImportText, setJsonImportText] = useState("");
+  const [jsonImportError, setJsonImportError] = useState("");
   const normalizedFilter = normalizeProviderKey(filter);
   const canSetModelOwnerGroup = normalizedFilter !== "all";
   const draftModelOwnerGroup =
@@ -234,6 +374,32 @@ export function AuthFilesFilesTab({
       setDraftModelOwner(selectedModelOwner);
     }
   }, [modelOwnerDialogOpen, selectedModelOwner]);
+
+  const closeJsonImport = useCallback(() => {
+    if (uploading) return;
+    setJsonImportOpen(false);
+    setJsonImportError("");
+  }, [uploading]);
+
+  const submitJsonImport = useCallback(async () => {
+    setJsonImportError("");
+    let files: File[];
+    try {
+      files = buildPastedAuthFiles(jsonImportText);
+    } catch {
+      setJsonImportError(t("auth_files.paste_json_invalid"));
+      return;
+    }
+
+    if (files.length === 0) {
+      setJsonImportError(t("auth_files.paste_json_empty"));
+      return;
+    }
+
+    await handleUpload(files);
+    setJsonImportText("");
+    setJsonImportOpen(false);
+  }, [handleUpload, jsonImportText, t]);
 
   return (
     <div className="mt-3 space-y-3">
@@ -425,6 +591,21 @@ export function AuthFilesFilesTab({
                     title={t("auth_files.upload")}
                   >
                     <Upload size={15} />
+                  </Button>
+                </HoverTooltip>
+                <HoverTooltip content={t("auth_files.paste_json")}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setJsonImportError("");
+                      setJsonImportOpen(true);
+                    }}
+                    disabled={uploading}
+                    aria-label={t("auth_files.paste_json")}
+                    title={t("auth_files.paste_json")}
+                  >
+                    <ClipboardPaste size={15} />
                   </Button>
                 </HoverTooltip>
                 <HoverTooltip content={t("auth_files_page.add_oauth")}>
@@ -824,6 +1005,60 @@ export function AuthFilesFilesTab({
           {t("auth_files.usage_stats_warning")}
         </p>
       )}
+
+      <Modal
+        open={jsonImportOpen}
+        title={t("auth_files.paste_json_title")}
+        description={t("auth_files.paste_json_description")}
+        maxWidth="max-w-3xl"
+        bodyHeightClassName="max-h-[72vh]"
+        onClose={closeJsonImport}
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={closeJsonImport} disabled={uploading}>
+              {t("auth_files.cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => void submitJsonImport()}
+              disabled={uploading || jsonImportText.trim().length === 0}
+            >
+              {uploading ? t("auth_files.upload") : t("auth_files.paste_json_upload")}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-2">
+          <label
+            htmlFor="auth-files-json-import"
+            className="text-xs font-semibold text-slate-600 dark:text-white/65"
+          >
+            {t("auth_files.paste_json_label")}
+          </label>
+          <textarea
+            id="auth-files-json-import"
+            value={jsonImportText}
+            onChange={(event) => {
+              setJsonImportText(event.currentTarget.value);
+              if (jsonImportError) setJsonImportError("");
+            }}
+            spellCheck={false}
+            className="min-h-[320px] w-full resize-y rounded-2xl border border-black/[0.06] bg-white px-3.5 py-3 font-mono text-xs leading-5 text-slate-900 shadow-[2px_2px_8px_rgb(0_0_0_/_0.055)] outline-none transition-colors placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-black/10 dark:border-transparent dark:bg-[#27272A] dark:text-white dark:shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] dark:placeholder:text-white/35 dark:focus-visible:ring-white/15"
+            placeholder={t("auth_files.paste_json_placeholder")}
+            aria-invalid={jsonImportError ? "true" : "false"}
+          />
+          {jsonImportError ? (
+            <p className="text-xs font-medium text-rose-600 dark:text-rose-300">
+              {jsonImportError}
+            </p>
+          ) : (
+            <p className="text-xs text-slate-500 dark:text-white/45">
+              {t("auth_files.paste_json_hint")}
+            </p>
+          )}
+        </div>
+      </Modal>
 
       <Modal
         open={modelOwnerDialogOpen}
