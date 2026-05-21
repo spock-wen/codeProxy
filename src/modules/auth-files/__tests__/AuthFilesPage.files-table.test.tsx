@@ -201,6 +201,81 @@ describe("AuthFilesPage files table", () => {
     expect(screen.getByRole("switch", { name: "Enable/Disable" })).toBeInTheDocument();
   });
 
+  test("uploads multiple auth files from pasted JSON objects", async () => {
+    render(
+      <MemoryRouter initialEntries={["/auth-files"]}>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/auth-files" element={<AuthFilesPage />} />
+            </Routes>
+          </ToastProvider>
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("qwen.json")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Paste JSON" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Paste Auth JSON" });
+    fireEvent.change(within(dialog).getByLabelText("Auth file JSON"), {
+      target: {
+        value: [
+          JSON.stringify({ type: "codex", account_id: "acct-one", access_token: "token-one" }),
+          JSON.stringify({ type: "kimi", account_id: "acct-two", refresh_token: "token-two" }),
+        ].join("\n"),
+      },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Upload JSON" }));
+
+    await waitFor(() => expect(mocks.upload).toHaveBeenCalledTimes(2));
+    const uploadCalls = mocks.upload.mock.calls as unknown as [[File], [File]];
+    expect(uploadCalls.map(([file]) => file.name)).toEqual([
+      "codex-acct-one.json",
+      "kimi-acct-two.json",
+    ]);
+    const uploadedJson = await Promise.all(
+      uploadCalls.map(async ([file]) => JSON.parse(await file.text()) as Record<string, unknown>),
+    );
+    expect(uploadedJson).toEqual([
+      { type: "codex", account_id: "acct-one", access_token: "token-one" },
+      { type: "kimi", account_id: "acct-two", refresh_token: "token-two" },
+    ]);
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Paste Auth JSON" })).not.toBeInTheDocument(),
+    );
+  });
+
+  test("shows an error for invalid pasted auth JSON", async () => {
+    render(
+      <MemoryRouter initialEntries={["/auth-files"]}>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/auth-files" element={<AuthFilesPage />} />
+            </Routes>
+          </ToastProvider>
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("qwen.json")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Paste JSON" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Paste Auth JSON" });
+    fireEvent.change(within(dialog).getByLabelText("Auth file JSON"), {
+      target: { value: '{"type":"codex"' },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Upload JSON" }));
+
+    expect(
+      await within(dialog).findByText(
+        "Please paste valid JSON objects or a JSON array of objects.",
+      ),
+    ).toBeInTheDocument();
+    expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
   test("keeps table action buttons on a single row", async () => {
     mocks.list.mockImplementation(async () => ({
       files: [
@@ -677,12 +752,15 @@ describe("AuthFilesPage files table", () => {
         },
       ],
     }));
-    mocks.getEntityStats.mockImplementation(async () => ({
-      source: [],
-      auth_index: [
-        { entity_name: "77", requests: 5, failed: 1, avg_latency: 0, total_tokens: 0 },
-      ],
-    }) as any);
+    mocks.getEntityStats.mockImplementation(
+      async () =>
+        ({
+          source: [],
+          auth_index: [
+            { entity_name: "77", requests: 5, failed: 1, avg_latency: 0, total_tokens: 0 },
+          ],
+        }) as any,
+    );
 
     render(
       <MemoryRouter initialEntries={["/auth-files"]}>
