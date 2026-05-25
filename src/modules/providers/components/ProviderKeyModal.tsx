@@ -34,7 +34,13 @@ import type { ModelEntryDraft } from "@/modules/providers/ModelInputList";
 const OPENCODE_GO_MODELS_URL = "https://opencode.ai/zen/go/v1/models";
 const OPENCODE_GO_CHAT_URL = "https://opencode.ai/zen/go/v1/chat/completions";
 const OPENCODE_GO_MESSAGES_URL = "https://opencode.ai/zen/go/v1/messages";
-const OPENCODE_GO_VISION_MODEL_IDS = new Set(["qwen3.5-plus", "qwen3.6-plus"]);
+const OPENCODE_GO_KNOWN_VISION_MODEL_IDS = new Set([
+  "qwen3.5-plus",
+  "qwen3.6-plus",
+  "mimo-v2-omni",
+  "mimo-v2.5",
+  "mimo-v2.5-pro",
+]);
 
 type ProviderKeyModalTab = "basic" | "request" | "models";
 
@@ -76,6 +82,22 @@ const SectionCard = ({
     {children}
   </div>
 );
+
+const isOpenCodeGoVisionModel = (modelId: string): boolean => {
+  const normalized = modelId.trim().toLowerCase();
+  if (!normalized) return false;
+  if (OPENCODE_GO_KNOWN_VISION_MODEL_IDS.has(normalized)) return true;
+  if (
+    normalized.includes("vision") ||
+    normalized.includes("multimodal") ||
+    normalized.includes("omni")
+  ) {
+    return true;
+  }
+  return normalized
+    .split(/[-_./:]+/)
+    .some((token) => token === "vl");
+};
 
 export function ProviderKeyModal({
   open,
@@ -233,7 +255,7 @@ export function ProviderKeyModal({
   const openCodeVisionFallbackOptions = useMemo(() => {
     const allowedModels = openCodeModels.filter(
       (model) =>
-        OPENCODE_GO_VISION_MODEL_IDS.has(model.id.toLowerCase()) &&
+        isOpenCodeGoVisionModel(model.id) &&
         !disableAllModels &&
         !excludedModelIds.has(model.id.toLowerCase()),
     );
@@ -254,7 +276,7 @@ export function ProviderKeyModal({
       openCodeModels.some(
         (model) =>
           model.id.toLowerCase() === fallbackLower &&
-          OPENCODE_GO_VISION_MODEL_IDS.has(fallbackLower) &&
+          isOpenCodeGoVisionModel(model.id) &&
           !excludedModelIds.has(fallbackLower),
       );
     if (allowed) return;

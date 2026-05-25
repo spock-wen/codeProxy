@@ -246,7 +246,7 @@ describe("ProvidersPage OpenCode Go tab", () => {
     expect(mocks.saveOpenCodeGoConfigs.mock.calls[0][0][0]).not.toHaveProperty("models");
   });
 
-  test("offers fetched OpenCode Go models as vision fallback options from string api-call body", async () => {
+  test("offers allowed multimodal OpenCode Go models as vision fallback options from string api-call body", async () => {
     const user = userEvent.setup();
     mocks.apiCallRequest.mockImplementation(async () => ({
       statusCode: 200,
@@ -258,6 +258,7 @@ describe("ProvidersPage OpenCode Go tab", () => {
           { id: "deepseek-v4-flash", object: "model", owned_by: "opencode" },
           { id: "qwen3.5-plus", object: "model", owned_by: "opencode" },
           { id: "qwen3.6-plus", object: "model", owned_by: "opencode" },
+          { id: "mimo-v2-omni", object: "model", owned_by: "opencode" },
           { id: "minimax-m2.5", object: "model", owned_by: "opencode" },
         ],
       }),
@@ -288,8 +289,9 @@ describe("ProvidersPage OpenCode Go tab", () => {
     expect(await screen.findByRole("option", { name: /qwen3\.5-plus/i })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /qwen3\.6-plus/i })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /deepseek-v4-flash/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /mimo-v2-omni/i })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /minimax-m2\.5/i })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("option", { name: /qwen3\.5-plus/i }));
+    await user.click(screen.getByRole("option", { name: /mimo-v2-omni/i }));
 
     await user.click(within(dialog).getByRole("tab", { name: /Basic/i }));
     await user.type(within(dialog).getByPlaceholderText("e.g. Gemini Primary"), "OpenCode Go");
@@ -302,7 +304,7 @@ describe("ProvidersPage OpenCode Go tab", () => {
           name: "OpenCode Go",
           apiKey: "sk-opencode-go",
           excludedModels: ["minimax-m2.5"],
-          visionFallbackModel: "qwen3.5-plus",
+          visionFallbackModel: "mimo-v2-omni",
         }),
       ]);
     });
