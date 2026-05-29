@@ -15,6 +15,15 @@ const DISABLE_ALL_MODELS_RULE = "*";
 export const hasDisableAllModelsRule = (models?: string[]) =>
   Array.isArray(models) && models.some((m) => String(m ?? "").trim() === DISABLE_ALL_MODELS_RULE);
 
+export const isProviderSimpleConfigEnabled = (item: ProviderSimpleConfig): boolean =>
+  !hasDisableAllModelsRule(item.excludedModels);
+
+export const isBedrockProviderConfigEnabled = (item: BedrockProviderConfig): boolean =>
+  !hasDisableAllModelsRule(item.excludedModels);
+
+export const isOpenAIProviderEnabled = (provider: OpenAIProvider): boolean =>
+  provider.disabled !== true;
+
 export const stripDisableAllModelsRule = (models?: string[]) =>
   Array.isArray(models)
     ? models.filter((m) => String(m ?? "").trim() !== DISABLE_ALL_MODELS_RULE)

@@ -14,6 +14,10 @@ import {
 } from "@/modules/providers/providers-helpers";
 import { formatLatency } from "@/modules/providers/hooks/useProviderLatency";
 import type { ProviderAccessSummary } from "@/modules/providers/provider-access";
+import { ProviderConnectionRows } from "@/modules/providers/components/ProviderConnectionRows";
+import { ProviderMetricChip } from "@/modules/providers/components/ProviderMetricChip";
+import { ProviderModelChips } from "@/modules/providers/components/ProviderModelChips";
+import { ProviderAccessChips } from "@/modules/providers/components/ProviderAccessChips";
 
 import { useTranslation } from "react-i18next";
 
@@ -103,14 +107,6 @@ export function ProviderKeyListCard({
             const stats = getStats(item);
             const statusData = getStatusBar(item);
             const accessSummary = getAccessSummary?.(item) ?? null;
-            const accessTone =
-              accessSummary === null || accessSummary.totalKeys === 0
-                ? "border-slate-200 bg-slate-50 text-slate-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white/65"
-                : accessSummary.reachableKeys === 0
-                  ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
-                  : accessSummary.reachableKeys < accessSummary.totalKeys
-                    ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100";
 
             return (
               <ProviderCard
@@ -173,46 +169,46 @@ export function ProviderKeyListCard({
                     : undefined
                 }
               >
-                <div className="space-y-1 text-xs text-slate-600 dark:text-white/65">
-                  <p className="truncate font-mono">apiKey：{maskApiKey(item.apiKey)}</p>
-                  {showBaseUrl ? (
-                    <p className="truncate font-mono">baseUrl：{item.baseUrl || "--"}</p>
+                <ProviderConnectionRows
+                  apiKey={item.apiKey}
+                  baseUrl={item.baseUrl}
+                  proxyUrl={item.proxyUrl}
+                  maskApiKey={maskApiKey}
+                  showBaseUrl={showBaseUrl}
+                />
+
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <ProviderMetricChip
+                    tone="blue"
+                    label={t("providers.models_label")}
+                    value={models.length}
+                  />
+                  {excludedModels.length ? (
+                    <ProviderMetricChip
+                      tone="rose"
+                      label={t("providers.excluded_models_label")}
+                      value={excludedModels.length}
+                    />
                   ) : null}
-                  {item.proxyUrl ? (
-                    <p className="truncate font-mono">proxyUrl：{item.proxyUrl}</p>
+                  {headerEntries.length ? (
+                    <ProviderMetricChip
+                      tone="slate"
+                      label={t("providers.headers_optional")}
+                      value={headerEntries.length}
+                      title={`${headerEntries.length} header(s)`}
+                    />
                   ) : null}
-                  <p className="tabular-nums">
-                    {t("providers.models_label")}: {models.length} ·{" "}
-                    {t("providers.excluded_models_label")}: {excludedModels.length} ·{" "}
-                    {t("providers.headers_optional")}: {headerEntries.length} ·{" "}
-                    {t("providers.success_stats", { count: stats.success })} ·{" "}
-                    {t("providers.failed_stats", { count: stats.failure })}
-                  </p>
+                  <ProviderMetricChip
+                    tone={stats.success > 0 ? "emerald" : "slate"}
+                    label={t("providers.success_stats", { count: stats.success })}
+                  />
+                  <ProviderMetricChip
+                    tone={stats.failure > 0 ? "rose" : "slate"}
+                    label={t("providers.failed_stats", { count: stats.failure })}
+                  />
                 </div>
 
-                {accessSummary ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-                    <span className={`rounded-full border px-2 py-0.5 font-medium ${accessTone}`}>
-                      {accessSummary.totalKeys === 0
-                        ? t("providers.access_no_keys")
-                        : accessSummary.reachableKeys === 0
-                          ? t("providers.access_none")
-                          : accessSummary.reachableKeys < accessSummary.totalKeys
-                            ? t("providers.access_limited", {
-                                reachable: accessSummary.reachableKeys,
-                                total: accessSummary.totalKeys,
-                              })
-                            : t("providers.access_all", { total: accessSummary.totalKeys })}
-                    </span>
-                    {accessSummary.exactOverrideKeys > 0 ? (
-                      <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                        {t("providers.access_exact_overrides", {
-                          count: accessSummary.exactOverrideKeys,
-                        })}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
+                <ProviderAccessChips accessSummary={accessSummary} />
 
                 {headerEntries.length ? (
                   <div className="mt-2 flex flex-wrap gap-1">
@@ -229,32 +225,15 @@ export function ProviderKeyListCard({
                   </div>
                 ) : null}
 
-                {models.length ? (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {models.map((model) => {
-                      const modelLabel =
-                        model.alias && model.alias !== model.name
-                          ? `${model.name} → ${model.alias}`
-                          : model.name;
-                      return (
-                        <span
-                          key={model.name}
-                          className="inline-flex max-w-full min-w-0 rounded-full bg-slate-900 px-2 py-0.5 text-[11px] text-white dark:bg-white dark:text-neutral-950"
-                          title={
-                            model.alias && model.alias !== model.name
-                              ? `${model.name} => ${model.alias}`
-                              : model.name
-                          }
-                        >
-                          <span className="min-w-0 truncate">{modelLabel}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                ) : null}
+                <div className="mt-1.5">
+                  <ProviderModelChips
+                    models={models}
+                    maxVisible={gridColumns >= 4 ? 4 : 6}
+                  />
+                </div>
 
                 {excludedModels.length ? (
-                  <div className="mt-2 flex flex-wrap gap-1">
+                  <div className="mt-1.5 flex flex-wrap gap-1">
                     {excludedModels.map((model) => (
                       <span
                         key={model}

@@ -6,7 +6,9 @@ import { Card } from "@/modules/ui/Card";
 import { EmptyState } from "@/modules/ui/EmptyState";
 import { ProviderCard } from "@/modules/providers/ProviderCard";
 import { ProviderStatusBar } from "@/modules/providers/ProviderStatusBar";
-import { ToggleSwitch } from "@/modules/ui/ToggleSwitch";
+import { ProviderMetricChip } from "@/modules/providers/components/ProviderMetricChip";
+import { ProviderModelChips } from "@/modules/providers/components/ProviderModelChips";
+import { OpenAIKeyEntrySummary } from "@/modules/providers/components/OpenAIKeyEntrySummary";
 
 interface OpenAIProvidersTabProps {
   providers: OpenAIProvider[];
@@ -60,7 +62,7 @@ export function OpenAIProvidersTab({
   return (
     <Card
       title={t("providers.openai_compatible")}
-      description={t("providers.claude_desc")}
+      description={t("providers.openai_tab_desc")}
       className="flex h-full min-h-0 flex-col"
       bodyClassName="min-h-0 flex flex-1 flex-col"
       loading={loading}
@@ -138,100 +140,45 @@ export function OpenAIProvidersTab({
                 ) : null}
 
                 {provider.apiKeyEntries?.length ? (
-                  <div className="mt-2 space-y-1">
-                    <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
-                      Keys: {provider.apiKeyEntries.length}
-                    </p>
-                    <div className="space-y-1">
-                      {provider.apiKeyEntries.map((entry, entryIndex) => {
-                        const entryStats = getKeyEntryStats(entry);
-                        const entryEnabled = entry.disabled !== true;
-                        return (
-                          <div
-                            key={`${entry.apiKey}:${entryIndex}`}
-                            className="grid gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-xs dark:border-neutral-800 dark:bg-neutral-950/60 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                          >
-                            <div className="min-w-0">
-                              <p className="truncate font-mono text-slate-900 dark:text-white">
-                                {entryIndex + 1}. {maskApiKey(entry.apiKey)}
-                              </p>
-                              {entry.proxyUrl ? (
-                                <p className="mt-0.5 truncate font-mono text-slate-600 dark:text-white/55">
-                                  proxy: {entry.proxyUrl}
-                                </p>
-                              ) : null}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 tabular-nums sm:justify-end">
-                              <span
-                                className={[
-                                  "rounded-full px-2 py-0.5 font-semibold",
-                                  entryEnabled
-                                    ? "bg-emerald-600/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200"
-                                    : "bg-amber-500/15 text-amber-700 dark:text-amber-200",
-                                ].join(" ")}
-                              >
-                                {entryEnabled ? t("providers.enabled") : t("providers.disabled")}
-                              </span>
-                              <span className="rounded-full bg-emerald-600/10 px-2 py-0.5 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
-                                {t("providers.success_stats", { count: entryStats.success })}
-                              </span>
-                              <span className="rounded-full bg-rose-600/10 px-2 py-0.5 text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
-                                {t("providers.failed_stats", { count: entryStats.failure })}
-                              </span>
-                              {onToggleKeyEntryEnabled ? (
-                                <ToggleSwitch
-                                  checked={entryEnabled}
-                                  ariaLabel={`${t("providers.enable_key_entry")} ${entryIndex + 1}`}
-                                  onCheckedChange={(enabled) =>
-                                    onToggleKeyEntryEnabled(idx, entryIndex, enabled)
-                                  }
-                                />
-                              ) : null}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <OpenAIKeyEntrySummary
+                    entries={provider.apiKeyEntries}
+                    maskApiKey={maskApiKey}
+                    getKeyEntryStats={getKeyEntryStats}
+                    onToggleKeyEntryEnabled={
+                      onToggleKeyEntryEnabled
+                        ? (entryIndex, enabled) => onToggleKeyEntryEnabled(idx, entryIndex, enabled)
+                        : undefined
+                    }
+                  />
                 ) : null}
 
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-white/65 tabular-nums">
-                  <span>
-                    {t("providers.models_label")}: {provider.models?.length ?? 0}
-                  </span>
-                  <span>·</span>
-                  <span>{t("providers.success_stats", { count: stats.success })}</span>
-                  <span>·</span>
-                  <span>{t("providers.failed_stats", { count: stats.failure })}</span>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <ProviderMetricChip
+                    tone="blue"
+                    label={t("providers.models_label")}
+                    value={provider.models?.length ?? 0}
+                  />
+                  <ProviderMetricChip
+                    tone={stats.success > 0 ? "emerald" : "slate"}
+                    label={t("providers.success_stats", { count: stats.success })}
+                  />
+                  <ProviderMetricChip
+                    tone={stats.failure > 0 ? "rose" : "slate"}
+                    label={t("providers.failed_stats", { count: stats.failure })}
+                  />
                   {provider.testModel ? (
-                    <>
-                      <span>·</span>
-                      <span className="truncate">testModel: {provider.testModel}</span>
-                    </>
+                    <span className="inline-flex items-center rounded-full bg-slate-600/10 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:bg-white/10 dark:text-white/65">
+                      testModel: {provider.testModel}
+                    </span>
                   ) : null}
                 </div>
 
                 {provider.models?.length ? (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {provider.models.map((model) => {
-                      const modelLabel =
-                        model.alias && model.alias !== model.name
-                          ? `${model.name} → ${model.alias}`
-                          : model.name;
-                      return (
-                        <span
-                          key={model.name}
-                          className="inline-flex max-w-full min-w-0 rounded-full bg-slate-900 px-2 py-0.5 text-[11px] text-white dark:bg-white dark:text-neutral-950"
-                          title={
-                            model.alias && model.alias !== model.name
-                              ? `${model.name} => ${model.alias}`
-                              : model.name
-                          }
-                        >
-                          <span className="min-w-0 truncate">{modelLabel}</span>
-                        </span>
-                      );
-                    })}
+                  <div className="mt-2">
+                    <ProviderModelChips
+                      models={provider.models}
+                      maxVisible={gridColumns >= 4 ? 4 : 6}
+                    />
                   </div>
                 ) : null}
 

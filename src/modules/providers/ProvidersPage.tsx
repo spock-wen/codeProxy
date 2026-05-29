@@ -1,15 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Cloud, Download, LayoutGrid, RefreshCw, Upload } from "lucide-react";
-import iconGemini from "@/assets/icons/gemini.svg";
-import iconClaude from "@/assets/icons/claude.svg";
-import iconCodex from "@/assets/icons/codex.svg";
-import iconVertex from "@/assets/icons/vertex.svg";
-import iconAmp from "@/assets/icons/amp.svg";
-import iconOpenai from "@/assets/icons/openai.svg";
-import iconOpenCodeDark from "@/assets/icons/opencode-dark.svg";
-import iconOpenCodeLight from "@/assets/icons/opencode-light.svg";
 import { ampcodeApi, providersApi, usageApi } from "@/lib/http/apis";
 import { apiKeyEntriesApi, type ApiKeyEntry } from "@/lib/http/apis/api-keys";
 import { channelGroupsApi, type ChannelGroupItem } from "@/lib/http/apis/channel-groups";
@@ -18,8 +9,7 @@ import type { BedrockProviderConfig, OpenAIProvider, ProviderSimpleConfig } from
 import { Button } from "@/modules/ui/Button";
 import { ConfirmModal } from "@/modules/ui/ConfirmModal";
 import { Modal } from "@/modules/ui/Modal";
-import { Select } from "@/modules/ui/Select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
+import { Tabs, TabsContent } from "@/modules/ui/Tabs";
 import { useToast } from "@/modules/ui/ToastProvider";
 import { downloadTextAsFile } from "@/modules/auth-files/helpers/authFilesPageUtils";
 import { AmpcodePanel } from "@/modules/providers/components/AmpcodePanel";
@@ -36,6 +26,9 @@ import {
   maskApiKey,
   readBool,
   readString,
+  isProviderSimpleConfigEnabled,
+  isBedrockProviderConfigEnabled,
+  isOpenAIProviderEnabled,
   type AmpMappingEntry,
 } from "@/modules/providers/providers-helpers";
 import {
@@ -45,16 +38,12 @@ import {
   type ProviderImportKind,
 } from "@/modules/providers/provider-import-export";
 import { summarizeProviderAccess } from "@/modules/providers/provider-access";
+import { ProvidersPageHeader } from "@/modules/providers/components/ProvidersPageHeader";
+import { ProvidersToolbar } from "@/modules/providers/components/ProvidersToolbar";
+import { ProviderTabsWithCounts } from "@/modules/providers/components/ProviderTabsWithCounts";
+import type { ProviderTabId } from "@/modules/providers/components/ProviderTabsWithCounts";
 
-type ProviderTab =
-  | "gemini"
-  | "claude"
-  | "codex"
-  | "opencode-go"
-  | "vertex"
-  | "bedrock"
-  | "openai"
-  | "ampcode";
+type ProviderTab = ProviderTabId;
 
 const PROVIDER_TAB_STORAGE_KEY = "providers-page:tab";
 const PROVIDER_TAB_VALUES: ProviderTab[] = [
@@ -565,6 +554,57 @@ export function ProvidersPage() {
     currentSelectableKeys.length > 0 &&
     currentSelectableKeys.every((key) => selectedExportKeySet.has(key));
 
+  const pageSummary = useMemo(() => {
+    const allKeyProviders = [
+      ...geminiKeys,
+      ...claudeKeys,
+      ...codexKeys,
+      ...openCodeGoKeys,
+      ...vertexKeys,
+    ];
+    const total = allKeyProviders.length + bedrockKeys.length + openaiProviders.length;
+    const enabled =
+      allKeyProviders.filter(isProviderSimpleConfigEnabled).length +
+      bedrockKeys.filter(isBedrockProviderConfigEnabled).length +
+      openaiProviders.filter(isOpenAIProviderEnabled).length;
+    return { total, enabled, disabled: total - enabled };
+  }, [
+    geminiKeys,
+    claudeKeys,
+    codexKeys,
+    openCodeGoKeys,
+    vertexKeys,
+    bedrockKeys,
+    openaiProviders,
+  ]);
+
+  const tabCounts = useMemo<Record<ProviderTab, number | null>>(() => {
+    const ampcodeCount =
+      ampcode && ampMappings.length > 0
+        ? ampMappings.filter((m) => m.from.trim() && m.to.trim()).length
+        : null;
+    return {
+      gemini: geminiKeys.length,
+      claude: claudeKeys.length,
+      codex: codexKeys.length,
+      "opencode-go": openCodeGoKeys.length,
+      vertex: vertexKeys.length,
+      bedrock: bedrockKeys.length,
+      openai: openaiProviders.length,
+      ampcode: ampcodeCount,
+    };
+  }, [
+    geminiKeys,
+    claudeKeys,
+    codexKeys,
+    openCodeGoKeys,
+    vertexKeys,
+    bedrockKeys,
+    openaiProviders,
+    ampcode,
+    ampMappings,
+  ]);
+
   const saveImportedItems = useCallback(
     async (
       kind: ProviderImportKind,
@@ -713,114 +753,41 @@ export function ProvidersPage() {
       data-testid="providers-page-shell"
       className="flex h-[calc(100dvh-97px)] min-h-0 flex-col gap-6 overflow-hidden sm:h-[calc(100dvh-113px)]"
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="space-y-0.5">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-            {t("providers.config_overview")}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-white/55">
-            {t("providers.config_overview_desc")}
-          </p>
-        </div>
-      </div>
+      <ProvidersPageHeader
+        totalProviders={pageSummary.total}
+        enabledProviders={pageSummary.enabled}
+        disabledProviders={pageSummary.disabled}
+        loading={loading}
+      />
 
-      <div
-        data-testid="providers-batch-actions"
-        className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-slate-50/80 px-2 py-1.5 transition-colors duration-200 ease-out dark:bg-white/3"
-      >
-        {currentImportKind ? (
-          <>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept="application/json,.json"
-              aria-label={t("providers.import_json")}
-              className="sr-only"
-              onChange={(event) => {
-                const file = event.currentTarget.files?.[0] ?? null;
-                void handleImportFile(file);
-                event.currentTarget.value = "";
-              }}
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-8! px-2 text-xs"
-              onClick={() => importInputRef.current?.click()}
-            >
-              <Upload size={14} />
-              {t("providers.import_json")}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-8! px-2 text-xs"
-              onClick={handleExport}
-              disabled={currentTabItems.length === 0}
-            >
-              <Download size={14} />
-              {t("providers.export_json")}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-8! px-2 text-xs"
-              onClick={() => selectAllCurrentItems(!allCurrentSelected)}
-              disabled={currentSelectableKeys.length === 0}
-            >
-              {allCurrentSelected
-                ? t("providers.batch_deselect_all")
-                : t("providers.batch_select_all")}
-            </Button>
-            <span className="ml-1 text-xs font-medium text-slate-600 dark:text-white/65">
-              {t("providers.batch_selected", { count: selectedExportCount })}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8! px-2 text-xs"
-              onClick={() => setSelectedExportKeys([])}
-              disabled={selectedExportCount === 0}
-            >
-              {t("providers.batch_clear")}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-8! px-2 text-xs"
-              onClick={handleExportSelected}
-              disabled={selectedExportCount === 0}
-            >
-              {t("providers.export_selected_json")}
-            </Button>
-          </>
-        ) : null}
-        <Button
-          variant="secondary"
-          size="sm"
-          className="h-8! px-2 text-xs"
-          onClick={() => void refreshTab(tab)}
-          disabled={loading}
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          {t("providers.refresh")}
-        </Button>
-        <div className="ml-auto flex items-center gap-1.5">
-          <LayoutGrid size={14} className="text-slate-500 dark:text-white/50" />
-          <Select
-            value={String(gridColumns)}
-            onChange={(v) => setGridColumns(Number(v))}
-            options={[
-              { value: "1", label: t("providers.grid_cols_1") },
-              { value: "2", label: t("providers.grid_cols_2") },
-              { value: "3", label: t("providers.grid_cols_3") },
-              { value: "4", label: t("providers.grid_cols_4") },
-            ]}
-            size="sm"
-            aria-label={t("providers.grid_columns_aria")}
-          />
-        </div>
-      </div>
+      <input
+        ref={importInputRef}
+        type="file"
+        accept="application/json,.json"
+        aria-label={t("providers.import_json")}
+        className="sr-only"
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0] ?? null;
+          void handleImportFile(file);
+          event.currentTarget.value = "";
+        }}
+      />
+      <ProvidersToolbar
+        currentImportKind={currentImportKind}
+        currentTabItemsCount={currentTabItems.length}
+        selectedExportCount={selectedExportCount}
+        allCurrentSelected={allCurrentSelected}
+        loading={loading}
+        gridColumns={gridColumns}
+        onImportClick={() => importInputRef.current?.click()}
+        onExport={handleExport}
+        onExportSelected={handleExportSelected}
+        onSelectAll={selectAllCurrentItems}
+        onClearSelection={() => setSelectedExportKeys([])}
+        onRefresh={() => void refreshTab(tab)}
+        onGridColumnsChange={setGridColumns}
+        onAddCurrent={null}
+      />
 
       <Tabs
         value={tab}
@@ -832,50 +799,30 @@ export function ProvidersPage() {
           void refreshTab(nextTab);
         }}
       >
+        <ProviderTabsWithCounts
+          tabs={[
+            { id: "gemini", label: "Gemini", count: tabCounts.gemini },
+            { id: "claude", label: "Claude", count: tabCounts.claude },
+            { id: "codex", label: "Codex", count: tabCounts.codex },
+            { id: "opencode-go", label: "OpenCode Go", count: tabCounts["opencode-go"] },
+            { id: "vertex", label: "Vertex", count: tabCounts.vertex },
+            { id: "bedrock", label: "Bedrock", count: tabCounts.bedrock },
+            { id: "openai", label: t("providers.openai_compatible"), count: tabCounts.openai },
+            { id: "ampcode", label: "Ampcode", count: tabCounts.ampcode },
+          ]}
+          value={tab}
+          onValueChange={(next) => {
+            if (next === tab) return;
+            setSelectedExportKeys([]);
+            setTab(next);
+            void refreshTab(next);
+          }}
+        />
         <div className="flex min-h-0 flex-1 flex-col gap-4">
-          <div className="flex shrink-0">
-            <TabsList>
-              <TabsTrigger value="gemini">
-                <img src={iconGemini} alt="" className="size-4" />
-                Gemini
-              </TabsTrigger>
-              <TabsTrigger value="claude">
-                <img src={iconClaude} alt="" className="size-4" />
-                Claude
-              </TabsTrigger>
-              <TabsTrigger value="codex">
-                <img src={iconCodex} alt="" className="size-4 dark:hidden" />
-                <img src={iconCodex} alt="" className="hidden size-4 dark:block" />
-                Codex
-              </TabsTrigger>
-              <TabsTrigger value="opencode-go">
-                <img src={iconOpenCodeLight} alt="" className="size-4 dark:hidden" />
-                <img src={iconOpenCodeDark} alt="" className="hidden size-4 dark:block" />
-                OpenCode Go
-              </TabsTrigger>
-              <TabsTrigger value="vertex">
-                <img src={iconVertex} alt="" className="size-4" />
-                Vertex
-              </TabsTrigger>
-              <TabsTrigger value="bedrock">
-                <Cloud size={16} />
-                Bedrock
-              </TabsTrigger>
-              <TabsTrigger value="openai">
-                <img src={iconOpenai} alt="" className="size-4 dark:hidden" />
-                <img src={iconOpenai} alt="" className="hidden size-4 dark:block" />
-                {t("providers.openai_compatible")}
-              </TabsTrigger>
-              <TabsTrigger value="ampcode">
-                <img src={iconAmp} alt="" className="size-4" />
-                Ampcode
-              </TabsTrigger>
-            </TabsList>
-          </div>
           <TabsContent value="gemini" className="min-h-0 flex flex-1 flex-col">
             <ProviderKeyListCard
               title={t("providers.gemini_keys")}
-              description={t("providers.openai_desc")}
+              description={t("providers.gemini_desc")}
               items={geminiKeys}
               loading={isActiveTabListLoading("gemini")}
               onAdd={() => openKeyEditor("gemini", null)}
@@ -896,7 +843,7 @@ export function ProvidersPage() {
           <TabsContent value="claude" className="min-h-0 flex flex-1 flex-col">
             <ProviderKeyListCard
               title={t("providers.claude_keys")}
-              description={t("providers.codex_desc")}
+              description={t("providers.claude_desc")}
               items={claudeKeys}
               loading={isActiveTabListLoading("claude")}
               onAdd={() => openKeyEditor("claude", null)}
@@ -917,7 +864,7 @@ export function ProvidersPage() {
           <TabsContent value="codex" className="min-h-0 flex flex-1 flex-col">
             <ProviderKeyListCard
               title={t("providers.codex_keys")}
-              description={t("providers.gemini_desc")}
+              description={t("providers.codex_desc")}
               items={codexKeys}
               loading={isActiveTabListLoading("codex")}
               onAdd={() => openKeyEditor("codex", null)}

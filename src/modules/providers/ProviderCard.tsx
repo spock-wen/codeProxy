@@ -54,7 +54,7 @@ export function ProviderCard({
   return (
     <div
       className={[
-        "group relative rounded-2xl border px-4 py-3 shadow-sm transition-all duration-200 ease-out",
+        "group relative rounded-xl border px-4 py-3 shadow-sm transition-all duration-200 ease-out min-h-[220px]",
         selected
           ? "border-blue-400 bg-blue-50/50 ring-1 ring-blue-200 dark:border-blue-500/50 dark:bg-blue-950/20 dark:ring-blue-500/20"
           : "border-slate-200 bg-white/70 hover:border-slate-300 hover:bg-white hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950/60 dark:hover:border-neutral-700 dark:hover:bg-neutral-950/80 dark:hover:shadow-lg dark:hover:shadow-black/20",
@@ -64,15 +64,14 @@ export function ProviderCard({
         .join(" ")}
     >
       {/* Header */}
-      <div className="grid gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          {onToggleSelected ? (
+      <div className="flex min-w-0 items-center gap-2">
+        {onToggleSelected ? (
             <div
               className={[
                 "flex items-center justify-center overflow-hidden transition-[width,opacity] duration-200 ease-out",
                 selected
                   ? "w-7 opacity-100"
-                  : "w-0 opacity-0 group-hover:w-7 group-hover:opacity-100",
+                  : "w-0 opacity-0 group-hover:w-7 group-hover:opacity-100 max-md:w-7 max-md:opacity-100",
               ].join(" ")}
             >
               <input
@@ -84,7 +83,10 @@ export function ProviderCard({
               />
             </div>
           ) : null}
-          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900 dark:text-white">
+          <p
+            className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900 dark:text-white"
+            title={title}
+          >
             {title}
           </p>
           {onToggleEnabled ? (
@@ -105,7 +107,7 @@ export function ProviderCard({
                     "inline-flex h-5 w-5 flex-none items-center justify-center rounded-full border-0 bg-transparent p-0 text-slate-500 shadow-none outline-none ring-0 transition-[color,opacity] duration-150 ease-out hover:bg-transparent hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-400/35 active:bg-transparent dark:text-white/55 dark:hover:bg-transparent dark:hover:text-white dark:focus-visible:ring-white/15",
                     menuOpen
                       ? "pointer-events-auto opacity-100"
-                      : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100",
+                      : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 max-md:pointer-events-auto max-md:opacity-100",
                   ].join(" ")}
                   aria-label={t("providers.more_actions")}
                   title={t("providers.more_actions")}
@@ -143,7 +145,6 @@ export function ProviderCard({
         {hasHeaderExtra ? (
           <div className="flex flex-wrap items-center justify-end gap-2">{headerExtra}</div>
         ) : null}
-      </div>
 
       {/* Content */}
       {children ? <div className="mt-2 min-w-0">{children}</div> : null}

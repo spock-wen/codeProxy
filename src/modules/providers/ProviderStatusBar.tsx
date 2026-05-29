@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { StatusBarData } from "@/modules/providers/provider-usage";
 
 const blockClass = (state: StatusBarData["blocks"][number]) => {
@@ -16,6 +17,7 @@ export function ProviderStatusBar({
   compact?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const hasData = data.totalSuccess + data.totalFailure > 0;
   const rateText = hasData ? `${data.successRate.toFixed(1)}%` : "--";
 
@@ -31,8 +33,16 @@ export function ProviderStatusBar({
   const containerCls = compact ? "flex items-center gap-2" : "mt-3 flex items-center gap-2";
   const rateWidth = compact ? "w-12" : "w-14";
 
+  const ariaLabel = hasData
+    ? `${t("common.success_rate")} ${rateText}, ${t("providers.success_stats", { count: data.totalSuccess })}, ${t("providers.failed_stats", { count: data.totalFailure })}`
+    : `${t("common.success_rate")} --`;
+
   return (
-    <div className={[containerCls, className].filter(Boolean).join(" ")}>
+    <div
+      className={[containerCls, className].filter(Boolean).join(" ")}
+      role="status"
+      aria-label={ariaLabel}
+    >
       <div className="flex flex-1 items-center gap-0.5">
         {data.blocks.map((state, idx) => (
           <div
