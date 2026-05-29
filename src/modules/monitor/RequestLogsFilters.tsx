@@ -1,18 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
-import { Filter, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { SearchableCheckboxMultiSelect } from "@/modules/ui/SearchableCheckboxMultiSelect";
 import type { SearchableCheckboxMultiSelectOption } from "@/modules/ui/SearchableCheckboxMultiSelect";
 import { cn } from "@/modules/ui/selectStyles";
 
 type StatusFilterValue = "success" | "failed";
-
-interface RequestLogStats {
-  total: number;
-  success_rate: number;
-  total_tokens: number;
-  total_cost: number;
-}
 
 interface RequestLogsFiltersProps {
   keyOptions: SearchableCheckboxMultiSelectOption[];
@@ -29,9 +22,6 @@ interface RequestLogsFiltersProps {
   onStatusesChange: (value: StatusFilterValue[]) => void;
   onResetFilters: () => void;
   hasActiveFilters: boolean;
-  stats: RequestLogStats;
-  lastUpdatedText: string;
-  loading: boolean;
 }
 
 export function RequestLogsFilters({
@@ -49,9 +39,6 @@ export function RequestLogsFilters({
   onStatusesChange,
   onResetFilters,
   hasActiveFilters,
-  stats,
-  lastUpdatedText,
-  loading,
 }: RequestLogsFiltersProps) {
   const { t } = useTranslation();
 
@@ -62,9 +49,7 @@ export function RequestLogsFilters({
 
   return (
     <div className="border-t border-slate-100 px-5 py-3 dark:border-neutral-800/60">
-      <div className="grid gap-2 min-[480px]:grid-cols-2 sm:flex sm:flex-wrap sm:items-center">
-        {/* Filter controls */}
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
           <div className="w-full min-[480px]:w-auto sm:w-[180px]">
             <SearchableCheckboxMultiSelect
               value={selectedApiKeys}
@@ -157,40 +142,6 @@ export function RequestLogsFilters({
             </button>
           ) : null}
         </div>
-
-        {/* Stats summary */}
-        <div className="col-span-2 min-[480px]:col-span-2 sm:col-span-1 sm:ml-auto">
-          <div className="grid grid-cols-2 items-center gap-x-3 gap-y-1.5 text-xs text-slate-600 dark:text-white/55 sm:flex sm:items-center sm:gap-1.5">
-            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-              <Filter size={12} aria-hidden="true" />
-              {t("request_logs.records_count", {
-                count: stats.total.toLocaleString(),
-              } as Record<string, string>)}
-            </span>
-
-            <span className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap sm:justify-start">
-              {t("common.success_rate")}
-              <span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
-            </span>
-
-            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-              {t("request_logs.col_total_token")}
-              <span className="font-mono tabular-nums">
-                {stats.total_tokens.toLocaleString()}
-              </span>
-            </span>
-
-            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-              {t("request_logs.col_cost")}
-              <span className="font-mono tabular-nums">${stats.total_cost.toFixed(4)}</span>
-            </span>
-
-            <span className="col-span-2 text-[11px] text-slate-400 dark:text-white/40 sm:col-span-1 sm:text-xs">
-              {loading ? t("request_logs.refreshing") : lastUpdatedText}
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

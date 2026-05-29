@@ -250,7 +250,8 @@ export function buildRequestLogsColumns(
       key: "id",
       label: t("request_logs.col_id"),
       width: "w-20",
-      cellClassName: "font-mono text-xs tabular-nums text-slate-500 dark:text-white/50",
+      headerClassName: "text-left",
+      cellClassName: "text-left font-mono text-xs tabular-nums text-slate-500 dark:text-white/50",
       render: (row) => (
         <OverflowTooltip content={`#${row.id}`} className="block min-w-0">
           <span className="block min-w-0 truncate">#{row.id}</span>
@@ -261,7 +262,8 @@ export function buildRequestLogsColumns(
       key: "timestamp",
       label: t("request_logs.col_time"),
       width: "w-52",
-      cellClassName: "font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      headerClassName: "text-center",
+      cellClassName: "text-center font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
       render: (row) => (
         <OverflowTooltip
           content={formatRequestLogTimestamp(row.timestamp)}
@@ -275,6 +277,8 @@ export function buildRequestLogsColumns(
       key: "channelName",
       label: t("request_logs.col_channel"),
       width: "w-32",
+      headerClassName: "text-center",
+      cellClassName: "text-center",
       render: (row) => (
         <OverflowTooltip content={row.channelName || "--"} className="block min-w-0">
           <span
@@ -350,9 +354,9 @@ export function buildRequestLogsColumns(
       key: "inputTokens",
       label: t("request_logs.col_input"),
       width: "w-32",
-      headerClassName: "text-right",
+      headerClassName: "text-center",
       cellClassName:
-        "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200 pl-6",
+        "text-center font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200 pl-6",
       render: (row) =>
         row.hasContent && onContentClick ? (
           <button
@@ -375,8 +379,8 @@ export function buildRequestLogsColumns(
       key: "cachedTokens",
       label: t("request_logs.col_cache_read"),
       width: "w-24",
-      headerClassName: "text-right",
-      cellClassName: "text-right font-mono text-xs tabular-nums",
+      headerClassName: "text-center",
+      cellClassName: "text-center font-mono text-xs tabular-nums",
       render: (row) => (
         <OverflowTooltip content={row.cachedTokens.toLocaleString()} className="block min-w-0">
           <span
@@ -391,8 +395,8 @@ export function buildRequestLogsColumns(
       key: "outputTokens",
       label: t("request_logs.col_output"),
       width: "w-24",
-      headerClassName: "text-right",
-      cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      headerClassName: "text-center",
+      cellClassName: "text-center font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
       render: (row) =>
         row.hasContent && onContentClick ? (
           <button
@@ -415,8 +419,8 @@ export function buildRequestLogsColumns(
       key: "totalTokens",
       label: t("request_logs.col_total_token"),
       width: "w-28",
-      headerClassName: "text-right",
-      cellClassName: "text-right font-mono text-xs tabular-nums text-slate-900 dark:text-white",
+      headerClassName: "text-center",
+      cellClassName: "text-center font-mono text-xs tabular-nums text-slate-900 dark:text-white",
       render: (row) => (
         <OverflowTooltip content={row.totalTokens.toLocaleString()} className="block min-w-0">
           <span className="block min-w-0 truncate">{row.totalTokens.toLocaleString()}</span>
@@ -427,9 +431,9 @@ export function buildRequestLogsColumns(
       key: "cost",
       label: t("request_logs.col_cost"),
       width: "w-24",
-      headerClassName: "text-right",
+      headerClassName: "text-center",
       cellClassName:
-        "text-right font-mono text-xs tabular-nums text-emerald-700 dark:text-emerald-400",
+        "text-center font-mono text-xs tabular-nums text-emerald-700 dark:text-emerald-400",
       render: (row) => (
         <OverflowTooltip content={`$${row.cost.toFixed(6)}`} className="block min-w-0">
           <span className="block min-w-0 truncate">${row.cost.toFixed(4)}</span>
@@ -440,6 +444,8 @@ export function buildRequestLogsColumns(
       key: "apiKeyName",
       label: t("request_logs.col_key_name"),
       width: "w-28",
+      headerClassName: "text-center",
+      cellClassName: "text-center",
       render: (row) => (
         <OverflowTooltip
           content={row.isSystemCall ? t("request_logs.system_call") : row.apiKeyName || "--"}
@@ -457,6 +463,8 @@ export function buildRequestLogsColumns(
       key: "model",
       label: t("request_logs.col_model"),
       width: "w-36",
+      headerClassName: "text-center",
+      cellClassName: "text-center",
       render: (row) => (
         <OverflowTooltip content={row.model} className="block min-w-0">
           <span className="block min-w-0 truncate">{row.model}</span>
