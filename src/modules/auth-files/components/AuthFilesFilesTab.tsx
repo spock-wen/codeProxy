@@ -804,37 +804,35 @@ export function AuthFilesFilesTab({
             </Button>
           </div>
 
-          <div className="min-w-0 rounded-2xl bg-slate-50/80 px-3 py-2.5 transition-colors duration-200 ease-out dark:bg-white/[0.03]">
-            <Tabs value={filter} onValueChange={setFilter} size="sm">
-              <TabsList className="max-w-full">
-                {filterChips.map((key) => {
-                  const active = filter === key;
-                  const normalizedKey = normalizeProviderKey(key);
-                  const count =
-                    key === "all"
-                      ? filterCounts.total
-                      : (filterCounts.counts[normalizedKey] ?? 0);
-                  const label = key === "all" ? t("auth_files.all") : key;
-                  const countClass = active
-                    ? "bg-black/[0.06] text-[#18181B] dark:bg-white/12 dark:text-white"
-                    : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/70";
-                  return (
-                    <TabsTrigger key={key} value={key}>
-                      {label}
-                      <span
-                        className={[
-                          "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums",
-                          countClass,
-                        ].join(" ")}
-                      >
-                        {count}
-                      </span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </Tabs>
-          </div>
+          <Tabs value={filter} onValueChange={setFilter} size="sm">
+            <TabsList className="max-w-full">
+              {filterChips.map((key) => {
+                const active = filter === key;
+                const normalizedKey = normalizeProviderKey(key);
+                const count =
+                  key === "all"
+                    ? filterCounts.total
+                    : (filterCounts.counts[normalizedKey] ?? 0);
+                const label = key === "all" ? t("auth_files.all") : key;
+                const countClass = active
+                  ? "bg-black/[0.06] text-[#18181B] dark:bg-white/12 dark:text-white"
+                  : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/70";
+                return (
+                  <TabsTrigger key={key} value={key}>
+                    {label}
+                    <span
+                      className={[
+                        "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums",
+                        countClass,
+                      ].join(" ")}
+                    >
+                      {count}
+                    </span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </Tabs>
 
           <div
             id="auth-files-mobile-filter-panel"
@@ -844,8 +842,8 @@ export function AuthFilesFilesTab({
               "gap-3 md:grid",
             ].join(" ")}
           >
-            <div className="flex flex-col gap-2">
-              <div className="flex min-w-0 flex-wrap items-start gap-3">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex min-w-0 flex-wrap items-start gap-2">
                 {canSetModelOwnerGroup ? (
                   <div className="min-w-0 flex-1 basis-[140px]">
                     <div className="space-y-1.5">
@@ -857,7 +855,7 @@ export function AuthFilesFilesTab({
                           variant="secondary"
                           size="sm"
                           className={[
-                            "relative !h-9 w-full justify-start px-3 text-xs",
+                            "relative w-full justify-start px-3 text-xs",
                             selectedModelOwner
                               ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-100 dark:hover:bg-emerald-400/15"
                               : "bg-[#EBEBEC] text-[#3F3F46] hover:bg-[#E4E4E7] dark:bg-[#27272A] dark:text-white/75 dark:hover:bg-[#303036]",
@@ -898,6 +896,7 @@ export function AuthFilesFilesTab({
                         placeholder={t("auth_files.all_tags")}
                         searchPlaceholder={t("auth_files.tag_filter_search_placeholder")}
                         aria-label={t("auth_files.tag_filter")}
+                        size="sm"
                       />
                     </div>
                   </div>
@@ -915,7 +914,7 @@ export function AuthFilesFilesTab({
                       placeholder={t("auth_files.status_filter")}
                       aria-label={t("auth_files.status_filter")}
                       disabled={statusFilterOptions.length <= 1 && statusFilter === "all"}
-                      className="h-9"
+                      size="sm"
                     />
                   </div>
                 </div>
@@ -931,6 +930,7 @@ export function AuthFilesFilesTab({
                       placeholder={t("auth_files_page.filename_hint")}
                       aria-label={t("auth_files.search")}
                       endAdornment={<Search size={16} className="text-slate-400" />}
+                      size="sm"
                     />
                   </div>
                 </div>
@@ -958,6 +958,7 @@ export function AuthFilesFilesTab({
                         aria-label={t("auth_files.quota_auto_refresh")}
                         variant="chip"
                         className="w-full"
+                        size="sm"
                       />
                     </div>
                   </div>
