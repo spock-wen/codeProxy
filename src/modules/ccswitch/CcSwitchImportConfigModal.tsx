@@ -196,15 +196,6 @@ function resolveGenericDefaultModel(
 }
 
 function reconcileModelMappings(draft: ConfigDraft, models: readonly string[]): ConfigDraft {
-  if (draft.clientType === "codex") {
-    const modelMappings = draft.modelMappings.filter((mapping) => !mapping.role);
-    return {
-      ...draft,
-      modelMappings,
-      defaultModel: resolveGenericDefaultModel(modelMappings, draft.defaultModel),
-    };
-  }
-
   const modelMappings =
     draft.clientType === "claude"
       ? reconcileClaudeMappings(draft.modelMappings, models, draft.defaultModel)
@@ -343,17 +334,18 @@ export function CcSwitchImportConfigModal({
     const modelOwnerKeys = new Set(
       (selectedGroupOption?.modelOwnerKeys ?? []).map(normalizeModelOwnerKey).filter(Boolean),
     );
-    const lookupParams =
-      lookupChannels.length > 0
-        ? { allowedChannels: lookupChannels }
-        : { allowedChannelGroups: [selectedGroup] };
+    const lookupParams = selectedGroup
+      ? { allowedChannelGroups: [selectedGroup] }
+      : { allowedChannels: lookupChannels };
 
     setModelsLoading(true);
     modelsApi
       .listAvailableModels(lookupParams)
       .then(async (models) => {
         if (cancelled) return;
-        const availability = await loadConfiguredModelAvailability();
+        const availability = await loadConfiguredModelAvailability(
+          selectedGroup ? { allowedChannelGroups: [selectedGroup] } : undefined,
+        );
         if (cancelled) return;
         let visibleModels = filterByConfiguredModelAvailability(models, availability);
         const optionMap = new Map<string, string>();

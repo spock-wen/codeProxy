@@ -612,9 +612,50 @@ let configuredAvailabilityInFlight:
   | { version: number; promise: Promise<ConfiguredModelAvailability> }
   | null = null;
 
+interface GroupAvailabilityCacheEntry {
+  expiresAt: number;
+  promise: Promise<ConfiguredModelAvailability>;
+}
+
+const GROUP_AVAILABILITY_TTL_MS = 15_000;
+const groupAvailabilityCache = new Map<string, GroupAvailabilityCacheEntry>();
+
 export { invalidateConfiguredModelAvailability };
 
-export const loadConfiguredModelAvailability = async (): Promise<ConfiguredModelAvailability> => {
+export const loadConfiguredModelAvailability = async (
+  options?: { allowedChannelGroups?: string[] },
+): Promise<ConfiguredModelAvailability> => {
+  const validGroups = (options?.allowedChannelGroups ?? [])
+    .map((g) => String(g ?? "").trim())
+    .filter(Boolean);
+
+  if (validGroups.length > 0) {
+    const cacheKey = validGroups.join(",");
+    const now = Date.now();
+    const cached = groupAvailabilityCache.get(cacheKey);
+    if (cached && now < cached.expiresAt) {
+      return cached.promise;
+    }
+    const promise = (async (): Promise<ConfiguredModelAvailability> => {
+      try {
+        const result = normalizeConfiguredModelAvailability(
+          await apiClient.get(
+            `/models/configured-availability?allowed_channel_groups=${encodeURIComponent(cacheKey)}`,
+          ),
+        );
+        groupAvailabilityCache.set(cacheKey, {
+          expiresAt: now + GROUP_AVAILABILITY_TTL_MS,
+          promise: Promise.resolve(result),
+        });
+        return result;
+      } catch {
+        return loadConfiguredModelAvailabilityFallback();
+      }
+    })();
+    groupAvailabilityCache.set(cacheKey, { expiresAt: now + GROUP_AVAILABILITY_TTL_MS, promise });
+    return promise;
+  }
+
   const now = Date.now();
   const cacheVersion = getConfiguredAvailabilityCacheVersion();
   if (

@@ -490,6 +490,10 @@ export function RoutingConfigEditor({
     () => resolvedDraftChannels.map((channel) => channel.name.trim()).filter(Boolean),
     [resolvedDraftChannels],
   );
+  const resolvedDraftChannelKey = useMemo(
+    () => resolvedDraftChannelValues.join("\n"),
+    [resolvedDraftChannelValues],
+  );
 
   const editingSystemDefaultGroup =
     groupEditorId === SYSTEM_DEFAULT_GROUP_ID ||
@@ -1348,7 +1352,6 @@ export function RoutingConfigEditor({
     let cancelled = false;
     setModelsLoading(true);
     setModelsError("");
-    setModelOptions([]);
     const modelLoader = editingSystemDefaultGroup
       ? loadModelsForChannels(resolvedDraftChannelValues, SYSTEM_DEFAULT_GROUP_NAME)
       : loadModelsForChannels(resolvedDraftChannelValues);
@@ -1365,18 +1368,21 @@ export function RoutingConfigEditor({
         const normalized = Array.from(optionMap.values()).sort((a, b) => a.id.localeCompare(b.id));
         setModelOptions(normalized);
         const allowed = new Set(normalized.map((model) => model.id));
-        setGroupDraft((current) => ({
-          ...current,
-          allowedModels: modelsSelectionTouched
-            ? current.allowedModels.filter((model) => allowed.has(model))
-            : normalized.map((model) => model.id),
-        }));
+        setGroupDraft((current) => {
+          if (!modelsSelectionTouched && current.allowedModels.length === 0) {
+            return current;
+          }
+          const nextAllowedModels = current.allowedModels.filter((model) => allowed.has(model));
+          const currentStr = JSON.stringify(current.allowedModels);
+          const nextStr = JSON.stringify(nextAllowedModels);
+          if (currentStr === nextStr) return current;
+          return { ...current, allowedModels: nextAllowedModels };
+        });
       })
       .catch((err: unknown) => {
         if (cancelled) return;
         const message =
           err instanceof Error ? err.message : t("channel_groups_page.models_load_failed");
-        setModelOptions([]);
         setModelsError(message);
       })
       .finally(() => {
@@ -1392,7 +1398,7 @@ export function RoutingConfigEditor({
     editingSystemDefaultGroup,
     loadModelsForChannels,
     modelsSelectionTouched,
-    resolvedDraftChannelValues,
+    resolvedDraftChannelKey,
     t,
   ]);
 
