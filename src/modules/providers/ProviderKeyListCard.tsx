@@ -26,7 +26,6 @@ export function ProviderKeyListCard({
   onEdit,
   onDelete,
   onToggleEnabled,
-  gridColumns = 2,
   renderExtra,
 
   getStats,
@@ -47,7 +46,6 @@ export function ProviderKeyListCard({
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
   onToggleEnabled?: (index: number, enabled: boolean) => void;
-  gridColumns?: number;
   renderExtra?: (item: ProviderSimpleConfig, index: number) => ReactNode;
   renderMetricsExtra?: (item: ProviderSimpleConfig, index: number, stats: KeyStatBucket) => ReactNode;
   getStats: (item: ProviderSimpleConfig) => KeyStatBucket;
@@ -62,14 +60,6 @@ export function ProviderKeyListCard({
   showModelMetric?: boolean;
 }) {
   const { t } = useTranslation();
-  const gridColumnsClass =
-    gridColumns === 4
-      ? "grid-cols-1 sm:grid-cols-4"
-      : gridColumns === 3
-        ? "grid-cols-1 sm:grid-cols-3"
-        : gridColumns === 2
-          ? "grid-cols-1 sm:grid-cols-2"
-          : "grid-cols-1";
 
   return (
     <Card
@@ -88,12 +78,8 @@ export function ProviderKeyListCard({
       ) : (
         <div
           data-testid="providers-tab-scroll"
-          className={[
-            "min-h-0 flex-1 overflow-y-auto pr-1",
-            gridColumns > 1
-              ? ["grid gap-3", gridColumnsClass, naturalHeight ? "items-start content-start" : ""].filter(Boolean).join(" ")
-              : "space-y-3",
-          ].join(" ")}
+          className="min-h-0 flex-1 overflow-y-auto pr-1 grid gap-3 items-start content-start"
+          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}
         >
           {items.map((item, idx) => {
             const selectionKey = `${item.apiKey.trim().toLowerCase()}:${idx}`;
@@ -241,7 +227,7 @@ export function ProviderKeyListCard({
                 <div className="mt-1.5">
                   <ProviderModelChips
                     models={models}
-                    maxVisible={gridColumns >= 4 ? 4 : 6}
+                    maxVisible={6}
                   />
                 </div>
 

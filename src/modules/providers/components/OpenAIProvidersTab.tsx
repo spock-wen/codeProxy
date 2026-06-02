@@ -29,7 +29,6 @@ interface OpenAIProvidersTabProps {
   };
   onToggleProviderEnabled?: (providerIndex: number, enabled: boolean) => void;
   onToggleKeyEntryEnabled?: (providerIndex: number, entryIndex: number, enabled: boolean) => void;
-  gridColumns?: number;
   selectedKeys?: Set<string>;
   onToggleSelected?: (key: string, checked: boolean) => void;
 }
@@ -45,19 +44,10 @@ export function OpenAIProvidersTab({
   getProviderStatusBar,
   onToggleProviderEnabled,
   onToggleKeyEntryEnabled,
-  gridColumns = 2,
   selectedKeys,
   onToggleSelected,
 }: OpenAIProvidersTabProps) {
   const { t } = useTranslation();
-  const gridColumnsClass =
-    gridColumns === 4
-      ? "grid-cols-1 sm:grid-cols-4"
-      : gridColumns === 3
-        ? "grid-cols-1 sm:grid-cols-3"
-        : gridColumns === 2
-          ? "grid-cols-1 sm:grid-cols-2"
-          : "grid-cols-1";
 
   return (
     <Card
@@ -81,12 +71,8 @@ export function OpenAIProvidersTab({
       ) : (
         <div
           data-testid="providers-tab-scroll"
-          className={[
-            "min-h-0 flex-1 overflow-y-auto pr-1",
-            gridColumns > 1
-              ? ["grid gap-3 items-start content-start", gridColumnsClass].join(" ")
-              : "space-y-3",
-          ].join(" ")}
+          className="min-h-0 flex-1 overflow-y-auto pr-1 grid gap-3 items-start content-start"
+          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}
         >
           {providers.map((provider, idx) => {
             const selectionKey = `${provider.name.trim().toLowerCase()}:${idx}`;
@@ -177,7 +163,7 @@ export function OpenAIProvidersTab({
                   <div className="mt-2">
                     <ProviderModelChips
                       models={provider.models}
-                      maxVisible={gridColumns >= 4 ? 4 : 6}
+                      maxVisible={6}
                     />
                   </div>
                 ) : null}

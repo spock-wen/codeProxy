@@ -79,29 +79,6 @@ function saveProviderTab(tab: ProviderTab): void {
   }
 }
 
-const GRID_COLUMNS_STORAGE_KEY = "providers-page:gridColumns";
-
-function readSavedGridColumns(): number {
-  try {
-    const saved = localStorage.getItem(GRID_COLUMNS_STORAGE_KEY);
-    if (saved) {
-      const num = Number(saved);
-      if (num >= 1 && num <= 4) return num;
-    }
-  } catch {
-    // ignore
-  }
-  return 2;
-}
-
-function saveGridColumns(cols: number): void {
-  try {
-    localStorage.setItem(GRID_COLUMNS_STORAGE_KEY, String(cols));
-  } catch {
-    // ignore
-  }
-}
-
 const getProviderSelectionKey = (
   kind: ProviderImportKind,
   item: ProviderSimpleConfig | BedrockProviderConfig | OpenAIProvider,
@@ -135,12 +112,6 @@ export function ProvidersPage() {
     saveProviderTab(next);
   }, []);
   const [loading, setLoading] = useState(true);
-
-  const [gridColumns, setGridColumnsState] = useState(readSavedGridColumns);
-  const setGridColumns = useCallback((cols: number) => {
-    setGridColumnsState(cols);
-    saveGridColumns(cols);
-  }, []);
 
   const cachedUsageState = getCachedData<OpenCodeGoUsageState>("opencode-go-usage");
   const [openCodeGoUsageState, setOpenCodeGoUsageState] = useState<OpenCodeGoUsageState>(
@@ -917,14 +888,12 @@ export function ProvidersPage() {
         selectedExportCount={selectedExportCount}
         allCurrentSelected={allCurrentSelected}
         loading={loading}
-        gridColumns={gridColumns}
         onImportClick={() => importInputRef.current?.click()}
         onExport={handleExport}
         onExportSelected={handleExportSelected}
         onSelectAll={selectAllCurrentItems}
         onClearSelection={() => setSelectedExportKeys([])}
         onRefresh={() => void refreshTab(tab)}
-        onGridColumnsChange={setGridColumns}
         onAddCurrent={
           tab === "ampcode"
             ? null
@@ -976,7 +945,6 @@ export function ProvidersPage() {
               getStatusBar={getSimpleStatusBar}
               getLatencyEntry={getLatencyEntry}
               checkLatency={checkLatency}
-              gridColumns={gridColumns}
               selectedKeys={selectedExportKeySet}
               onToggleSelected={toggleExportSelection}
             />
@@ -994,7 +962,6 @@ export function ProvidersPage() {
               getStatusBar={getSimpleStatusBar}
               getLatencyEntry={getLatencyEntry}
               checkLatency={checkLatency}
-              gridColumns={gridColumns}
               selectedKeys={selectedExportKeySet}
               onToggleSelected={toggleExportSelection}
             />
@@ -1012,7 +979,6 @@ export function ProvidersPage() {
               getStatusBar={getSimpleStatusBar}
               getLatencyEntry={getLatencyEntry}
               checkLatency={checkLatency}
-              gridColumns={gridColumns}
               selectedKeys={selectedExportKeySet}
               onToggleSelected={toggleExportSelection}
             />
@@ -1083,7 +1049,6 @@ export function ProvidersPage() {
                   </button>
                 );
               }}
-              gridColumns={gridColumns}
               selectedKeys={selectedExportKeySet}
               onToggleSelected={toggleExportSelection}
             />
@@ -1100,7 +1065,6 @@ export function ProvidersPage() {
               getStatusBar={getSimpleStatusBar}
               getLatencyEntry={getLatencyEntry}
               checkLatency={checkLatency}
-              gridColumns={gridColumns}
               selectedKeys={selectedExportKeySet}
               onToggleSelected={toggleExportSelection}
             />
@@ -1118,7 +1082,6 @@ export function ProvidersPage() {
               getStatusBar={getSimpleStatusBar}
               getLatencyEntry={getLatencyEntry}
               checkLatency={checkLatency}
-              gridColumns={gridColumns}
               selectedKeys={selectedExportKeySet}
               onToggleSelected={toggleExportSelection}
             />
@@ -1140,7 +1103,6 @@ export function ProvidersPage() {
               onToggleKeyEntryEnabled={(providerIndex, entryIndex, enabled) =>
                 void toggleOpenAIKeyEntryEnabled(providerIndex, entryIndex, enabled)
               }
-              gridColumns={gridColumns}
               selectedKeys={selectedExportKeySet}
               onToggleSelected={toggleExportSelection}
             />

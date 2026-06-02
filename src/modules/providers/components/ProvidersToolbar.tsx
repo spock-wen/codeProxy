@@ -1,8 +1,7 @@
 import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { CheckSquare, Download, LayoutGrid, Plus, RefreshCw, Upload } from "lucide-react";
+import { CheckSquare, Download, Plus, RefreshCw, Upload } from "lucide-react";
 import { Button } from "@/modules/ui/Button";
-import { Select } from "@/modules/ui/Select";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 export type ProvidersToolbarProps = {
@@ -11,14 +10,12 @@ export type ProvidersToolbarProps = {
   selectedExportCount: number;
   allCurrentSelected: boolean;
   loading: boolean;
-  gridColumns: number;
   onImportClick: () => void;
   onExport: () => void;
   onExportSelected: () => void;
   onSelectAll: (checked: boolean) => void;
   onClearSelection: () => void;
   onRefresh: () => void;
-  onGridColumnsChange: (cols: number) => void;
   onAddCurrent: (() => void) | null;
   addLabel?: string;
   children?: ReactNode;
@@ -35,14 +32,12 @@ export function ProvidersToolbar({
   selectedExportCount,
   allCurrentSelected,
   loading,
-  gridColumns,
   onImportClick,
   onExport,
   onExportSelected,
   onSelectAll,
   onClearSelection,
   onRefresh,
-  onGridColumnsChange,
   onAddCurrent,
 }: ProvidersToolbarProps) {
   const { t } = useTranslation();
@@ -133,25 +128,6 @@ export function ProvidersToolbar({
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           {t("providers.refresh")}
         </Button>
-      </div>
-
-      {/* Right group: grid */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <LayoutGrid size={14} className="text-slate-500 dark:text-white/50" />
-          <Select
-            value={String(gridColumns)}
-            onChange={(v) => onGridColumnsChange(Number(v))}
-            options={[
-              { value: "1", label: t("providers.grid_cols_1") },
-              { value: "2", label: t("providers.grid_cols_2") },
-              { value: "3", label: t("providers.grid_cols_3") },
-              { value: "4", label: t("providers.grid_cols_4") },
-            ]}
-            size="sm"
-            aria-label={t("providers.grid_columns_aria")}
-          />
-        </div>
       </div>
     </div>
   );
