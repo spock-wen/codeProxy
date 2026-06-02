@@ -340,11 +340,15 @@ export function QuickImportTabContent({
       if (!key) return "";
 
       const baseUrl = appendCcSwitchRoutePath(detectApiBaseFromLocation(), config.routePath);
+      // Use root base URL for usage queries so that usage/summary is not
+      // routed through the CC Switch routePath (which the server does not rewrite for /v0/management/* paths).
+      const usageBaseUrl = detectApiBaseFromLocation();
       return buildCcSwitchImportUrlForConfig({
         apiKey: key,
         baseUrl,
         config,
         configs,
+        usageBaseUrl,
       });
     },
     [apiKey, configs],

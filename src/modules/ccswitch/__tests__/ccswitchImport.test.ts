@@ -9,7 +9,12 @@ import {
 const decodeUsageScript = (url: string) => {
   const encoded = new URL(url).searchParams.get("usageScript");
   expect(encoded).toBeTruthy();
-  return atob(encoded!);
+  const binary = atob(encoded!);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
 };
 
 describe("ccswitchImport", () => {
@@ -113,9 +118,14 @@ describe("ccswitchImport", () => {
     expect(parsed.searchParams.get("enabled")).toBe("true");
 
     const usageScript = decodeUsageScript(url);
-    expect(usageScript).toContain("{{baseUrl}}/v0/management/public/usage");
+    expect(usageScript).toContain("{{baseUrl}}/v0/management/public/usage/summary");
     expect(usageScript).toContain('method: "POST"');
     expect(usageScript).toContain('api_key: "{{apiKey}}"');
+    expect(usageScript).toContain("days: 1");
+    expect(usageScript).toContain("total_calls");
+    expect(usageScript).toContain("quota_cost");
+    expect(usageScript).toContain("今日用量");
+    expect(usageScript).toContain("今日消耗");
   });
 
   test("builds a provider deeplink for a selected channel group route and enabled state", () => {
@@ -134,6 +144,25 @@ describe("ccswitchImport", () => {
     expect(parsed.searchParams.get("name")).toBe("Team A Codex");
     expect(parsed.searchParams.get("model")).toBe("gpt-5.4");
     expect(parsed.searchParams.get("enabled")).toBe("false");
+  });
+
+  test("uses separate usageBaseUrl when explicitly provided with a routePath baseUrl", () => {
+    const url = buildCcSwitchImportUrl({
+      apiKey: "sk-test-key",
+      baseUrl: "https://relay.example.com/team-a",
+      usageBaseUrl: "https://relay.example.com",
+      clientType: "codex",
+      providerName: "Separated Usage",
+      model: "gpt-5.4",
+    });
+
+    const parsed = new URL(url);
+    expect(parsed.searchParams.get("homepage")).toBe("https://relay.example.com/team-a");
+    expect(parsed.searchParams.get("endpoint")).toBe("https://relay.example.com/team-a/v1");
+    expect(parsed.searchParams.get("usageBaseUrl")).toBe("https://relay.example.com");
+
+    const usageScript = decodeUsageScript(url);
+    expect(usageScript).toContain("{{baseUrl}}/v0/management/public/usage/summary");
   });
 
   test("uses the request model name from generic model mappings as the provider default", () => {

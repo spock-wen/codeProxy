@@ -90,12 +90,19 @@ function joinCcSwitchEndpoint(baseUrl: string, endpointPath: string): string {
 }
 
 const encodeBase64 = (value: string): string => {
-  if (typeof btoa === "function") return btoa(value);
   const buffer = (globalThis as { Buffer?: { from: (input: string, encoding: string) => unknown } })
     .Buffer;
   if (buffer?.from) {
     const bytes = buffer.from(value, "utf-8") as { toString: (encoding: string) => string };
     return bytes.toString("base64");
+  }
+  if (typeof btoa === "function") {
+    const utf8Bytes = new (globalThis as { TextEncoder?: new () => { encode: (input: string) => Uint8Array } }).TextEncoder().encode(value);
+    let binary = "";
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binary += String.fromCharCode(utf8Bytes[i]);
+    }
+    return btoa(binary);
   }
   throw new Error("Base64 encoder is unavailable");
 };
@@ -156,25 +163,23 @@ const getGenericRequestModel = (
 export function buildCcSwitchUsageScript(): string {
   return `({
   request: {
-    url: "{{baseUrl}}/v0/management/public/usage",
+    url: "{{baseUrl}}/v0/management/public/usage/summary",
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ api_key: "{{apiKey}}" })
+    body: JSON.stringify({ api_key: "{{apiKey}}", days: 1 })
   },
   extractor: function(response) {
-    var usage = response && response.usage ? response.usage : {};
-    var apis = usage.apis || {};
-    var keys = Object.keys(apis);
-    var item = keys.length > 0 ? apis[keys[0]] || {} : {};
-    var requests = Number(item.total_requests || usage.total_requests || 0) || 0;
-    var tokens = Number(item.total_tokens || usage.total_tokens || 0) || 0;
+    var stats = response && response.stats ? response.stats : {};
+    var calls = Number(stats.total_calls || 0) || 0;
+    var cost = Number(stats.quota_cost || 0) || 0;
     return {
-      planName: "CliProxy",
+      planName: "今日用量",
       isValid: response && response.found === false ? false : true,
-      used: requests,
+      invalidMessage: response && response.found === false ? "API Key 未找到" : null,
+      used: calls,
       remaining: null,
-      unit: "requests",
-      extra: String(tokens) + " tokens"
+      unit: "次",
+      extra: "今日消耗 " + cost.toFixed(4) + " 额度"
     };
   }
 })`;
@@ -207,6 +212,7 @@ export function resolveCcSwitchImportConfig(input: {
   clientType: CcSwitchClientType;
   models?: readonly string[];
   settings?: CcSwitchImportSettingsInput;
+  usageBaseUrl?: string;
 }): {
   homepage: string;
   endpoint: string;
@@ -224,7 +230,7 @@ export function resolveCcSwitchImportConfig(input: {
   return {
     homepage,
     endpoint,
-    usageBaseUrl: homepage,
+    usageBaseUrl: input.usageBaseUrl ? normalizeCcSwitchBaseUrl(input.usageBaseUrl) : homepage,
     usageAutoInterval: clientSettings.usageAutoInterval,
     model: pickCcSwitchDefaultModel(input.clientType, input.models ?? [], settings),
   };
@@ -251,6 +257,7 @@ export function buildCcSwitchImportUrl(input: {
   modelMappings?: readonly CcSwitchModelMappingInput[];
   models?: readonly string[];
   settings?: CcSwitchImportSettingsInput;
+  usageBaseUrl?: string;
 }): string {
   const client = getCcSwitchClientConfig(input.clientType);
   const settings = normalizeCcSwitchImportSettings(
@@ -261,6 +268,7 @@ export function buildCcSwitchImportUrl(input: {
     clientType: input.clientType,
     models: input.models,
     settings,
+    usageBaseUrl: input.usageBaseUrl,
   });
   const params = new URLSearchParams({
     resource: "provider",

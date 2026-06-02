@@ -65,12 +65,14 @@ export function buildCcSwitchImportUrlForConfig({
   config,
   configs,
   providerName,
+  usageBaseUrl,
 }: {
   apiKey: string;
   baseUrl: string;
   config: CcSwitchImportConfigListItem;
   configs: readonly CcSwitchImportConfigListItem[];
   providerName?: string;
+  usageBaseUrl?: string;
 }): string {
   return buildCcSwitchImportUrl({
     apiKey,
@@ -82,5 +84,6 @@ export function buildCcSwitchImportUrlForConfig({
     modelMappings: config.modelMappings,
     models: [],
     settings: buildCcSwitchSettingsForConfig(config, configs),
+    usageBaseUrl,
   });
 }
