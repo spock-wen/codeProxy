@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import { RefreshCw } from "lucide-react";
+import { CheckCircle2, Circle, LoaderCircle, RefreshCw, XCircle } from "lucide-react";
 import type {
   UpdateCheckResponse,
   UpdateProgressLogEntry,
@@ -98,6 +98,19 @@ function stageLabel(t: TFunction, stage: string) {
   return t(UPDATE_STAGE_LABEL_KEYS[stage] ?? "auto_update.progress_stage_unknown");
 }
 
+function normalizedProgressStatus(progress?: UpdateProgressResponse | null) {
+  return progress?.status?.trim().toLowerCase() ?? "";
+}
+
+function progressPercent(status: string, activeStageIndex: number) {
+  if (status === "completed") return 100;
+  const safeStageIndex = Math.max(0, activeStageIndex);
+  if (status === "failed") {
+    return Math.min(100, Math.max(14, ((safeStageIndex + 1) / UPDATE_STAGE_ORDER.length) * 100));
+  }
+  return Math.min(94, Math.max(10, ((safeStageIndex + 0.5) / UPDATE_STAGE_ORDER.length) * 100));
+}
+
 function formatLogTimestamp(value?: string) {
   if (!value) return "";
   const date = new Date(value);
@@ -146,7 +159,7 @@ type AnimationFrameHandle =
   | { kind: "animation-frame"; id: number }
   | { kind: "timeout"; id: number };
 
-function useSmoothUpdateLogs(sourceLogs: UpdateProgressLogEntry[]) {
+function useSmoothUpdateLogs(sourceLogs: UpdateProgressLogEntry[], flushImmediately = false) {
   const [visibleLogs, setVisibleLogs] = useState<UpdateProgressLogEntry[]>([]);
   const visibleLogsRef = useRef<UpdateProgressLogEntry[]>([]);
   const queuedLogsRef = useRef<UpdateProgressLogEntry[]>([]);
@@ -216,6 +229,15 @@ function useSmoothUpdateLogs(sourceLogs: UpdateProgressLogEntry[]) {
     const currentVisibleLogs = visibleLogsRef.current;
     const currentQueuedLogs = queuedLogsRef.current;
 
+    if (flushImmediately) {
+      queuedLogsRef.current = [];
+      cancelFrame();
+      if (!sameLogEntries(currentVisibleLogs, targetLogs)) {
+        commitVisibleLogs(targetLogs);
+      }
+      return;
+    }
+
     if (!targetLogs.length) {
       queuedLogsRef.current = [];
       cancelFrame();
@@ -244,7 +266,7 @@ function useSmoothUpdateLogs(sourceLogs: UpdateProgressLogEntry[]) {
     if (nextQueuedLogs.length && (!hadPendingLogs || !frameHandleRef.current)) {
       scheduleFrame();
     }
-  }, [sourceLogs]);
+  }, [flushImmediately, sourceLogs]);
 
   return visibleLogs;
 }
@@ -284,9 +306,46 @@ function UpdateProgressConsole({
     [candidate.docker_image, candidate.docker_tag].filter(Boolean).join(":") ||
     "--";
   const logs = progress?.logs ?? [];
-  const visibleLogs = useSmoothUpdateLogs(logs);
-  const activeStageIndex = Math.max(0, UPDATE_STAGE_ORDER.indexOf(stage));
-  const isRunning = progress?.status === "running";
+  const progressStatus = normalizedProgressStatus(progress);
+  const rawStageIndex = UPDATE_STAGE_ORDER.indexOf(stage);
+  const activeStageIndex = Math.max(0, rawStageIndex);
+  const isCompleted = progressStatus === "completed";
+  const isFailed = progressStatus === "failed";
+  const visibleLogs = useSmoothUpdateLogs(logs, isCompleted || isFailed);
+  const isRunning = progressStatus === "running";
+  const percent = progressPercent(progressStatus, activeStageIndex);
+  const StatusIcon = isCompleted
+    ? CheckCircle2
+    : isFailed
+      ? XCircle
+      : isRunning
+        ? LoaderCircle
+        : Circle;
+  const statusTone = isCompleted ? "emerald" : isFailed ? "rose" : isRunning ? "sky" : "slate";
+  const statusIconClass =
+    statusTone === "emerald"
+      ? "bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/20"
+      : statusTone === "rose"
+        ? "bg-rose-50 text-rose-600 ring-rose-100 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-500/20"
+        : statusTone === "sky"
+          ? "bg-sky-50 text-sky-600 ring-sky-100 dark:bg-sky-500/10 dark:text-sky-200 dark:ring-sky-500/20"
+          : "bg-slate-100 text-slate-500 ring-slate-200 dark:bg-white/10 dark:text-white/60 dark:ring-white/10";
+  const statusChipClass =
+    statusTone === "emerald"
+      ? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/20"
+      : statusTone === "rose"
+        ? "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-500/20"
+        : statusTone === "sky"
+          ? "bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-200 dark:ring-sky-500/20"
+          : "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-white/10 dark:text-white/60 dark:ring-white/10";
+  const progressBarClass =
+    statusTone === "emerald"
+      ? "bg-emerald-500"
+      : statusTone === "rose"
+        ? "bg-rose-500"
+        : statusTone === "sky"
+          ? "bg-sky-500"
+          : "bg-slate-400";
 
   useLayoutEffect(() => {
     const node = logStreamRef.current;
@@ -297,30 +356,50 @@ function UpdateProgressConsole({
   return (
     <section
       data-testid="update-progress-console"
-      className="min-w-0 space-y-3 rounded-2xl border border-sky-200 bg-sky-50/80 p-3 dark:border-sky-500/20 dark:bg-sky-500/10"
+      className="min-w-0 space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950"
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-            <RefreshCw
-              size={14}
-              className={[isRunning ? "animate-spin" : "", "text-sky-600 dark:text-sky-300"].join(
-                " ",
-              )}
-            />
-            {t("auto_update.progress_title")}
-          </h3>
-          <p className="mt-1 text-xs text-slate-600 dark:text-white/60">
-            {progress?.message?.trim() || t("auto_update.progress_default_message")}
-          </p>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <span
+              className={[
+                "mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1",
+                statusIconClass,
+              ].join(" ")}
+            >
+              <StatusIcon size={16} className={isRunning ? "animate-spin" : ""} />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("auto_update.progress_title")}
+              </h3>
+              <p className="mt-1 break-words text-xs leading-5 text-slate-600 dark:text-white/60">
+                {progress?.message?.trim() || t("auto_update.progress_default_message")}
+              </p>
+            </div>
+          </div>
+          <span
+            className={[
+              "rounded-full px-2.5 py-1 text-xs font-medium ring-1",
+              statusChipClass,
+            ].join(" ")}
+          >
+            {stageLabel(t, stage)}
+          </span>
         </div>
-        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-700 dark:bg-sky-400/15 dark:text-sky-200">
-          {stageLabel(t, stage)}
-        </span>
+        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+          <div
+            className={[
+              "h-full rounded-full transition-[width] duration-500 ease-out",
+              progressBarClass,
+            ].join(" ")}
+            style={{ width: `${percent}%` }}
+          />
+        </div>
       </div>
 
       <dl className="grid min-w-0 gap-2 lg:grid-cols-2">
-        <div className="min-w-0 rounded-xl border border-sky-200/70 bg-white/80 p-3 dark:border-sky-500/15 dark:bg-neutral-950/50">
+        <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/50">
           <dt className="text-xs font-medium text-slate-500 dark:text-white/55">
             {t("auto_update.progress_service_path")}
           </dt>
@@ -328,7 +407,7 @@ function UpdateProgressConsole({
             {currentVersion} <span className="text-slate-400">-&gt;</span> {targetVersion}
           </dd>
         </div>
-        <div className="min-w-0 rounded-xl border border-sky-200/70 bg-white/80 p-3 dark:border-sky-500/15 dark:bg-neutral-950/50">
+        <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/50">
           <dt className="text-xs font-medium text-slate-500 dark:text-white/55">
             {t("auto_update.progress_ui_path")}
           </dt>
@@ -336,7 +415,7 @@ function UpdateProgressConsole({
             {currentUIVersion} <span className="text-slate-400">-&gt;</span> {targetUIVersion}
           </dd>
         </div>
-        <div className="min-w-0 rounded-xl border border-sky-200/70 bg-white/80 p-3 dark:border-sky-500/15 dark:bg-neutral-950/50 lg:col-span-2">
+        <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/50 lg:col-span-2">
           <dt className="text-xs font-medium text-slate-500 dark:text-white/55">
             {t("auto_update.image")}
           </dt>
@@ -346,29 +425,39 @@ function UpdateProgressConsole({
         </div>
       </dl>
 
-      <ol className="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-5">
+      <ol className="grid gap-2 text-xs sm:grid-cols-5">
         {UPDATE_STAGE_ORDER.map((item, index) => {
-          const completed = progress?.status === "completed" || index < activeStageIndex;
-          const active = progress?.status !== "completed" && item === stage;
+          const completed = isCompleted || (!isFailed && index < activeStageIndex);
+          const active = !isCompleted && item === stage;
+          const StageIcon = completed
+            ? CheckCircle2
+            : active && isFailed
+              ? XCircle
+              : active && isRunning
+                ? LoaderCircle
+                : Circle;
           return (
             <li
               key={item}
               className={[
-                "rounded-lg border px-2.5 py-2",
+                "flex items-center gap-2 rounded-lg border px-2.5 py-2",
                 completed
                   ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-                  : active
-                    ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-400/25 dark:bg-sky-400/15 dark:text-sky-100"
-                    : "border-slate-200 bg-white/70 text-slate-500 dark:border-neutral-800 dark:bg-neutral-950/40 dark:text-white/45",
+                  : active && isFailed
+                    ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
+                    : active
+                      ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-400/25 dark:bg-sky-400/15 dark:text-sky-100"
+                      : "border-slate-200 bg-white/70 text-slate-500 dark:border-neutral-800 dark:bg-neutral-950/40 dark:text-white/45",
               ].join(" ")}
             >
-              {stageLabel(t, item)}
+              <StageIcon size={13} className={active && isRunning ? "animate-spin" : ""} />
+              <span className="min-w-0 truncate">{stageLabel(t, item)}</span>
             </li>
           );
         })}
       </ol>
 
-      <div className="min-w-0 overflow-hidden rounded-xl border border-neutral-900 bg-neutral-950 text-xs text-slate-100 shadow-inner">
+      <div className="min-w-0 overflow-hidden rounded-lg border border-neutral-900 bg-neutral-950 text-xs text-slate-100 shadow-inner">
         <div className="flex items-center justify-between border-b border-white/10 px-3 py-2 text-[11px] uppercase tracking-wide text-slate-400">
           <span>{t("auto_update.progress_logs")}</span>
           <span>
@@ -420,11 +509,12 @@ export function UpdateDetailsModal({
 }) {
   const { t } = useTranslation();
   const [releaseNotesExpanded, setReleaseNotesExpanded] = useState(false);
-  const showProgressConsole = Boolean(progress && progress.status !== "idle");
-  const progressStatus = progress?.status?.trim().toLowerCase();
+  const progressStatus = normalizedProgressStatus(progress);
+  const showProgressConsole = Boolean(progress && progressStatus !== "idle");
   const progressCompleted = showProgressConsole && progressStatus === "completed";
   const progressFailed = showProgressConsole && progressStatus === "failed";
-  const activeUpdate = updating || progress?.status === "running";
+  const activeUpdate =
+    !progressCompleted && !progressFailed && (updating || progressStatus === "running");
   const displayCandidate = showProgressConsole ? (updateTarget ?? candidate) : candidate;
   const alreadyUpToDate = Boolean(
     displayCandidate &&

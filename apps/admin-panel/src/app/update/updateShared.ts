@@ -11,6 +11,9 @@ export const DEFAULT_HEARTBEAT_TIMEOUT_MS = 180000;
 
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+const normalizedProgressStatus = (progress?: UpdateProgressResponse | null) =>
+  progress?.status?.trim().toLowerCase() ?? "";
+
 export const shortCommit = (commit?: string) => {
   const trimmed = commit?.trim() ?? "";
   return trimmed.length > 7 ? trimmed.slice(0, 7) : trimmed;
@@ -144,12 +147,28 @@ const waitForAppliedTarget = async ({
       return lastProgress;
     }
   };
-  await pollProgress();
+  const initialProgress = await pollProgress();
+  const initialStatus = normalizedProgressStatus(initialProgress);
+  if (initialStatus === "failed") {
+    return {
+      ok: false as const,
+      latest: lastCheck,
+      progress: initialProgress,
+      failed: true as const,
+    };
+  }
+  if (initialStatus === "completed") {
+    return { ok: true as const, latest: lastCheck, progress: initialProgress };
+  }
   await sleep(Math.min(heartbeatIntervalMs, 3000));
   while (true) {
     const progress = await pollProgress();
-    if (progress?.status === "failed") {
+    const status = normalizedProgressStatus(progress);
+    if (status === "failed") {
       return { ok: false as const, latest: lastCheck, progress, failed: true as const };
+    }
+    if (status === "completed") {
+      return { ok: true as const, latest: lastCheck, progress };
     }
     try {
       await apiClient.get("/system-stats", {
@@ -181,7 +200,6 @@ export const applyUpdateFlow = async ({
   notify,
   onCheck,
   onProgress,
-  onSuccess,
   t,
 }: {
   candidate?: UpdateCheckResponse | null;
@@ -190,7 +208,6 @@ export const applyUpdateFlow = async ({
   notify: (input: { type?: "success" | "error" | "info" | "warning"; message: string }) => void;
   onCheck?: (info: UpdateCheckResponse) => void;
   onProgress?: (progress: UpdateProgressResponse) => void;
-  onSuccess?: () => void;
   t: TFunction;
 }) => {
   const response = await updateApi.apply();
@@ -221,6 +238,5 @@ export const applyUpdateFlow = async ({
     return false;
   }
   notify({ type: "success", message: t("auto_update.success") });
-  onSuccess?.();
   return true;
 };

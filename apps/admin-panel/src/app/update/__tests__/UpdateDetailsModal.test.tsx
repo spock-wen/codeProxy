@@ -166,4 +166,33 @@ describe("UpdateDetailsModal", () => {
       }),
     ).toHaveClass("text-emerald-800");
   });
+
+  test("lets completed progress override a stale parent updating flag", async () => {
+    render(
+      <UpdateDetailsModal
+        open
+        candidate={candidate}
+        updateTarget={candidate}
+        updating
+        progress={{
+          status: "completed",
+          stage: "completed",
+          message: "update completed",
+          logs: [
+            {
+              timestamp: "2026-04-20T07:30:05Z",
+              stream: "stderr",
+              message: "Container clirelay Started",
+            },
+          ],
+        }}
+        onApply={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: /update completed/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /updating/i })).toBeNull();
+    expect(screen.getAllByRole("button", { name: /close/i }).at(-1)).toBeEnabled();
+  });
 });

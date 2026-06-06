@@ -80,7 +80,6 @@ export function UpdateDetailsCard({
         notify,
         onCheck: setCandidate,
         onProgress: setProgress,
-        onSuccess: () => window.location.reload(),
         t,
       });
       setUpdating(false);
