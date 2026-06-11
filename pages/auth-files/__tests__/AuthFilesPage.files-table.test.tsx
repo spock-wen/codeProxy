@@ -2512,7 +2512,7 @@ describe("AuthFilesPage files table", () => {
     const cards = await screen.findByTestId("auth-files-cards");
     expect(cards).not.toHaveTextContent(/d left/);
     fireEvent.click(within(cards).getByRole("button", { name: "View" }));
-    const dialog = await screen.findByRole("dialog", { name: "View: codex-subscription.json" });
+    const dialog = await screen.findByRole("dialog", { name: "Codex Subscriber" });
     fireEvent.click(within(dialog).getByRole("tab", { name: "Fields" }));
 
     const input = await within(dialog).findByLabelText("Subscription start date");
@@ -2525,7 +2525,7 @@ describe("AuthFilesPage files table", () => {
     expect(uploadedJson.subscription_started_at).toBe(new Date(startedAtInput).toISOString());
     await waitFor(() =>
       expect(
-        screen.queryByRole("dialog", { name: "View: codex-subscription.json" }),
+        screen.queryByRole("dialog", { name: "Codex Subscriber" }),
       ).not.toBeInTheDocument(),
     );
     await waitFor(() => expect(screen.getByTestId("auth-files-cards")).toHaveTextContent(/d left/));
@@ -2564,8 +2564,9 @@ describe("AuthFilesPage files table", () => {
     fireEvent.click(within(cards).getByRole("button", { name: "View" }));
 
     const dialog = await screen.findByRole("dialog", {
-      name: "View: codex-pcamtu927@gmail.com-plus.json",
+      name: "pcamtu927@gmail.com",
     });
+    expect(within(dialog).getByText("plus")).toBeInTheDocument();
     expect(within(dialog).getByRole("tab", { name: "Usage" })).toBeInTheDocument();
     expect(await within(dialog).findByText("Current cycle cost")).toBeInTheDocument();
     expect(within(dialog).getByText("$1.2345")).toBeInTheDocument();
@@ -2632,7 +2633,7 @@ describe("AuthFilesPage files table", () => {
     expect(authGroupOwnerMappingMap).toEqual({ codex: "openai" });
 
     fireEvent.click(screen.getByRole("button", { name: "View" }));
-    const dialog = await screen.findByRole("dialog", { name: "View: codex.json" });
+    const dialog = await screen.findByRole("dialog", { name: "Codex Main" });
     fireEvent.click(within(dialog).getByRole("tab", { name: "Models" }));
 
     expect(

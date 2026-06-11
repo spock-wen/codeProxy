@@ -21,7 +21,7 @@ export function Modal({
 }: PropsWithChildren<{
   open: boolean;
   title: string;
-  description?: string;
+  description?: ReactNode;
   footer?: ReactNode;
   maxWidth?: string;
   panelClassName?: string;

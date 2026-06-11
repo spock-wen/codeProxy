@@ -21,6 +21,8 @@ import {
   normalizeProviderKey,
   parseAdditionalQuotaWindowLabel,
   readAuthFileChannelName,
+  resolveAuthFileDisplayName,
+  resolveAuthFilePlanType,
   resolveFileType,
   type AuthFileModelItem,
   type AuthFileModelOwnerGroup,
@@ -139,6 +141,10 @@ export function AuthFileDetailModal({
   const providerKey = normalizeProviderKey(modelsFileType);
   const detailProviderKey = detailFile ? normalizeProviderKey(resolveFileType(detailFile)) : "";
   const supportsUsageTrend = detailProviderKey === "kimi" || detailProviderKey === "codex";
+  const detailTitle = detailFile
+    ? resolveAuthFileDisplayName(detailFile) || String(detailFile.name || "")
+    : t("auth_files.view_auth_file");
+  const detailPlanType = detailFile ? resolveAuthFilePlanType(detailFile) : null;
   const excludedModels = excluded[providerKey] ?? [];
   const canRenameChannel = detailFile ? canRenameAuthFileChannel(detailFile) : false;
   const channelBaseline = detailFile ? readAuthFileChannelName(detailFile) : "";
@@ -208,6 +214,14 @@ export function AuthFileDetailModal({
     const sortedKeys = Array.from(xKeys).sort();
     const formatAxisLabel = (key: string) =>
       detailTrendWindow === "5h" ? key.slice(5) : key.slice(5);
+    const compactQuotaLegendLabel = (label: string) => {
+      const translated = translateQuotaLabel(label).trim();
+      if (translated.length <= 14) return translated;
+      const colonIndex = Math.max(translated.lastIndexOf(":"), translated.lastIndexOf("："));
+      const suffix = colonIndex >= 0 ? translated.slice(colonIndex + 1).trim() : "";
+      if (suffix) return suffix.length > 14 ? `${suffix.slice(0, 14)}...` : suffix;
+      return `${translated.slice(0, 14)}...`;
+    };
     const palette = ["#2563eb", "#db2777", "#16a34a", "#9333ea", "#0f766e", "#dc2626"];
 
     return {
@@ -216,25 +230,35 @@ export function AuthFileDetailModal({
       animationDurationUpdate: 420,
       animationEasing: "cubicOut" as const,
       animationEasingUpdate: "cubicOut" as const,
-      grid: { left: 38, right: 78, top: 38, bottom: 34 },
+      grid: { left: 46, right: 108, top: 74, bottom: 38 },
       tooltip: { trigger: "axis", confine: true },
       legend: {
-        top: 0,
+        top: 8,
+        left: 8,
+        right: 8,
         type: "scroll",
-        textStyle: { color: "#64748b" },
+        itemGap: 14,
+        pageButtonPosition: "end",
+        pageIconColor: "#64748b",
+        pageIconInactiveColor: "#cbd5e1",
+        pageTextStyle: { color: "#64748b" },
+        textStyle: {
+          color: "#64748b",
+          width: 154,
+          overflow: "truncate",
+        },
       },
       xAxis: {
         type: "category",
         data: sortedKeys.map(formatAxisLabel),
-        axisLabel: { color: "#64748b" },
+        axisLabel: { color: "#64748b", hideOverlap: true },
         axisLine: { lineStyle: { color: "#cbd5e1" } },
       },
       yAxis: [
         {
           type: "value",
           min: 0,
-          name: t("auth_files.trend_requests"),
-          axisLabel: { color: "#64748b" },
+          axisLabel: { color: "#64748b", hideOverlap: true },
           splitLine: { lineStyle: { color: "#e2e8f0" } },
         },
         {
@@ -242,16 +266,15 @@ export function AuthFileDetailModal({
           min: 0,
           max: 100,
           offset: 46,
-          name: "%",
-          axisLabel: { color: "#64748b", formatter: "{value}%" },
+          axisLabel: { color: "#64748b", formatter: "{value}%", hideOverlap: true },
           splitLine: { show: false },
         },
         {
           type: "value",
           min: 0,
-          name: "$",
           axisLabel: {
             color: "#64748b",
+            hideOverlap: true,
             formatter: (value: number) => {
               if (!Number.isFinite(value)) return "$0";
               if (Math.abs(value) < 1) return `$${value.toFixed(3)}`;
@@ -288,7 +311,7 @@ export function AuthFileDetailModal({
           data: sortedKeys.map((key) => costByKey.get(key) ?? 0),
         },
         ...quotaBySeries.map(({ series, values }, index) => ({
-          name: `${translateQuotaLabel(series.quota_label)} ${t(
+          name: `${compactQuotaLegendLabel(series.quota_label)} ${t(
             "auth_files.trend_quota_used_suffix",
           )}`,
           type: "line",
@@ -341,12 +364,17 @@ export function AuthFileDetailModal({
             {t("common.loading_ellipsis")}
           </div>
           <div className="min-w-0 rounded-lg bg-slate-50/70 p-3 dark:bg-white/[0.04]">
-            <EChart
-              option={trendChartOption}
-              className="h-72 min-w-0"
-              loading
-              loadingText={t("common.loading_ellipsis")}
-            />
+            <div className="h-80 min-w-0 overflow-hidden rounded-md border border-slate-200/70 bg-white/70 dark:border-white/10 dark:bg-white/[0.03]">
+              <div className="flex h-full items-end gap-2 px-4 pb-5 pt-8">
+                {Array.from({ length: 14 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="min-w-0 flex-1 animate-pulse rounded-t bg-slate-200/80 dark:bg-white/10"
+                    style={{ height: `${24 + ((index * 17) % 52)}%` }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       );
@@ -445,7 +473,7 @@ export function AuthFileDetailModal({
         <div className="min-w-0 rounded-lg bg-slate-50/70 p-3 dark:bg-white/[0.04]">
           <EChart
             option={trendChartOption}
-            className="h-72 min-w-0"
+            className="h-80 min-w-0"
             replaceMerge="series"
             loading={detailTrendLoading}
             loadingText={t("common.loading_ellipsis")}
@@ -458,10 +486,13 @@ export function AuthFileDetailModal({
   return (
     <Modal
       open={open}
-      title={
-        detailFile
-          ? t("auth_files.view_file_title", { name: detailFile.name })
-          : t("auth_files.view_auth_file")
+      title={detailTitle}
+      description={
+        detailPlanType ? (
+          <span className="inline-flex h-6 max-w-full items-center rounded-full border border-blue-200 bg-blue-50 px-2 text-xs font-semibold tracking-normal text-blue-700 dark:border-blue-400/30 dark:bg-blue-400/10 dark:text-blue-200">
+            {detailPlanType}
+          </span>
+        ) : undefined
       }
       maxWidth="max-w-4xl"
       bodyHeightClassName="h-[70vh]"

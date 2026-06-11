@@ -153,9 +153,11 @@ describe("AuthFileDetailModal", () => {
     expect(screen.getByText("$1.2345")).toBeInTheDocument();
     expect(screen.getByText("Weekly quota used")).toBeInTheDocument();
     expect(screen.getByText("8%")).toBeInTheDocument();
-    expect(screen.getByRole("dialog", { name: "View: codex.json" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Codex Primary" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Download" })).toBeEnabled();
     expect(chartOptions[0]?.animation).toBe(true);
+    expect(chartOptions[0]?.grid?.top).toBeGreaterThanOrEqual(70);
+    expect(chartOptions[0]?.yAxis?.every((item: any) => !item.name)).toBe(true);
     expect(chartOptions[0]?.series?.every((item: any) => item.animation === true)).toBe(true);
   });
 
@@ -168,6 +170,8 @@ describe("AuthFileDetailModal", () => {
     });
 
     expect(screen.getByRole("tab", { name: "Usage" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "pcamtu927@gmail.com" })).toBeInTheDocument();
+    expect(screen.getByText("plus")).toBeInTheDocument();
     expect(screen.getByText("Current cycle cost")).toBeInTheDocument();
     expect(screen.getByText("$1.2345")).toBeInTheDocument();
   });
@@ -184,7 +188,8 @@ describe("AuthFileDetailModal", () => {
     renderDetailModal({ detailTrend: null, detailTrendLoading: true });
 
     expect(screen.getByTestId("auth-file-trend-loading")).toBeInTheDocument();
-    expect(screen.getByTestId("auth-file-trend-chart")).toBeInTheDocument();
+    expect(screen.queryByTestId("auth-file-trend-chart")).not.toBeInTheDocument();
+    expect(chartOptions).toHaveLength(0);
   });
 
   test("does not render quota sample summary cards below the trend chart", () => {
@@ -220,7 +225,7 @@ describe("AuthFileDetailModal", () => {
         quota_series: [
           {
             quota_key: "code_5h",
-            quota_label: "m_quota.code_5h",
+            quota_label: "GPT-5.3-Codex-Spark: 五小时",
             window_seconds: 18000,
             points: [
               { timestamp: oldQuotaAt22, percent: 100 },
@@ -243,6 +248,7 @@ describe("AuthFileDetailModal", () => {
     const series = JSON.parse(chart.dataset.series ?? "[]");
     expect(series[0].data).toEqual([0, 2, 1, 1, 10]);
     expect(series[1].data).toEqual([0, 0.002, 0.001, 0.001, 0.01]);
+    expect(series[2].name).toBe("五小时 used");
     expect(series[2].data).toEqual([null, null, null, null, 6]);
   });
 
