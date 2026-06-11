@@ -306,7 +306,7 @@ export function RequestLogsPage() {
     try {
       const data = await usageApi.exportSummary({
         days: timeRange,
-        api_key: selectedApiKeys.length === 1 ? selectedApiKeys[0] : undefined,
+        api_key: selectedApiKeys?.length === 1 ? selectedApiKeys[0] : undefined,
       });
       if (data.length === 0) {
         notify({ type: "info", message: t("request_logs.export_summary_empty") });
