@@ -20,6 +20,14 @@ function Badge({ children, className }: { children: React.ReactNode; className: 
   );
 }
 
+function RequestPath({ children }: { children: string }) {
+  return (
+    <code className="inline-block max-w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[11px] font-medium leading-relaxed text-slate-700 dark:border-neutral-800 dark:bg-white/5 dark:text-white/70">
+      <span className="break-all">{children}</span>
+    </code>
+  );
+}
+
 export function LiveLogsTab({
   t,
   loading,
@@ -267,11 +275,7 @@ export function LiveLogsTab({
                                 {line.method}
                               </Badge>
                             ) : null}
-                            {line.path ? (
-                              <Badge className="border-slate-200 bg-white font-mono text-slate-700 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white/70">
-                                <span className="break-all">{line.path}</span>
-                              </Badge>
-                            ) : null}
+                            {line.path ? <RequestPath>{line.path}</RequestPath> : null}
                           </div>
                           <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-slate-900 dark:text-slate-100">
                             {line.message}
