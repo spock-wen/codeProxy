@@ -26,6 +26,26 @@ export type FixedNumberOptions = {
   fractionDigits?: number;
 };
 
+export type UsageMetricFormatOptions = {
+  locale?: string;
+};
+
+export type UsageMetricVariant = "number" | "currency";
+
+export const USAGE_METRIC_COMPACT_OPTIONS = {
+  threshold: 10_000,
+  maximumFractionDigits: 1,
+  standardMaximumFractionDigits: 0,
+} satisfies CompactNumberOptions;
+
+export const USAGE_COST_COMPACT_OPTIONS = {
+  threshold: 10_000,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  standardMinimumFractionDigits: 4,
+  standardMaximumFractionDigits: 4,
+} satisfies CompactNumberOptions;
+
 const DEFAULT_COMPACT_UNITS: CompactNumberUnit[] = [
   { value: 1, suffix: "" },
   { value: 1_000, suffix: "K" },
@@ -131,6 +151,54 @@ export function formatUsd(value: number, options: FixedNumberOptions = {}): stri
     locale: options.locale,
     fractionDigits: options.fractionDigits ?? 2,
   })}`;
+}
+
+export function formatUsageMetricNumber(
+  value: number,
+  options: UsageMetricFormatOptions = {},
+): string {
+  return formatCompactNumber(value, {
+    ...USAGE_METRIC_COMPACT_OPTIONS,
+    locale: options.locale,
+  });
+}
+
+export function formatUsageMetricTooltipNumber(
+  value: number,
+  options: UsageMetricFormatOptions = {},
+): string {
+  return formatFixedNumber(value, { locale: options.locale, fractionDigits: 2 });
+}
+
+export function formatUsageMetricCost(
+  value: number,
+  options: UsageMetricFormatOptions = {},
+): string {
+  return formatCompactUsd(value, {
+    ...USAGE_COST_COMPACT_OPTIONS,
+    locale: options.locale,
+  });
+}
+
+export function formatUsageMetricTooltipCost(
+  value: number,
+  options: UsageMetricFormatOptions = {},
+): string {
+  return formatUsd(value, { locale: options.locale, fractionDigits: 4 });
+}
+
+export function isUsageMetricCompact(
+  value: number,
+  variant: UsageMetricVariant = "number",
+): boolean {
+  return getCompactNumberParts(
+    value,
+    variant === "currency" ? USAGE_COST_COMPACT_OPTIONS : USAGE_METRIC_COMPACT_OPTIONS,
+  ).compact;
+}
+
+export function formatUsageMetricRate(value: number): string {
+  return `${formatFixedNumber(value, { fractionDigits: 2 })}%`;
 }
 
 export function formatHourLabel(date: Date): string {

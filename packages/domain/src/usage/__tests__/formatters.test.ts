@@ -3,8 +3,14 @@ import {
   formatCompactNumber,
   formatCompactUsd,
   formatFixedNumber,
+  formatUsageMetricCost,
+  formatUsageMetricNumber,
+  formatUsageMetricRate,
+  formatUsageMetricTooltipCost,
+  formatUsageMetricTooltipNumber,
   formatUsd,
   getCompactNumberParts,
+  isUsageMetricCompact,
 } from "../formatters";
 
 describe("usage formatters", () => {
@@ -36,5 +42,24 @@ describe("usage formatters", () => {
       "$2,315.2875",
     );
     expect(formatUsd(12_345.67891, { locale: "en-US", fractionDigits: 4 })).toBe("$12,345.6789");
+  });
+
+  test("formats usage metric values with dashboard compact precision", () => {
+    expect(formatUsageMetricNumber(9_999, { locale: "en-US" })).toBe("9,999");
+    expect(formatUsageMetricNumber(23_800, { locale: "en-US" })).toBe("23.8K");
+    expect(formatUsageMetricNumber(2_819_900_000, { locale: "en-US" })).toBe("2.8B");
+    expect(formatUsageMetricTooltipNumber(2_819_900_000, { locale: "en-US" })).toBe(
+      "2,819,900,000.00",
+    );
+    expect(isUsageMetricCompact(9_999)).toBe(false);
+    expect(isUsageMetricCompact(10_000)).toBe(true);
+  });
+
+  test("formats usage metric cost and rate values with dashboard precision", () => {
+    expect(formatUsageMetricCost(9_999.12345, { locale: "en-US" })).toBe("$9,999.1235");
+    expect(formatUsageMetricCost(12_345.67891, { locale: "en-US" })).toBe("$12.35K");
+    expect(formatUsageMetricTooltipCost(12_345.67891, { locale: "en-US" })).toBe("$12,345.6789");
+    expect(isUsageMetricCompact(12_345.67891, "currency")).toBe(true);
+    expect(formatUsageMetricRate(91.234)).toBe("91.23%");
   });
 });
