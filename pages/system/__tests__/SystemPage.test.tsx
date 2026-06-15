@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import i18n from "@code-proxy/i18n";
+import { invalidateConfiguredModelAvailability } from "@features/model-availability";
 import { SystemPage } from "../SystemPage";
 import { ThemeProvider } from "@code-proxy/ui";
 import { ToastProvider } from "@code-proxy/ui";
@@ -17,6 +18,24 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@code-proxy/api-client", () => ({
   apiClient: {
     get: mocks.apiGet,
+  },
+  authFilesApi: {
+    list: () => mocks.apiGet("/auth-files"),
+    getModelsForAuthFile: async (name: string) => {
+      const payload = await mocks.apiGet("/auth-files/models", { params: { name } });
+      const record =
+        payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+      return Array.isArray(record.models) ? record.models : [];
+    },
+  },
+  providersApi: {
+    getGeminiKeys: async () => [],
+    getClaudeConfigs: async () => [],
+    getCodexConfigs: async () => [],
+    getOpenCodeGoConfigs: async () => [],
+    getVertexConfigs: async () => [],
+    getOpenAIProviders: async () =>
+      normalizeOpenAIProviders(await mocks.apiGet("/openai-compatibility")),
   },
 }));
 
@@ -52,11 +71,50 @@ function renderPage() {
   );
 }
 
+function extractList(payload: unknown, key: string): unknown[] {
+  if (Array.isArray(payload)) return payload;
+  const record =
+    payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+  const value = record[key] ?? record.items ?? record.data;
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeOpenAIProviders(payload: unknown) {
+  return extractList(payload, "openai-compatibility").map((entry) => {
+    const item = entry && typeof entry === "object" ? (entry as Record<string, unknown>) : {};
+    const rawEntries = Array.isArray(item["api-key-entries"])
+      ? item["api-key-entries"]
+      : Array.isArray(item.apiKeyEntries)
+        ? item.apiKeyEntries
+        : [];
+    return {
+      name: String(item.name ?? ""),
+      disabled: item.disabled === true,
+      prefix: typeof item.prefix === "string" ? item.prefix : undefined,
+      models: Array.isArray(item.models) ? item.models : [],
+      apiKeyEntries: rawEntries
+        .map((raw) => {
+          const keyEntry =
+            raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+          const apiKey = String(keyEntry["api-key"] ?? keyEntry.apiKey ?? "").trim();
+          if (!apiKey) return null;
+          return {
+            apiKey,
+            disabled: keyEntry.disabled === true,
+          };
+        })
+        .filter(Boolean),
+    };
+  });
+}
+
 describe("SystemPage", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
     window.localStorage.clear();
+    invalidateConfiguredModelAvailability();
     mocks.apiGet.mockImplementation((path: string) => {
+      if (path === "/auth-group-model-owner-mappings") return Promise.resolve({ items: [] });
       if (path === "/model-path-availability") return Promise.resolve({ data: [] });
       if (path === "/model-configs?scope=library") return Promise.resolve({ data: [] });
       if (path === "/auth-files") return Promise.resolve({ files: [] });
@@ -182,6 +240,7 @@ describe("SystemPage", () => {
 
   test("shows only default root v1 model discovery results", async () => {
     mocks.apiGet.mockImplementation((path: string) => {
+      if (path === "/auth-group-model-owner-mappings") return Promise.resolve({ items: [] });
       if (path === "/model-path-availability") {
         return Promise.resolve({
           data: [
@@ -219,6 +278,107 @@ describe("SystemPage", () => {
     expect(screen.queryByText("gpt-group-only")).not.toBeInTheDocument();
     expect(screen.queryByText("gemini-v1beta-only")).not.toBeInTheDocument();
     expect(mocks.apiGet).toHaveBeenCalledWith("/model-path-availability");
+  });
+
+  test("shows persisted mapped owner models on the system page", async () => {
+    mocks.apiGet.mockImplementation((path: string) => {
+      if (path === "/auth-group-model-owner-mappings") {
+        return Promise.resolve({
+          items: [{ auth_group: "codex", owner: "codex" }],
+        });
+      }
+      if (path === "/model-path-availability") {
+        return Promise.resolve({
+          data: [
+            {
+              id: "gpt-5.5",
+              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
+            },
+            {
+              id: "gpt-5-codex",
+              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
+            },
+          ],
+        });
+      }
+      if (path === "/model-configs?scope=library") {
+        return Promise.resolve({
+          data: [{ id: "gpt-5.5", owned_by: "codex", description: "Mapped Codex model" }],
+        });
+      }
+      if (path === "/auth-files") {
+        return Promise.resolve({
+          files: [{ name: "codex-main.json", type: "codex", disabled: false }],
+        });
+      }
+      if (
+        path === "/gemini-api-key" ||
+        path === "/claude-api-key" ||
+        path === "/codex-api-key" ||
+        path === "/vertex-api-key" ||
+        path === "/openai-compatibility"
+      ) {
+        return Promise.resolve([]);
+      }
+      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
+      return Promise.resolve({});
+    });
+
+    renderPage();
+
+    expect(await screen.findByText("gpt-5.5")).toBeInTheDocument();
+    expect(screen.queryByText("gpt-5-codex")).not.toBeInTheDocument();
+  });
+
+  test("hides disabled OpenAI compatible provider models in mapped owner mode", async () => {
+    mocks.apiGet.mockImplementation((path: string) => {
+      if (path === "/auth-group-model-owner-mappings") {
+        return Promise.resolve({
+          items: [{ auth_group: "codex", owner: "codex" }],
+        });
+      }
+      if (path === "/model-path-availability") return Promise.resolve({ data: [] });
+      if (path === "/model-configs?scope=library") return Promise.resolve({ data: [] });
+      if (path === "/auth-files") return Promise.resolve({ files: [] });
+      if (path === "/openai-compatibility") {
+        return Promise.resolve({
+          "openai-compatibility": [
+            {
+              name: "Disabled Compat",
+              disabled: true,
+              "api-key-entries": [{ "api-key": "sk-disabled" }],
+              models: [{ name: "upstream-disabled", alias: "disabled-provider-model" }],
+            },
+            {
+              name: "Disabled Key Compat",
+              "api-key-entries": [{ "api-key": "sk-entry-disabled", disabled: true }],
+              models: [{ name: "upstream-entry-disabled", alias: "disabled-key-model" }],
+            },
+            {
+              name: "Active Compat",
+              "api-key-entries": [{ "api-key": "sk-active" }],
+              models: [{ name: "upstream-active", alias: "active-compat-model" }],
+            },
+          ],
+        });
+      }
+      if (
+        path === "/gemini-api-key" ||
+        path === "/claude-api-key" ||
+        path === "/codex-api-key" ||
+        path === "/vertex-api-key"
+      ) {
+        return Promise.resolve([]);
+      }
+      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
+      return Promise.resolve({});
+    });
+
+    renderPage();
+
+    expect(await screen.findByText("active-compat-model")).toBeInTheDocument();
+    expect(screen.queryByText("disabled-provider-model")).not.toBeInTheDocument();
+    expect(screen.queryByText("disabled-key-model")).not.toBeInTheDocument();
   });
 
   test("rechecks the target version before treating the update as successful", async () => {
@@ -586,10 +746,13 @@ describe("SystemPage", () => {
 
     expect(within(dialog).getByTestId("update-progress-console")).toBeInTheDocument();
     await waitFor(() => {
-      expect(within(dialog).getByRole("heading", { name: /update completed/i })).toBeInTheDocument();
+      expect(
+        within(dialog).getByRole("heading", { name: /update completed/i }),
+      ).toBeInTheDocument();
     });
-    expect(within(dialog).getByText(/docker compose pull clirelay/i)).toBeInTheDocument();
     expect(within(dialog).getByText(/The updater finished all steps\./i)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/docker compose pull clirelay/i)).toBeNull();
+    expect(within(dialog).queryByTestId("update-log-stream")).toBeNull();
     expect(
       within(dialog).getByText((_, element) =>
         Boolean(element?.textContent?.trim().match(/^\d+%$/)),

@@ -1,10 +1,11 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import i18n from "@code-proxy/i18n";
 import { RequestLogsPage } from "@pages/request-logs/RequestLogsPage";
 import { ThemeProvider } from "@code-proxy/ui";
 import { ToastProvider } from "@code-proxy/ui";
+import type { UsageLogItem } from "@code-proxy/api-client/endpoints/usage";
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -57,11 +58,74 @@ const responseWithFilterOptions = {
   },
 };
 
+const buildUsageLogItem = (overrides: Partial<UsageLogItem> = {}): UsageLogItem => ({
+  id: 1,
+  timestamp: "2026-04-08T12:00:00Z",
+  api_key: "sk-test-123456",
+  api_key_name: "Primary",
+  model: "gpt-5.4",
+  source: "codex",
+  channel_name: "Codex",
+  auth_index: "auth-1",
+  failed: false,
+  latency_ms: 1200,
+  first_token_ms: 183,
+  input_tokens: 10,
+  output_tokens: 20,
+  reasoning_tokens: 0,
+  cached_tokens: 0,
+  total_tokens: 30,
+  cost: 0.0123,
+  has_content: false,
+  ...overrides,
+});
+
+const responseWithRows = (items: UsageLogItem[]) => ({
+  ...responseWithFilterOptions,
+  items,
+  total: items.length,
+  stats: {
+    ...responseWithFilterOptions.stats,
+    total: items.length,
+    success_rate: 100,
+    total_tokens: items.reduce((sum, item) => sum + item.total_tokens, 0),
+  },
+});
+
 const mocks = vi.hoisted(() => ({
   getUsageLogs: vi.fn(),
   getLogContent: vi.fn(),
   clearUsageLogs: vi.fn(),
 }));
+
+function installLocalStorageMock() {
+  const store = new Map<string, string>();
+  const localStorageMock = {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => {
+      store.clear();
+    },
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+
+  Object.defineProperty(globalThis, "localStorage", {
+    value: localStorageMock,
+    configurable: true,
+  });
+  Object.defineProperty(window, "localStorage", {
+    value: localStorageMock,
+    configurable: true,
+  });
+}
 
 vi.mock("@code-proxy/api-client", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@code-proxy/api-client")>();
@@ -77,8 +141,13 @@ vi.mock("@code-proxy/api-client", async (importOriginal) => {
 });
 
 describe("RequestLogsPage", () => {
+  beforeAll(() => {
+    installLocalStorageMock();
+  });
+
   afterEach(async () => {
     await i18n.changeLanguage("zh-CN");
+    window.localStorage.clear();
     mocks.getUsageLogs.mockReset();
     mocks.getLogContent.mockReset();
     mocks.clearUsageLogs.mockReset();
@@ -203,7 +272,7 @@ describe("RequestLogsPage", () => {
     );
   });
 
-  test("only sends explicit request-log filter subsets, restores full selection, and resets filters", async () => {
+  test("only applies request-log multi-select changes after confirmation and restores full selection", async () => {
     await i18n.changeLanguage("en");
     const user = userEvent.setup();
 
@@ -227,6 +296,10 @@ describe("RequestLogsPage", () => {
           models: undefined,
           channels: undefined,
           statuses: undefined,
+          api_keys_empty: false,
+          models_empty: false,
+          channels_empty: false,
+          statuses_empty: false,
         }),
       ),
     );
@@ -234,33 +307,47 @@ describe("RequestLogsPage", () => {
     await user.click(keyFilter);
     await user.click(await screen.findByRole("option", { name: "Primary" }));
 
+    expect(mocks.getUsageLogs).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Apply filters" }));
+
     await waitFor(() =>
       expect(mocks.getUsageLogs).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
           api_keys: ["sk-secondary"],
+          api_keys_empty: false,
         }),
       ),
     );
 
-    await user.click(screen.getByRole("option", { name: "Primary" }));
+    await user.click(keyFilter);
+    await user.click(screen.getByRole("button", { name: "Select all" }));
+
+    expect(mocks.getUsageLogs).toHaveBeenCalledTimes(2);
+
+    await user.click(screen.getByRole("button", { name: "Apply filters" }));
 
     await waitFor(() =>
       expect(mocks.getUsageLogs).toHaveBeenNthCalledWith(
         3,
         expect.objectContaining({
           api_keys: undefined,
+          api_keys_empty: false,
         }),
       ),
     );
 
-    await user.click(await screen.findByRole("option", { name: "Primary" }));
+    await user.click(keyFilter);
+    await user.click(screen.getByRole("option", { name: "Primary" }));
+    await user.click(screen.getByRole("button", { name: "Apply filters" }));
 
     await waitFor(() =>
       expect(mocks.getUsageLogs).toHaveBeenNthCalledWith(
         4,
         expect.objectContaining({
           api_keys: ["sk-secondary"],
+          api_keys_empty: false,
         }),
       ),
     );
@@ -272,9 +359,113 @@ describe("RequestLogsPage", () => {
         5,
         expect.objectContaining({
           api_keys: undefined,
+          api_keys_empty: false,
         }),
       ),
     );
+  });
+
+  test("supports deselecting all request-log filter options in one click", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+
+    mocks.getUsageLogs.mockResolvedValue(responseWithFilterOptions);
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    const [keyFilter] = await screen.findAllByRole("combobox");
+
+    await user.click(keyFilter);
+    expect(await screen.findByRole("button", { name: "Deselect all" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Deselect all" }));
+    expect(screen.getByRole("combobox", { name: "Filter by Key name" })).toHaveTextContent(
+      "0 selected",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Apply filters" }));
+
+    await waitFor(() =>
+      expect(mocks.getUsageLogs).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          api_keys: undefined,
+          api_keys_empty: true,
+        }),
+      ),
+    );
+  });
+
+  test("clears a request-log filter from the trigger and refreshes table data", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+
+    mocks.getUsageLogs
+      .mockResolvedValueOnce(
+        responseWithRows([
+          buildUsageLogItem({ id: 1, model: "gpt-5.4" }),
+          buildUsageLogItem({ id: 2, model: "gpt-4.1" }),
+        ]),
+      )
+      .mockResolvedValueOnce(
+        responseWithRows([buildUsageLogItem({ id: 3, model: "gpt-5.4" })]),
+      )
+      .mockResolvedValueOnce(
+        responseWithRows([buildUsageLogItem({ id: 4, model: "gpt-4.1" })]),
+      );
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    const [, modelFilter] = await screen.findAllByRole("combobox");
+
+    await user.click(modelFilter);
+    await user.click(await screen.findByRole("option", { name: "gpt-4.1" }));
+    await user.click(screen.getByRole("button", { name: "Apply filters" }));
+
+    await waitFor(() =>
+      expect(mocks.getUsageLogs).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          models: ["gpt-5.4"],
+          models_empty: false,
+        }),
+      ),
+    );
+    expect(screen.getByRole("combobox", { name: "Filter by model" })).toHaveTextContent(
+      "gpt-5.4",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Clear model filter" }));
+
+    await waitFor(() =>
+      expect(mocks.getUsageLogs).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({
+          models: undefined,
+          models_empty: false,
+        }),
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: "Clear model filter" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("combobox", { name: "Filter by model" })).toHaveTextContent(
+      "All Models",
+    );
+    expect(await screen.findByText("gpt-4.1")).toBeInTheDocument();
   });
 
   test("keeps the filtered-results bulk action hidden until the user actually searches", async () => {
@@ -296,6 +487,7 @@ describe("RequestLogsPage", () => {
     await user.click(modelFilter);
     await user.click(await screen.findByRole("option", { name: "gpt-5.4" }));
 
+    expect(screen.getByRole("button", { name: /Select all/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Select shown/i })).not.toBeInTheDocument();
 
     await user.type(screen.getByRole("textbox"), "gpt");

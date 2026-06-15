@@ -45,6 +45,19 @@ describe("LogsPage", () => {
     vi.clearAllMocks();
   });
 
+  test("uses a backend-safe limit for the initial log fetch", async () => {
+    await i18n.changeLanguage("zh-CN");
+
+    mocks.fetchLogs.mockResolvedValue({
+      lines: [],
+      "latest-timestamp": null,
+    });
+
+    renderLogsPage();
+
+    await waitFor(() => expect(mocks.fetchLogs).toHaveBeenCalledWith({ limit: 20000 }));
+  });
+
   test("treats an empty error log list as loaded instead of retrying", async () => {
     await i18n.changeLanguage("zh-CN");
     const user = userEvent.setup();
@@ -63,5 +76,27 @@ describe("LogsPage", () => {
 
     expect(await screen.findByText("暂无错误日志")).toBeInTheDocument();
     await waitFor(() => expect(mocks.fetchErrorLogs).toHaveBeenCalledTimes(1));
+  });
+
+  test("renders long request paths without a full-pill badge", async () => {
+    await i18n.changeLanguage("zh-CN");
+
+    const longPath =
+      "/v0/management/usage/entity-stats?days=30&auth_index=c354956ed44cc510&source=t%3Aantigravity-yuan364299311%40gmail.com.json";
+    mocks.fetchLogs.mockResolvedValue({
+      lines: [
+        `2026-06-14 09:25:21 [INFO] [gin_logger.go:96] 200 | 288ms | 36.159.232.171 | GET "${longPath}"`,
+      ],
+      "latest-timestamp": null,
+    });
+
+    renderLogsPage();
+
+    const path = await screen.findByText(longPath);
+    const pathContainer = path.closest("code");
+
+    expect(pathContainer).toBeInTheDocument();
+    expect(pathContainer).toHaveClass("rounded-md");
+    expect(pathContainer).not.toHaveClass("rounded-full");
   });
 });
