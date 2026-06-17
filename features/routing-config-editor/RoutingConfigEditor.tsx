@@ -33,6 +33,20 @@ import {
 const SYSTEM_DEFAULT_GROUP_NAME = "default";
 const SYSTEM_DEFAULT_GROUP_ID = "system-default-root";
 
+function normalizeRoutingStrategy(value: unknown): RoutingStrategy {
+  return value === "fill-first" || value === "session-sticky" ? value : "round-robin";
+}
+
+function routingStrategyLabel(t: ReturnType<typeof useTranslation>["t"], strategy: RoutingStrategy) {
+  if (strategy === "session-sticky") {
+    return t("channel_groups_page.routing_strategy_session_sticky");
+  }
+  if (strategy === "fill-first") {
+    return t("channel_groups_page.routing_strategy_fill_first");
+  }
+  return t("channel_groups_page.routing_strategy_round_robin");
+}
+
 type GroupDraft = {
   name: string;
   description: string;
@@ -649,7 +663,7 @@ export function RoutingConfigEditor({
       setGroupDraft({
         name: group.name,
         description: group.description,
-        strategy: group.strategy === "fill-first" ? "fill-first" : "round-robin",
+        strategy: normalizeRoutingStrategy(group.strategy),
         excludeFromDefault: isSystemDefault ? false : group.excludeFromDefault === true,
         matchMode: isSystemDefault ? "channels" : (group.matchMode ?? "channels"),
         channels: cloneMembers(group.channels),
@@ -819,7 +833,7 @@ export function RoutingConfigEditor({
         id: existingDefault?.id ?? makeClientId(),
         name: SYSTEM_DEFAULT_GROUP_NAME,
         description: existingDefault?.description ?? "",
-        strategy: existingDefault?.strategy === "fill-first" ? "fill-first" : "round-robin",
+        strategy: normalizeRoutingStrategy(existingDefault?.strategy),
         excludeFromDefault: false,
         matchMode: "channels",
         channels: existingDefault ? cloneMembers(existingDefault.channels) : [],
@@ -850,7 +864,7 @@ export function RoutingConfigEditor({
       id: groupEditorId ?? makeClientId(),
       name: groupName,
       description: groupDraft.description.trim(),
-      strategy: groupDraft.strategy === "fill-first" ? "fill-first" : "round-robin",
+      strategy: normalizeRoutingStrategy(groupDraft.strategy),
       excludeFromDefault:
         groupDraft.excludeFromDefault && groupName.toLowerCase() !== SYSTEM_DEFAULT_GROUP_NAME,
       matchMode: groupDraft.matchMode,
@@ -1092,8 +1106,8 @@ export function RoutingConfigEditor({
             );
           }
           const summary =
-            group.strategy === "fill-first"
-              ? t("channel_groups_page.routing_strategy_fill_first")
+            group.strategy === "fill-first" || group.strategy === "session-sticky"
+              ? routingStrategyLabel(t, group.strategy)
               : summarizePriorityMode(
                   resolveGroupChannels(group),
                   t("channel_groups_page.round_robin_mode"),
@@ -1672,11 +1686,15 @@ export function RoutingConfigEditor({
                             value: "fill-first",
                             label: t("channel_groups_page.routing_strategy_fill_first"),
                           },
+                          {
+                            value: "session-sticky",
+                            label: t("channel_groups_page.routing_strategy_session_sticky"),
+                          },
                         ]}
                         onChange={(value) => {
                           setGroupDraft((current) => ({
                             ...current,
-                            strategy: value === "fill-first" ? "fill-first" : "round-robin",
+                            strategy: normalizeRoutingStrategy(value),
                           }));
                         }}
                       />

@@ -777,6 +777,57 @@ describe("ChannelGroupsPage", () => {
     expect(within(row as HTMLTableRowElement).getByText("vip")).toBeInTheDocument();
   });
 
+  test("hydrates session-sticky routing strategy from routing config", async () => {
+    mockedApiGet.mockImplementation((path: string) => {
+      if (path === "/routing-config") {
+        return Promise.resolve({
+          strategy: "session-sticky",
+          "include-default-group": true,
+          "channel-groups": [
+            {
+              name: "Sticky Pool",
+              strategy: "session-sticky",
+              match: { channels: ["Team A Claude"] },
+            },
+          ],
+          "path-routes": [],
+        });
+      }
+      if (path === "/channel-groups") {
+        return Promise.resolve({
+          items: [
+            {
+              name: "Sticky Pool",
+              channels: ["Team A Claude"],
+              "channel-details": [{ name: "Team A Claude", source: "claude" }],
+            },
+          ],
+        });
+      }
+      if (path.startsWith("/models?")) {
+        return Promise.resolve({ data: [] });
+      }
+      if (
+        path === "/auth-files" ||
+        path === "/model-configs?scope=library" ||
+        path === "/gemini-api-key" ||
+        path === "/claude-api-key" ||
+        path === "/codex-api-key" ||
+        path === "/opencode-go-api-key" ||
+        path === "/vertex-api-key" ||
+        path === "/openai-compatibility"
+      ) {
+        return Promise.resolve({ files: [], data: [] });
+      }
+      return Promise.resolve({});
+    });
+
+    renderPage();
+
+    const row = await screen.findByRole("row", { name: /Sticky Pool/i });
+    expect(row).toHaveTextContent("会话粘性");
+  });
+
   test("refreshes channel options when opening the new group editor", async () => {
     let channelGroupsCalls = 0;
     mockedApiGet.mockImplementation((path: string) => {
