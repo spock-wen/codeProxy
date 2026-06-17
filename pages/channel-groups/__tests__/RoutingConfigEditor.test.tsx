@@ -129,6 +129,25 @@ describe("RoutingConfigEditor", () => {
     expect(screen.getByTestId("group-strategy")).toHaveTextContent("fill-first");
   });
 
+  test("stores session-sticky as the group-scoped routing strategy", async () => {
+    await i18n.changeLanguage("zh-CN");
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(screen.getByRole("button", { name: "新增分组" }));
+    await user.click(screen.getByRole("combobox", { name: "分组内调度策略" }));
+    await user.click(screen.getByRole("option", { name: "会话粘性" }));
+    await user.type(screen.getByPlaceholderText("pro"), "team-session");
+    await user.type(screen.getByPlaceholderText("/pro"), "/team-session");
+    await user.click(screen.getByRole("combobox", { name: "选择渠道" }));
+    await user.click(screen.getByRole("option", { name: "Main Codex" }));
+    await user.click(screen.getByRole("combobox", { name: "选择渠道" }));
+    await user.click(screen.getByRole("button", { name: "添加" }));
+
+    expect(screen.getByTestId("group-strategy")).toHaveTextContent("session-sticky");
+  });
+
   test("shows fill-first as the table scheduling mode for that group", async () => {
     await i18n.changeLanguage("zh-CN");
 
@@ -156,6 +175,35 @@ describe("RoutingConfigEditor", () => {
     const row = screen.getByRole("row", { name: /kimicode/i });
     expect(row).toHaveTextContent("优先首个可用渠道");
   });
+
+  test("shows session-sticky as the table scheduling mode for that group", async () => {
+    await i18n.changeLanguage("zh-CN");
+
+    render(
+      <Harness
+        initialValues={{
+          ...DEFAULT_VISUAL_VALUES,
+          routingChannelGroups: [
+            {
+              id: "group-session",
+              name: "session-pool",
+              description: "",
+              strategy: "session-sticky",
+              channels: [
+                { id: "channel-main", name: "Main Codex", priority: "" },
+                { id: "channel-backup", name: "Backup Claude", priority: "" },
+              ],
+              allowedModels: [],
+            },
+          ],
+        }}
+      />,
+    );
+
+    const row = screen.getByRole("row", { name: /session-pool/i });
+    expect(row).toHaveTextContent("会话粘性");
+  });
+
 
   test("defaults model tab selections to every channel-scoped model", async () => {
     await i18n.changeLanguage("zh-CN");
