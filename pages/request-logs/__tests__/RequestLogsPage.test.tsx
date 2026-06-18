@@ -168,6 +168,7 @@ describe("RequestLogsPage", () => {
           channel_name: "Codex",
           auth_index: "auth-1",
           failed: false,
+          streaming: true,
           latency_ms: 1200,
           first_token_ms: 183,
           input_tokens: 10,
@@ -204,7 +205,32 @@ describe("RequestLogsPage", () => {
     );
 
     expect(await screen.findByText("Duration")).toBeInTheDocument();
+    expect(await screen.findByText("Streaming")).toBeInTheDocument();
     expect(await screen.findByText("183ms")).toBeInTheDocument();
+  });
+
+  test("labels non-streaming logs without rendering a first token placeholder", async () => {
+    await i18n.changeLanguage("en");
+
+    mocks.getUsageLogs.mockResolvedValue(
+      responseWithRows([
+        buildUsageLogItem({
+          streaming: false,
+          first_token_ms: 0,
+        }),
+      ]),
+    );
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    expect(await screen.findByText("Non-streaming")).toBeInTheDocument();
+    expect(screen.queryByLabelText("First Token: --")).not.toBeInTheDocument();
   });
 
   test("does not crash when backend returns null filter arrays", async () => {
