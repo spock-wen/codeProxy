@@ -724,56 +724,121 @@ export function AuthFileDetailModal({
                     {t("common.loading_ellipsis")}
                   </div>
                 ) : (
-                  <div className="max-w-3xl space-y-5" data-testid="auth-file-fields-grid">
-                    {canRenameChannel ? (
-                      <div className="grid gap-2">
-                        <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
-                          {t("auth_files.channel_name_label")}
-                        </p>
-                        <TextInput
-                          value={channelLabelValue}
-                          onChange={(e) => {
-                            const value = e.currentTarget.value;
-                            setChannelEditor((prev) => ({
-                              ...prev,
-                              fileName: detailFile.name,
-                              label: value,
-                              error: null,
-                            }));
-                          }}
-                          placeholder={t("auth_files.channel_name_placeholder")}
-                        />
-                        {channelEditor.error ? (
-                          <p className="text-sm text-rose-600 dark:text-rose-300">
-                            {channelEditor.error}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-slate-500 dark:text-white/55">
-                            {t("auth_files.channel_name_hint")}
-                          </p>
-                        )}
+                  <div
+                    className="grid max-w-none items-start gap-x-10 gap-y-5 lg:grid-cols-2"
+                    data-testid="auth-file-fields-grid"
+                  >
+                    {canRenameChannel || prefixProxyEditor.json ? (
+                      <div className="min-w-0 space-y-5">
+                        {canRenameChannel ? (
+                          <div className="grid gap-2">
+                            <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
+                              {t("auth_files.channel_name_label")}
+                            </p>
+                            <TextInput
+                              value={channelLabelValue}
+                              onChange={(e) => {
+                                const value = e.currentTarget.value;
+                                setChannelEditor((prev) => ({
+                                  ...prev,
+                                  fileName: detailFile.name,
+                                  label: value,
+                                  error: null,
+                                }));
+                              }}
+                              placeholder={t("auth_files.channel_name_placeholder")}
+                            />
+                            {channelEditor.error ? (
+                              <p className="text-sm text-rose-600 dark:text-rose-300">
+                                {channelEditor.error}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-slate-500 dark:text-white/55">
+                                {t("auth_files.channel_name_hint")}
+                              </p>
+                            )}
+                          </div>
+                        ) : null}
+
+                        {prefixProxyEditor.json ? (
+                          <>
+                            <div className="grid gap-2">
+                              <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
+                                {t("auth_files.prefix_label")}
+                              </p>
+                              <TextInput
+                                value={prefixProxyEditor.prefix}
+                                onChange={(e) => {
+                                  const value = e.currentTarget.value;
+                                  setPrefixProxyEditor((prev) => ({ ...prev, prefix: value }));
+                                }}
+                                placeholder={t("auth_files.prefix_placeholder")}
+                              />
+                              <p className="text-xs text-slate-500 dark:text-white/55">
+                                {t("auth_files.leave_empty_prefix")}
+                              </p>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
+                                {t("auth_files.subscription_started_at_label")}
+                              </p>
+                              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                                <DateTimePicker
+                                  value={prefixProxyEditor.subscriptionStartedAt}
+                                  onChange={(value) => {
+                                    setPrefixProxyEditor((prev) => ({
+                                      ...prev,
+                                      subscriptionStartedAt: value,
+                                    }));
+                                  }}
+                                  aria-label={t("auth_files.subscription_started_at_label")}
+                                  locale={i18n.language}
+                                  labels={{
+                                    picker: t("auth_files.subscription_date_picker"),
+                                    open: t("auth_files.subscription_date_picker_open"),
+                                    previousMonth: t(
+                                      "auth_files.subscription_date_picker_previous_month",
+                                    ),
+                                    nextMonth: t("auth_files.subscription_date_picker_next_month"),
+                                    today: t("auth_files.subscription_date_picker_today"),
+                                    clear: t("auth_files.subscription_date_picker_clear"),
+                                    hour: t("auth_files.subscription_date_picker_hour"),
+                                    minute: t("auth_files.subscription_date_picker_minute"),
+                                  }}
+                                />
+                                <Select
+                                  value={prefixProxyEditor.subscriptionPeriod}
+                                  onChange={(value) =>
+                                    setPrefixProxyEditor((prev) => ({
+                                      ...prev,
+                                      subscriptionPeriod: value as AuthFileSubscriptionPeriod,
+                                    }))
+                                  }
+                                  options={[
+                                    {
+                                      value: "monthly",
+                                      label: t("auth_files.subscription_period_monthly"),
+                                    },
+                                    {
+                                      value: "yearly",
+                                      label: t("auth_files.subscription_period_yearly"),
+                                    },
+                                  ]}
+                                  aria-label={t("auth_files.subscription_period_label")}
+                                />
+                              </div>
+                              <p className="text-xs text-slate-500 dark:text-white/55">
+                                {t("auth_files.subscription_started_at_hint")}
+                              </p>
+                            </div>
+                          </>
+                        ) : null}
                       </div>
                     ) : null}
 
                     {prefixProxyEditor.json ? (
-                      <>
-                        <div className="grid gap-2">
-                          <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
-                            {t("auth_files.prefix_label")}
-                          </p>
-                          <TextInput
-                            value={prefixProxyEditor.prefix}
-                            onChange={(e) => {
-                              const value = e.currentTarget.value;
-                              setPrefixProxyEditor((prev) => ({ ...prev, prefix: value }));
-                            }}
-                            placeholder={t("auth_files.prefix_placeholder")}
-                          />
-                          <p className="text-xs text-slate-500 dark:text-white/55">
-                            {t("auth_files.leave_empty_prefix")}
-                          </p>
-                        </div>
-
+                      <div className="min-w-0 space-y-5">
                         <div className="grid gap-2">
                           <ProxyPoolSelect
                             value={prefixProxyEditor.proxyId}
@@ -805,66 +870,14 @@ export function AuthFileDetailModal({
                             {t("auth_files.leave_empty_proxy")}
                           </p>
                         </div>
-
-                        <div className="grid gap-2">
-                          <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
-                            {t("auth_files.subscription_started_at_label")}
-                          </p>
-                          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
-                            <DateTimePicker
-                              value={prefixProxyEditor.subscriptionStartedAt}
-                              onChange={(value) => {
-                                setPrefixProxyEditor((prev) => ({
-                                  ...prev,
-                                  subscriptionStartedAt: value,
-                                }));
-                              }}
-                              aria-label={t("auth_files.subscription_started_at_label")}
-                              locale={i18n.language}
-                              labels={{
-                                picker: t("auth_files.subscription_date_picker"),
-                                open: t("auth_files.subscription_date_picker_open"),
-                                previousMonth: t(
-                                  "auth_files.subscription_date_picker_previous_month",
-                                ),
-                                nextMonth: t("auth_files.subscription_date_picker_next_month"),
-                                today: t("auth_files.subscription_date_picker_today"),
-                                clear: t("auth_files.subscription_date_picker_clear"),
-                                hour: t("auth_files.subscription_date_picker_hour"),
-                                minute: t("auth_files.subscription_date_picker_minute"),
-                              }}
-                            />
-                            <Select
-                              value={prefixProxyEditor.subscriptionPeriod}
-                              onChange={(value) =>
-                                setPrefixProxyEditor((prev) => ({
-                                  ...prev,
-                                  subscriptionPeriod: value as AuthFileSubscriptionPeriod,
-                                }))
-                              }
-                              options={[
-                                {
-                                  value: "monthly",
-                                  label: t("auth_files.subscription_period_monthly"),
-                                },
-                                {
-                                  value: "yearly",
-                                  label: t("auth_files.subscription_period_yearly"),
-                                },
-                              ]}
-                              aria-label={t("auth_files.subscription_period_label")}
-                            />
-                          </div>
-                          <p className="text-xs text-slate-500 dark:text-white/55">
-                            {t("auth_files.subscription_started_at_hint")}
-                          </p>
-                        </div>
-                      </>
+                      </div>
                     ) : (
-                      <EmptyState
-                        title={t("auth_files_page.cannot_edit")}
-                        description={prefixProxyEditor.error || t("auth_files.unknown_error")}
-                      />
+                      <div className={canRenameChannel ? "min-w-0" : "min-w-0 lg:col-span-2"}>
+                        <EmptyState
+                          title={t("auth_files_page.cannot_edit")}
+                          description={prefixProxyEditor.error || t("auth_files.unknown_error")}
+                        />
+                      </div>
                     )}
                   </div>
                 )}

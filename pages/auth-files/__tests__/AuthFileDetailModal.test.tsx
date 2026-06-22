@@ -346,6 +346,8 @@ describe("AuthFileDetailModal", () => {
     expect(body.className).toContain("!overflow-hidden");
     expect(scroller.className).toContain("overflow-y-auto");
     expect(scroller).not.toContainElement(screen.getByRole("tablist"));
+    expect(grid.className).toContain("lg:grid-cols-2");
+    expect(grid.className).not.toContain("max-w-3xl");
     expect(grid.className).not.toMatch(/\bborder\b/);
     expect(grid.className).not.toContain("divide-y");
     expect(within(grid).getByPlaceholderText("e.g. team-a")).toHaveValue("team-a");
