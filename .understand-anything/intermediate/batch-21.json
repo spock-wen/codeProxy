@@ -1,0 +1,613 @@
+{
+  "nodes": [
+    {
+      "id": "file:pages/config/RuntimeConfigPanel.tsx",
+      "type": "file",
+      "name": "RuntimeConfigPanel.tsx",
+      "filePath": "pages/config/RuntimeConfigPanel.tsx",
+      "summary": "Runtime configuration panel component for managing proxy runtime settings including debug, logging, auto-update, proxy URL, routing strategy, and other live config toggles via the management API.",
+      "tags": ["ui-component", "configuration", "admin-panel"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/config/visual/__tests__/VisualConfigEditor.test.tsx",
+      "type": "file",
+      "name": "VisualConfigEditor.test.tsx",
+      "filePath": "pages/config/visual/__tests__/VisualConfigEditor.test.tsx",
+      "summary": "Test suite for VisualConfigEditor component covering auto-update toggle, source branch selection, custom Docker image repo, and YAML load/write round-trip.",
+      "tags": ["test", "vitest", "configuration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/config/visual/PayloadRuleEditors.tsx",
+      "type": "file",
+      "name": "PayloadRuleEditors.tsx",
+      "filePath": "pages/config/visual/PayloadRuleEditors.tsx",
+      "summary": "Editors for payload override rules and payload filter rules used in visual config. Provides dynamic form UI to manage model entries, params, and param value types.",
+      "tags": ["ui-component", "configuration", "payload-rules"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/config/visual/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "pages/config/visual/types.ts",
+      "summary": "Type definitions for visual config including PayloadRule, PayloadFilterRule, RoutingChannelGroupEntry, RoutingPathRouteEntry, VisualConfigValues, and helpers makeClientId and DEFAULT_VISUAL_VALUES.",
+      "tags": ["types", "configuration", "visual-config"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/config/visual/useVisualConfig.ts",
+      "type": "file",
+      "name": "useVisualConfig.ts",
+      "filePath": "pages/config/visual/useVisualConfig.ts",
+      "summary": "React hook for managing visual config state with YAML serialization/deserialization. Handles parsing of nested proxy config structure into flat form state and back, including API keys, routing, payload rules, and filters.",
+      "tags": ["hook", "configuration", "state-management", "yaml"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/config/visual/VisualConfigEditor.tsx",
+      "type": "file",
+      "name": "VisualConfigEditor.tsx",
+      "filePath": "pages/config/visual/VisualConfigEditor.tsx",
+      "summary": "Main visual configuration editor form component with sections for basic settings, TLS, remote management, auth, logging, auto-update, routing channel groups, path routes, payload rules, and payload filters.",
+      "tags": ["ui-component", "configuration", "visual-config-editor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/config/YamlCodeEditor.tsx",
+      "type": "file",
+      "name": "YamlCodeEditor.tsx",
+      "filePath": "pages/config/YamlCodeEditor.tsx",
+      "summary": "Custom YAML code editor component with syntax highlighting, comment-aware tokenizer, search with result navigation, and forwardRef-based imperative API for cursor/selection control.",
+      "tags": ["ui-component", "yaml", "editor", "syntax-highlighting"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/dashboard/__tests__/DashboardCards.test.ts",
+      "type": "file",
+      "name": "DashboardCards.test.ts",
+      "filePath": "pages/dashboard/__tests__/DashboardCards.test.ts",
+      "summary": "Snapshot-style tests verifying dashboard card composition by reading source files and checking expected imports, formatting functions, dark mode classes, and component structure.",
+      "tags": ["test", "vitest", "dashboard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/dashboard/DashboardPage.tsx",
+      "type": "file",
+      "name": "DashboardPage.tsx",
+      "filePath": "pages/dashboard/DashboardPage.tsx",
+      "summary": "Main dashboard page with KPI cards (total requests, tokens, active keys, cost), throughput trend chart, and system monitor section. Polls for dashboard summary and system stats with auto-refresh.",
+      "tags": ["ui-component", "dashboard", "page", "kpi", "charts"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/dashboard/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/dashboard/index.ts",
+      "summary": "Barrel export file re-exporting DashboardPage and dashboardRoute.",
+      "tags": ["barrel-export", "dashboard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/dashboard/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/dashboard/route.tsx",
+      "summary": "Route definition for /dashboard with auth required, dashboard layout, and nav label.",
+      "tags": ["route", "dashboard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/dashboard/SystemMonitorSection.tsx",
+      "type": "file",
+      "name": "SystemMonitorSection.tsx",
+      "filePath": "pages/dashboard/SystemMonitorSection.tsx",
+      "summary": "System monitoring UI section with health score ring, disk usage ring, CPU/memory gauges, network throughput rates, uptime, latency per channel, and active concurrency cards.",
+      "tags": ["ui-component", "monitoring", "system-stats", "health"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/dashboard/useSystemStats.ts",
+      "type": "file",
+      "name": "useSystemStats.ts",
+      "filePath": "pages/dashboard/useSystemStats.ts",
+      "summary": "React hook that connects to a WebSocket for live system stats with HTTP polling fallback. Provides SystemStats, ChannelLatency, and ConcurrencySnapshot types.",
+      "tags": ["hook", "websocket", "system-stats", "realtime"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/identity-fingerprint/__tests__/IdentityFingerprintPage.test.tsx",
+      "type": "file",
+      "name": "IdentityFingerprintPage.test.tsx",
+      "filePath": "pages/identity-fingerprint/__tests__/IdentityFingerprintPage.test.tsx",
+      "summary": "Tests for IdentityFingerprintPage covering provider tabs (Codex, Claude, Gemini, Kimi), YAML config integration, and form interactions.",
+      "tags": ["test", "vitest", "identity-fingerprint"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/identity-fingerprint/IdentityFingerprintPage.tsx",
+      "type": "file",
+      "name": "IdentityFingerprintPage.tsx",
+      "filePath": "pages/identity-fingerprint/IdentityFingerprintPage.tsx",
+      "summary": "Identity fingerprint configuration page with per-provider tabs (Codex, Claude, Gemini, Kimi). Supports editing user-agent, session mode, custom headers, and YAML config import/export.",
+      "tags": ["ui-component", "identity-fingerprint", "page", "provider-config"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/identity-fingerprint/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/identity-fingerprint/index.ts",
+      "summary": "Barrel export file re-exporting IdentityFingerprintPage and identityFingerprintRoute.",
+      "tags": ["barrel-export", "identity-fingerprint"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/identity-fingerprint/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/identity-fingerprint/route.tsx",
+      "summary": "Route definition for /identity-fingerprint with auth required, dashboard layout, and redirect from legacy path.",
+      "tags": ["route", "identity-fingerprint"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/image-generation/__tests__/ImageGenerationPage.test.tsx",
+      "type": "file",
+      "name": "ImageGenerationPage.test.tsx",
+      "filePath": "pages/image-generation/__tests__/ImageGenerationPage.test.tsx",
+      "summary": "Tests for ImageGenerationPage covering text-to-image, image-to-image, auth file selection, task polling, and UI state transitions.",
+      "tags": ["test", "vitest", "image-generation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/image-generation/components/ImageGenerationPageContent.tsx",
+      "type": "file",
+      "name": "ImageGenerationPageContent.tsx",
+      "filePath": "pages/image-generation/components/ImageGenerationPageContent.tsx",
+      "summary": "Image generation page content with text-to-image and image-to-image modes. Supports model selection, auth file binding, size/quality parameters, image upload, generation task polling, and API documentation with curl examples.",
+      "tags": ["ui-component", "image-generation", "page", "openai"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/image-generation/ImageGenerationPage.tsx",
+      "type": "file",
+      "name": "ImageGenerationPage.tsx",
+      "filePath": "pages/image-generation/ImageGenerationPage.tsx",
+      "summary": "Thin wrapper component that delegates rendering to ImageGenerationPageContent.",
+      "tags": ["ui-component", "image-generation", "wrapper"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/image-generation/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/image-generation/index.ts",
+      "summary": "Barrel export file re-exporting ImageGenerationPage and imageGenerationRoute.",
+      "tags": ["barrel-export", "image-generation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/image-generation/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/image-generation/route.tsx",
+      "summary": "Route definition for /image-generation with auth required and dashboard layout.",
+      "tags": ["route", "image-generation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/login/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/login/index.ts",
+      "summary": "Barrel export file re-exporting LoginPage and loginRoute.",
+      "tags": ["barrel-export", "login"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/login/LoginPage.tsx",
+      "type": "file",
+      "name": "LoginPage.tsx",
+      "filePath": "pages/login/LoginPage.tsx",
+      "summary": "Login page with API base URL, management key input with show/hide toggle, remember password, and redirect to dashboard on success. Handles auth restoring state and redirects authenticated users.",
+      "tags": ["ui-component", "login", "authentication", "page"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/login/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/login/route.tsx",
+      "summary": "Route definition for /login with no auth required and no layout wrapper.",
+      "tags": ["route", "login"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:RuntimeConfigPanel",
+      "type": "function",
+      "name": "RuntimeConfigPanel",
+      "filePath": "pages/config/RuntimeConfigPanel.tsx",
+      "summary": "React component providing the runtime configuration panel toggles and text inputs for proxy settings like debug, logging, auto-update, proxy URL, retry count, and routing strategy.",
+      "tags": ["ui-component", "configuration", "runtime"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:PayloadRulesEditor",
+      "type": "function",
+      "name": "PayloadRulesEditor",
+      "filePath": "pages/config/visual/PayloadRuleEditors.tsx",
+      "summary": "Editor component for managing a list of PayloadRule objects with dynamic add/remove for models and params.",
+      "tags": ["ui-component", "payload-rules", "editor"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:PayloadFilterRulesEditor",
+      "type": "function",
+      "name": "PayloadFilterRulesEditor",
+      "filePath": "pages/config/visual/PayloadRuleEditors.tsx",
+      "summary": "Editor component for managing a list of PayloadFilterRule objects.",
+      "tags": ["ui-component", "payload-filter", "editor"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useVisualConfig",
+      "type": "function",
+      "name": "useVisualConfig",
+      "filePath": "pages/config/visual/useVisualConfig.ts",
+      "summary": "React hook that manages visual config state, providing methods to load from YAML, serialize to YAML, and update individual fields. Handles all config sections including routing, payload rules, and API keys.",
+      "tags": ["hook", "configuration", "yaml", "state-management"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:VisualConfigEditor",
+      "type": "function",
+      "name": "VisualConfigEditor",
+      "filePath": "pages/config/visual/VisualConfigEditor.tsx",
+      "summary": "React component rendering the full visual configuration editor with sections for basics, TLS, remote management, auth, logging, auto-update, routing, and payload rules.",
+      "tags": ["ui-component", "configuration", "editor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:YamlCodeEditor",
+      "type": "function",
+      "name": "YamlCodeEditor",
+      "filePath": "pages/config/YamlCodeEditor.tsx",
+      "summary": "Forwarded-ref YAML code editor component with built-in syntax highlighting using custom tokenizer, search functionality, and cursor/selection management.",
+      "tags": ["ui-component", "yaml", "editor", "syntax-highlighting"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:DashboardPage",
+      "type": "function",
+      "name": "DashboardPage",
+      "filePath": "pages/dashboard/DashboardPage.tsx",
+      "summary": "Main dashboard page component rendering KPI cards, throughput trend chart, and system monitor section with auto-refresh polling.",
+      "tags": ["ui-component", "dashboard", "page"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:SystemMonitorSection",
+      "type": "function",
+      "name": "SystemMonitorSection",
+      "filePath": "pages/dashboard/SystemMonitorSection.tsx",
+      "summary": "React component displaying system health metrics including health score, disk usage, CPU/memory gauges, network throughput, latency, and concurrency.",
+      "tags": ["ui-component", "monitoring", "system-stats"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:useSystemStats",
+      "type": "function",
+      "name": "useSystemStats",
+      "filePath": "pages/dashboard/useSystemStats.ts",
+      "summary": "React hook connecting to WebSocket for real-time system stats with HTTP polling fallback. Returns stats, connection status, and error state.",
+      "tags": ["hook", "websocket", "system-stats"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:IdentityFingerprintPage",
+      "type": "function",
+      "name": "IdentityFingerprintPage",
+      "filePath": "pages/identity-fingerprint/IdentityFingerprintPage.tsx",
+      "summary": "React component for managing identity fingerprints across providers (Codex, Claude, Gemini, Kimi) with YAML integration.",
+      "tags": ["ui-component", "identity-fingerprint", "page"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ImageGenerationPage",
+      "type": "function",
+      "name": "ImageGenerationPage",
+      "filePath": "pages/image-generation/components/ImageGenerationPageContent.tsx",
+      "summary": "React component for OpenAI-compatible image generation testing with text-to-image and image-to-image modes, auth file selection, and task polling.",
+      "tags": ["ui-component", "image-generation", "page"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:LoginPage",
+      "type": "function",
+      "name": "LoginPage",
+      "filePath": "pages/login/LoginPage.tsx",
+      "summary": "React component providing the authentication login form with API base URL, management key, remember password, and redirect-to-dashboard flow.",
+      "tags": ["ui-component", "login", "authentication"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "type:VisualConfigValues",
+      "type": "class",
+      "name": "VisualConfigValues",
+      "filePath": "pages/config/visual/types.ts",
+      "summary": "Type defining all visual configuration value fields including host, port, TLS, remote management, auth, logging, auto-update, routing, and payload rules.",
+      "tags": ["types", "configuration", "visual-config"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "type:PayloadRule",
+      "type": "class",
+      "name": "PayloadRule",
+      "filePath": "pages/config/visual/types.ts",
+      "summary": "Type representing a payload override rule with model entries and parameter entries.",
+      "tags": ["types", "payload-rules"],
+      "complexity": "simple"
+    },
+    {
+      "id": "type:RoutingChannelGroupEntry",
+      "type": "class",
+      "name": "RoutingChannelGroupEntry",
+      "filePath": "pages/config/visual/types.ts",
+      "summary": "Type representing a routing channel group with strategy, match mode, channels, tags, allowed models, and system flag.",
+      "tags": ["types", "routing", "channel-groups"],
+      "complexity": "simple"
+    },
+    {
+      "id": "type:SystemStats",
+      "type": "class",
+      "name": "SystemStats",
+      "filePath": "pages/dashboard/useSystemStats.ts",
+      "summary": "Interface defining system statistics fields including CPU, memory, disk, network, uptime, concurrency, and latency data.",
+      "tags": ["types", "system-stats"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:pages/config/visual/VisualConfigEditor.tsx",
+      "target": "file:pages/config/visual/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports types"
+    },
+    {
+      "source": "file:pages/config/visual/VisualConfigEditor.tsx",
+      "target": "file:pages/config/visual/PayloadRuleEditors.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports PayloadRuleEditors"
+    },
+    {
+      "source": "file:pages/config/visual/PayloadRuleEditors.tsx",
+      "target": "file:pages/config/visual/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports types"
+    },
+    {
+      "source": "file:pages/config/visual/PayloadRuleEditors.tsx",
+      "target": "file:pages/config/visual/useVisualConfig.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports constants"
+    },
+    {
+      "source": "file:pages/config/visual/useVisualConfig.ts",
+      "target": "file:pages/config/visual/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports types"
+    },
+    {
+      "source": "file:pages/config/visual/__tests__/VisualConfigEditor.test.tsx",
+      "target": "file:pages/config/visual/VisualConfigEditor.tsx",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "tests"
+    },
+    {
+      "source": "file:pages/config/visual/__tests__/VisualConfigEditor.test.tsx",
+      "target": "file:pages/config/visual/useVisualConfig.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "tests"
+    },
+    {
+      "source": "file:pages/config/RuntimeConfigPanel.tsx",
+      "target": "file:pages/config/visual/types.ts",
+      "type": "imports",
+      "weight": 0.3,
+      "label": "uses config types"
+    },
+    {
+      "source": "file:pages/dashboard/DashboardPage.tsx",
+      "target": "file:pages/dashboard/SystemMonitorSection.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders SystemMonitorSection"
+    },
+    {
+      "source": "file:pages/dashboard/DashboardPage.tsx",
+      "target": "file:pages/dashboard/useSystemStats.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "uses useSystemStats"
+    },
+    {
+      "source": "file:pages/dashboard/SystemMonitorSection.tsx",
+      "target": "file:pages/dashboard/useSystemStats.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "depends on SystemStats types"
+    },
+    {
+      "source": "file:pages/dashboard/__tests__/DashboardCards.test.ts",
+      "target": "file:pages/dashboard/DashboardPage.tsx",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "tests"
+    },
+    {
+      "source": "file:pages/dashboard/__tests__/DashboardCards.test.ts",
+      "target": "file:pages/dashboard/SystemMonitorSection.tsx",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "tests"
+    },
+    {
+      "source": "file:pages/dashboard/index.ts",
+      "target": "file:pages/dashboard/DashboardPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:pages/dashboard/index.ts",
+      "target": "file:pages/dashboard/route.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:pages/identity-fingerprint/IdentityFingerprintPage.tsx",
+      "target": "file:pages/identity-fingerprint/__tests__/IdentityFingerprintPage.test.tsx",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "tested by"
+    },
+    {
+      "source": "file:pages/identity-fingerprint/index.ts",
+      "target": "file:pages/identity-fingerprint/IdentityFingerprintPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:pages/identity-fingerprint/index.ts",
+      "target": "file:pages/identity-fingerprint/route.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:pages/image-generation/components/ImageGenerationPageContent.tsx",
+      "target": "file:pages/image-generation/__tests__/ImageGenerationPage.test.tsx",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "tested by"
+    },
+    {
+      "source": "file:pages/image-generation/ImageGenerationPage.tsx",
+      "target": "file:pages/image-generation/components/ImageGenerationPageContent.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "delegates to"
+    },
+    {
+      "source": "file:pages/image-generation/index.ts",
+      "target": "file:pages/image-generation/ImageGenerationPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:pages/image-generation/index.ts",
+      "target": "file:pages/image-generation/route.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:pages/login/index.ts",
+      "target": "file:pages/login/LoginPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:pages/login/index.ts",
+      "target": "file:pages/login/route.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:pages/login/route.tsx",
+      "target": "file:pages/login/LoginPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "lazy loads"
+    },
+    {
+      "source": "file:pages/dashboard/route.tsx",
+      "target": "file:pages/dashboard/DashboardPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "lazy loads"
+    },
+    {
+      "source": "file:pages/identity-fingerprint/route.tsx",
+      "target": "file:pages/identity-fingerprint/IdentityFingerprintPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "lazy loads"
+    },
+    {
+      "source": "file:pages/image-generation/route.tsx",
+      "target": "file:pages/image-generation/ImageGenerationPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "lazy loads"
+    },
+    {
+      "source": "file:pages/config/visual/VisualConfigEditor.tsx",
+      "target": "file:pages/config/visual/useVisualConfig.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports config values"
+    },
+    {
+      "source": "file:pages/dashboard/useSystemStats.ts",
+      "target": "file:pages/dashboard/DashboardPage.tsx",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "used by"
+    },
+    {
+      "source": "file:pages/dashboard/useSystemStats.ts",
+      "target": "file:pages/dashboard/SystemMonitorSection.tsx",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "used by"
+    },
+    {
+      "source": "file:pages/dashboard/DashboardPage.tsx",
+      "target": "file:pages/dashboard/__tests__/DashboardCards.test.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "test target"
+    },
+    {
+      "source": "file:pages/identity-fingerprint/__tests__/IdentityFingerprintPage.test.tsx",
+      "target": "file:pages/identity-fingerprint/IdentityFingerprintPage.tsx",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "tests"
+    },
+    {
+      "source": "file:pages/image-generation/__tests__/ImageGenerationPage.test.tsx",
+      "target": "file:pages/image-generation/ImageGenerationPage.tsx",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "tests"
+    }
+  ]
+}

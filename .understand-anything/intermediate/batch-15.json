@@ -1,0 +1,685 @@
+{
+  "nodes": [
+    {
+      "id": "file:packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "type": "file",
+      "name": "ccswitchImportConfigList.ts",
+      "filePath": "packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "summary": "Manages CcSwitch import configuration list items. Defines CcSwitchImportConfigListItem and CcSwitchModelMapping interfaces, provides functions to create, normalize, derive settings from, and manage route paths for CcSwitch import configs across client types (claude, codex, gemini).",
+      "tags": ["ccswitch", "import", "config-list", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/ccswitch/ccswitchImportLinks.ts",
+      "type": "file",
+      "name": "ccswitchImportLinks.ts",
+      "filePath": "packages/domain/src/ccswitch/ccswitchImportLinks.ts",
+      "summary": "Builds CcSwitch import URLs and settings by combining config list items with import settings. Functions include appending route paths, building settings for a specific config, and generating import URLs for config items.",
+      "tags": ["ccswitch", "import", "url-building", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "type": "file",
+      "name": "ccswitchImportSettings.ts",
+      "filePath": "packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "summary": "Defines CcSwitch import settings types (CcSwitchClaudeAuthField, CcSwitchClientImportSettings, CcSwitchImportSettings), default settings for claude/codex/gemini clients, and normalization functions for endpoint paths, auth fields, auto-intervals, and the full settings object.",
+      "tags": ["ccswitch", "import", "settings", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/domain/src/index.ts",
+      "summary": "Barrel export file that re-exports all public symbols from ccswitch (import, configList, compatibility, links, settings), auth-files (authFiles, types), quota, and usage modules, plus specifically re-exports isRuntimeOnlyAuthFile and normalizeAuthIndexValue.",
+      "tags": ["barrel", "exports", "domain"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/models/helpers.ts",
+      "type": "file",
+      "name": "helpers.ts",
+      "filePath": "packages/domain/src/models/helpers.ts",
+      "summary": "Model helper utilities: normalizes provider keys (lowercase/trim), matches model IDs against glob-like patterns, resolves file types from AuthFileItem (codex/kimi/other), and manages AuthFilesModelOwnerGroupMap via localStorage.",
+      "tags": ["models", "helpers", "localStorage", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/providers/providerUsage.ts",
+      "type": "file",
+      "name": "providerUsage.ts",
+      "filePath": "packages/domain/src/providers/providerUsage.ts",
+      "summary": "Provider usage tracking utilities: detects raw API keys/tokens in text via regex, computes FNV-1a 64-bit hex fingerprints for keys, normalizes usage source IDs (key/masked/text prefixes), builds candidate source IDs, calculates status bar data (20 blocks over 200 min window), and merges key stat buckets.",
+      "tags": ["providers", "usage", "fingerprinting", "status-bar", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/quota/builders.ts",
+      "type": "file",
+      "name": "builders.ts",
+      "filePath": "packages/domain/src/quota/builders.ts",
+      "summary": "Builder functions for constructing quota data structures: pickEarlierResetTime, minNullableNumber, Gemini CLI quota bucket grouping with model deduplication and ordering, antigravity quota info extraction, model lookup by ID/name, and antigravity quota group building.",
+      "tags": ["quota", "builders", "gemini-cli", "antigravity", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/quota/constants.ts",
+      "type": "file",
+      "name": "constants.ts",
+      "filePath": "packages/domain/src/quota/constants.ts",
+      "summary": "Quota constants including type color themes for providers (qwen, gemini, claude, codex, antigravity, kiro, iflow, etc.), API URLs and request headers for Antigravity, Gemini CLI, Claude, Codex, and Kiro (AWS CodeWhisperer), plus Gemini CLI model group definitions and lookup maps.",
+      "tags": ["quota", "constants", "api-urls", "headers", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/quota/formatters.ts",
+      "type": "file",
+      "name": "formatters.ts",
+      "filePath": "packages/domain/src/quota/formatters.ts",
+      "summary": "Formatting functions for quota display: formatQuotaResetTime (date locale string), formatUnixSeconds, formatCodexResetLabel (from window data), createStatusError (error with optional status), and getStatusFromError extraction.",
+      "tags": ["quota", "formatters", "display", "domain"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/quota/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/domain/src/quota/index.ts",
+      "summary": "Barrel export file re-exporting all quota submodules: constants, parsers, formatters, builders, resolvers, and validators.",
+      "tags": ["barrel", "exports", "quota", "domain"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/quota/parsers.ts",
+      "type": "file",
+      "name": "parsers.ts",
+      "filePath": "packages/domain/src/quota/parsers.ts",
+      "summary": "Normalization and parsing functions for quota payloads: normalizes auth index, string, number, Gemini CLI model IDs, quota fractions, and plan types. Decodes base64 URL payloads, parses JWT ID tokens, and parses quota payloads for Antigravity, Claude, Codex, Gemini CLI, Kiro, and Kiro error responses.",
+      "tags": ["quota", "parsers", "normalization", "jwt", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/quota/resolvers.ts",
+      "type": "file",
+      "name": "resolvers.ts",
+      "filePath": "packages/domain/src/quota/resolvers.ts",
+      "summary": "Resolver functions that extract data from AuthFileItem objects: Codex ChatGPT account ID (from direct fields, metadata, attributes, or JWT id_token), Codex plan type, and Gemini CLI project ID (from account field with parenthetical extraction).",
+      "tags": ["quota", "resolvers", "auth-files", "codex", "gemini-cli", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/quota/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "packages/domain/src/quota/types.ts",
+      "summary": "Type definitions for the quota system: theme colors, quota status/items/state, Gemini CLI bucket/group/payload types, Antigravity quota info and group, Codex usage window/rate limit/payload types, Claude usage window/extra usage/payload types, and Kiro subscription/trial/breakdown/payload types.",
+      "tags": ["quota", "types", "definitions", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/quota/validators.ts",
+      "type": "file",
+      "name": "validators.ts",
+      "filePath": "packages/domain/src/quota/validators.ts",
+      "summary": "Validation and type-checking functions: resolves auth provider from AuthFileItem, checks if a file is Antigravity, Claude, Claude OAuth, Codex, Gemini CLI, Kiro, runtime-only, or disabled, and checks if a Gemini CLI model should be ignored based on prefix.",
+      "tags": ["quota", "validators", "auth-files", "domain"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/usage/chartConfig.ts",
+      "type": "file",
+      "name": "chartConfig.ts",
+      "filePath": "packages/domain/src/usage/chartConfig.ts",
+      "summary": "Chart.js configuration utilities: sparkline options (responsive, no tooltips/legend), buildChartOptions with theme (dark/light) and mobile awareness for axis ticks, colors, tooltips, and getHourChartMinWidth for responsive hourly charts.",
+      "tags": ["usage", "chart-config", "chart.js", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/usage/charts.ts",
+      "type": "file",
+      "name": "charts.ts",
+      "filePath": "packages/domain/src/usage/charts.ts",
+      "summary": "Chart data building functions: hex-to-RGB conversion, gradient generation, buildHourlySeriesByModel (hourly request/token counts per model), buildDailySeriesByModel (daily aggregation), and buildChartData (combines series into Chart.js ready datasets with color assignments).",
+      "tags": ["usage", "charts", "chart-data", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/usage/details.ts",
+      "type": "file",
+      "name": "details.ts",
+      "filePath": "packages/domain/src/usage/details.ts",
+      "summary": "Usage detail processing: filterUsageByTimeRange (filters by time window across API/model hierarchy), collectUsageDetails (flattens nested usage into UsageDetail array), extractTotalTokens (sums all token types), calculateTokenBreakdown (cached+reasoning), calculateRecentPerMinuteRates (RPM/TPM), getModelNamesFromUsage.",
+      "tags": ["usage", "details", "filtering", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/usage/formatters.ts",
+      "type": "file",
+      "name": "formatters.ts",
+      "filePath": "packages/domain/src/usage/formatters.ts",
+      "summary": "Number and date formatting utilities: formatPerMinuteValue (adaptive precision), formatCompactNumber (K/M suffixes), formatUsd, formatHourLabel (MM-DD HH:00), formatDayLabel (YYYY-MM-DD).",
+      "tags": ["usage", "formatters", "domain"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/usage/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/domain/src/usage/index.ts",
+      "summary": "Barrel export file re-exporting all usage submodules (chartConfig, charts, details, formatters, pricing, sanitize, shared, status) and maskApiKey.",
+      "tags": ["barrel", "exports", "usage", "domain"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/usage/maskApiKey.ts",
+      "type": "file",
+      "name": "maskApiKey.ts",
+      "filePath": "packages/domain/src/usage/maskApiKey.ts",
+      "summary": "Simple API key masking utility: shows first 2 and last 2 characters of a key with asterisks in between (minimum 10 asterisks, configurable).",
+      "tags": ["usage", "masking", "security", "domain"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/usage/pricing.ts",
+      "type": "file",
+      "name": "pricing.ts",
+      "filePath": "packages/domain/src/usage/pricing.ts",
+      "summary": "Cost calculation system: calculateCost (per-model token-based or per-call pricing), calculateTotalCost, loadModelPrices/saveModelPrices (localStorage), getApiStats (per-endpoint statistics with cost), getModelStats (per-model aggregated statistics).",
+      "tags": ["usage", "pricing", "cost", "domain"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/src/usage/sanitize.ts",
+      "type": "file",
+      "name": "sanitize.ts",
+      "filePath": "packages/domain/src/usage/sanitize.ts",
+      "summary": "Usage data sanitization: detects raw API keys/secrets via multiple regex patterns (key-like tokens, query params, headers, Bearer tokens), computes FNV-1a 64-bit key fingerprints, normalizes usage source IDs with prefixes (k:/m:/t:), builds candidate source IDs, and masks sensitive values in strings.",
+      "tags": ["usage", "sanitize", "security", "fingerprinting", "domain"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/domain/src/usage/shared.ts",
+      "type": "file",
+      "name": "shared.ts",
+      "filePath": "packages/domain/src/usage/shared.ts",
+      "summary": "Shared types and constants for usage system: KeyStatBucket, KeyStats, TokenBreakdown, RateStats, ModelPrice, UsageDetail, ApiStats, UsageTimeRange. Constants for tokens-per-price-unit, model price storage key, time range durations. Utility functions isRecord and getApisRecord.",
+      "tags": ["usage", "shared", "types", "constants", "domain"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/usage/status.ts",
+      "type": "file",
+      "name": "status.ts",
+      "filePath": "packages/domain/src/usage/status.ts",
+      "summary": "Status bar and service health computation: calculateStatusBarData (20 blocks over 200 min with optional filters), calculateServiceHealthData (7x96 grid over 7 days), computeKeyStats (success/failure by source and auth index), token breakdown series (hourly/daily), cost series (hourly/daily).",
+      "tags": ["usage", "status", "health", "domain"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/i18n/package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "packages/i18n/package.json",
+      "summary": "Package configuration for @code-proxy/i18n. Private package with i18next and react-i18next dependencies.",
+      "tags": ["config", "i18n", "package"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:CcSwitchImportConfigListItem",
+      "type": "class",
+      "name": "CcSwitchImportConfigListItem",
+      "filePath": "packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "summary": "Interface defining a CcSwitch import configuration list item with clientType, providerName, note, defaultModel, modelMappings, allowedChannelGroups, routePath, endpointPath, usageAutoInterval, and apiKeyField.",
+      "tags": ["interface", "ccswitch", "config-list"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:CcSwitchModelMapping",
+      "type": "class",
+      "name": "CcSwitchModelMapping",
+      "filePath": "packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "summary": "Interface mapping a request model to a target model with optional Claude role (main/haiku/sonnet/opus).",
+      "tags": ["interface", "ccswitch", "model-mapping"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:CcSwitchClientImportSettings",
+      "type": "class",
+      "name": "CcSwitchClientImportSettings",
+      "filePath": "packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "summary": "Interface defining per-client settings: endpointPath, defaultModel, usageAutoInterval, and optional apiKeyField for Claude.",
+      "tags": ["interface", "ccswitch", "settings"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:CcSwitchImportSettings",
+      "type": "class",
+      "name": "CcSwitchImportSettings",
+      "filePath": "packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "summary": "Record type mapping CcSwitchClientType to CcSwitchClientImportSettings for claude/codex/gemini clients.",
+      "tags": ["type", "ccswitch", "settings"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:StatusBarData",
+      "type": "class",
+      "name": "StatusBarData",
+      "filePath": "packages/domain/src/providers/providerUsage.ts",
+      "summary": "Type representing status bar visualization data with blocks (20 states), successRate, totalSuccess, and totalFailure.",
+      "tags": ["type", "status-bar", "provider-usage"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:KeyStatBucket",
+      "type": "class",
+      "name": "KeyStatBucket",
+      "filePath": "packages/domain/src/usage/shared.ts",
+      "summary": "Simple interface with success and failure counter fields.",
+      "tags": ["interface", "usage", "stats"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:UsageDetail",
+      "type": "class",
+      "name": "UsageDetail",
+      "filePath": "packages/domain/src/usage/shared.ts",
+      "summary": "Interface representing a single usage detail record with timestamp, source, auth_index, token breakdown (input/output/reasoning/cached), failed flag, and optional __modelName.",
+      "tags": ["interface", "usage", "detail"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:ModelPrice",
+      "type": "class",
+      "name": "ModelPrice",
+      "filePath": "packages/domain/src/usage/shared.ts",
+      "summary": "Interface for model pricing with mode (token/call), prompt, completion, cache, and perCall rates.",
+      "tags": ["interface", "pricing", "usage"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:QuotaItem",
+      "type": "class",
+      "name": "QuotaItem",
+      "filePath": "packages/domain/src/quota/types.ts",
+      "summary": "Interface for a single quota display item with label, percent, value, resetAtMs, windowSeconds, meta, and type.",
+      "tags": ["interface", "quota", "display"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:QuotaState",
+      "type": "class",
+      "name": "QuotaState",
+      "filePath": "packages/domain/src/quota/types.ts",
+      "summary": "Interface for the overall quota state including status, items list, planType, error, updatedAt, fetchedAt, and source.",
+      "tags": ["interface", "quota", "state"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports normalizeCcSwitchEndpointPath, normalizeCcSwitchClaudeAuthField, normalizeCcSwitchImportSettings, DEFAULT_CC_SWITCH_IMPORT_SETTINGS, CcSwitchClaudeAuthField"
+    },
+    {
+      "source": "file:packages/domain/src/ccswitch/ccswitchImportLinks.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports deriveCcSwitchImportSettingsFromConfigList, CcSwitchImportConfigListItem"
+    },
+    {
+      "source": "file:packages/domain/src/ccswitch/ccswitchImportLinks.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizeCcSwitchClaudeAuthField, normalizeCcSwitchImportSettings, CcSwitchImportSettingsInput"
+    },
+    {
+      "source": "file:packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImport.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports CcSwitchClientType"
+    },
+    {
+      "source": "file:packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImport.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports getCcSwitchClientConfig, CcSwitchClaudeModelRole, CcSwitchClientType"
+    },
+    {
+      "source": "file:packages/domain/src/ccswitch/ccswitchImportLinks.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImport.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports buildCcSwitchImportUrl, CcSwitchClientType"
+    },
+    {
+      "source": "file:packages/domain/src/index.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports everything"
+    },
+    {
+      "source": "file:packages/domain/src/index.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportLinks.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports everything"
+    },
+    {
+      "source": "file:packages/domain/src/index.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports everything"
+    },
+    {
+      "source": "file:packages/domain/src/index.ts",
+      "target": "file:packages/domain/src/quota/index.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports quota module"
+    },
+    {
+      "source": "file:packages/domain/src/index.ts",
+      "target": "file:packages/domain/src/usage/index.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports usage module"
+    },
+    {
+      "source": "file:packages/domain/src/quota/index.ts",
+      "target": "file:packages/domain/src/quota/constants.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/quota/index.ts",
+      "target": "file:packages/domain/src/quota/parsers.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/quota/index.ts",
+      "target": "file:packages/domain/src/quota/formatters.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/quota/index.ts",
+      "target": "file:packages/domain/src/quota/builders.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/quota/index.ts",
+      "target": "file:packages/domain/src/quota/resolvers.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/quota/index.ts",
+      "target": "file:packages/domain/src/quota/validators.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/usage/index.ts",
+      "target": "file:packages/domain/src/usage/chartConfig.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/usage/index.ts",
+      "target": "file:packages/domain/src/usage/charts.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/usage/index.ts",
+      "target": "file:packages/domain/src/usage/details.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/usage/index.ts",
+      "target": "file:packages/domain/src/usage/formatters.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/usage/index.ts",
+      "target": "file:packages/domain/src/usage/pricing.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/usage/index.ts",
+      "target": "file:packages/domain/src/usage/sanitize.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/usage/index.ts",
+      "target": "file:packages/domain/src/usage/shared.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/usage/index.ts",
+      "target": "file:packages/domain/src/usage/status.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/domain/src/usage/index.ts",
+      "target": "file:packages/domain/src/usage/maskApiKey.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "re-exports maskApiKey"
+    },
+    {
+      "source": "file:packages/domain/src/quota/builders.ts",
+      "target": "file:packages/domain/src/quota/types.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports AntigravityQuotaGroup, AntigravityQuotaInfo, AntigravityModelsPayload, GeminiCliParsedBucket, GeminiCliQuotaBucketState"
+    },
+    {
+      "source": "file:packages/domain/src/quota/builders.ts",
+      "target": "file:packages/domain/src/quota/constants.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports GEMINI_CLI_GROUP_LOOKUP, GEMINI_CLI_GROUP_ORDER"
+    },
+    {
+      "source": "file:packages/domain/src/quota/builders.ts",
+      "target": "file:packages/domain/src/quota/parsers.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports normalizeQuotaFraction"
+    },
+    {
+      "source": "file:packages/domain/src/quota/builders.ts",
+      "target": "file:packages/domain/src/quota/validators.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports isIgnoredGeminiCliModel"
+    },
+    {
+      "source": "file:packages/domain/src/quota/resolvers.ts",
+      "target": "file:packages/domain/src/quota/parsers.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizeStringValue, normalizePlanType, parseIdTokenPayload"
+    },
+    {
+      "source": "file:packages/domain/src/quota/resolvers.ts",
+      "target": "file:packages/domain/src/auth-files/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports AuthFileItem"
+    },
+    {
+      "source": "file:packages/domain/src/quota/validators.ts",
+      "target": "file:packages/domain/src/quota/constants.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports GEMINI_CLI_IGNORED_MODEL_PREFIXES"
+    },
+    {
+      "source": "file:packages/domain/src/quota/validators.ts",
+      "target": "file:packages/domain/src/auth-files/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports AuthFileItem"
+    },
+    {
+      "source": "file:packages/domain/src/quota/formatters.ts",
+      "target": "file:packages/domain/src/quota/parsers.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports normalizeNumberValue"
+    },
+    {
+      "source": "file:packages/domain/src/quota/formatters.ts",
+      "target": "file:packages/domain/src/quota/types.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports CodexUsageWindow"
+    },
+    {
+      "source": "file:packages/domain/src/models/helpers.ts",
+      "target": "file:packages/domain/src/auth-files/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports AuthFileItem"
+    },
+    {
+      "source": "file:packages/domain/src/usage/charts.ts",
+      "target": "file:packages/domain/src/usage/details.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports collectUsageDetails, extractTotalTokens"
+    },
+    {
+      "source": "file:packages/domain/src/usage/charts.ts",
+      "target": "file:packages/domain/src/usage/formatters.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports formatDayLabel, formatHourLabel"
+    },
+    {
+      "source": "file:packages/domain/src/usage/details.ts",
+      "target": "file:packages/domain/src/usage/shared.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports getApisRecord, isRecord, USAGE_TIME_RANGE_MS, RateStats, TokenBreakdown, UsageDetail, UsageTimeRange"
+    },
+    {
+      "source": "file:packages/domain/src/usage/details.ts",
+      "target": "file:packages/domain/src/usage/sanitize.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports normalizeUsageSourceId"
+    },
+    {
+      "source": "file:packages/domain/src/usage/pricing.ts",
+      "target": "file:packages/domain/src/usage/shared.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports getApisRecord, isRecord, MODEL_PRICE_STORAGE_KEY, TOKENS_PER_PRICE_UNIT, ApiStats, ModelPrice, UsageDetail"
+    },
+    {
+      "source": "file:packages/domain/src/usage/pricing.ts",
+      "target": "file:packages/domain/src/usage/details.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports collectUsageDetails"
+    },
+    {
+      "source": "file:packages/domain/src/usage/pricing.ts",
+      "target": "file:packages/domain/src/usage/sanitize.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports maskUsageSensitiveValue"
+    },
+    {
+      "source": "file:packages/domain/src/usage/status.ts",
+      "target": "file:packages/domain/src/usage/shared.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports getApisRecord, isRecord, normalizeAuthIndex, KeyStatBucket, KeyStats, ModelPrice, UsageDetail"
+    },
+    {
+      "source": "file:packages/domain/src/usage/status.ts",
+      "target": "file:packages/domain/src/usage/details.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports collectUsageDetails"
+    },
+    {
+      "source": "file:packages/domain/src/usage/status.ts",
+      "target": "file:packages/domain/src/usage/pricing.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports calculateCost"
+    },
+    {
+      "source": "file:packages/domain/src/usage/status.ts",
+      "target": "file:packages/domain/src/usage/formatters.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports formatDayLabel, formatHourLabel"
+    },
+    {
+      "source": "file:packages/domain/src/usage/status.ts",
+      "target": "file:packages/domain/src/usage/sanitize.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports normalizeUsageSourceId"
+    },
+    {
+      "source": "file:packages/domain/src/usage/status.ts",
+      "target": "file:packages/domain/src/usage/maskApiKey.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports maskApiKey"
+    },
+    {
+      "source": "file:packages/domain/src/usage/sanitize.ts",
+      "target": "file:packages/domain/src/usage/maskApiKey.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports maskApiKey"
+    },
+    {
+      "source": "file:packages/domain/src/providers/providerUsage.ts",
+      "target": "file:packages/domain/src/usage/maskApiKey.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "uses similar key fingerprinting and masking logic"
+    }
+  ]
+}

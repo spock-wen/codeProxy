@@ -1,0 +1,721 @@
+{
+  "nodes": [
+    {
+      "id": "file:.helloagents/plan/2026-05-28-resizable-table-columns/tasks.md",
+      "type": "document",
+      "name": "Resizable Table Columns Task Plan",
+      "filePath": ".helloagents/plan/2026-05-28-resizable-table-columns/tasks.md",
+      "summary": "Task tracking markdown for implementing resizable table columns with column width drag, visual hints, localStorage caching, and tests",
+      "tags": ["docs", "plan", "table-columns"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.verify.mjs",
+      "type": "file",
+      "name": "Playwright Verify Script",
+      "filePath": ".verify.mjs",
+      "summary": "Playwright script that takes desktop and mobile screenshots of the management UI to verify page load",
+      "tags": ["script", "e2e", "playwright"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.vite.proxy.mjs",
+      "type": "file",
+      "name": "Vite Dev Proxy Config",
+      "filePath": ".vite.proxy.mjs",
+      "summary": "Vite dev server configuration proxying API paths (v0, v1, v1beta, /api) to http://127.0.0.1:8317",
+      "tags": ["config", "vite", "proxy", "dev-server"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/App.css",
+      "type": "config",
+      "name": "Root App Styles",
+      "filePath": "apps/admin-panel/src/App.css",
+      "summary": "Root CSS with Vite app container styles, logo animation, and card styling",
+      "tags": ["css", "vite", "styles"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/AppRouter.test.ts",
+      "type": "file",
+      "name": "AppRouter Test",
+      "filePath": "apps/admin-panel/src/app/AppRouter.test.ts",
+      "summary": "Tests verifying AppRouter keeps management routes relative to /manage basename and checks route redirects",
+      "tags": ["test", "router"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:AppRouter",
+      "type": "function",
+      "name": "AppRouter",
+      "filePath": "apps/admin-panel/src/app/AppRouter.tsx",
+      "summary": "Main application router component defining public routes, auth-protected dashboard routes, login redirects, and wildcard routes",
+      "tags": ["router", "react", "auth"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/AppRouter.tsx",
+      "type": "file",
+      "name": "AppRouter",
+      "filePath": "apps/admin-panel/src/app/AppRouter.tsx",
+      "summary": "Main application router component with public routes, auth-protected dashboard layout, login redirects, and wildcard route handling",
+      "tags": ["router", "react", "auth", "routes"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:dismissAppLoader",
+      "type": "function",
+      "name": "dismissAppLoader",
+      "filePath": "apps/admin-panel/src/app/bootstrap/dismissAppLoader.ts",
+      "summary": "Removes the app loader element with a fade-out transition",
+      "tags": ["bootstrap", "loader"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/bootstrap/dismissAppLoader.ts",
+      "type": "file",
+      "name": "Dismiss App Loader",
+      "filePath": "apps/admin-panel/src/app/bootstrap/dismissAppLoader.ts",
+      "summary": "Bootstrap utility that fades out and removes the app loader DOM element",
+      "tags": ["bootstrap", "loader"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProtectedRoute",
+      "type": "function",
+      "name": "ProtectedRoute",
+      "filePath": "apps/admin-panel/src/app/guards/ProtectedRoute.tsx",
+      "summary": "Auth guard that shows a loading spinner during session restore, redirects to /login if unauthenticated, or renders child routes via Outlet",
+      "tags": ["auth", "route-guard", "react"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/guards/ProtectedRoute.tsx",
+      "type": "file",
+      "name": "ProtectedRoute",
+      "filePath": "apps/admin-panel/src/app/guards/ProtectedRoute.tsx",
+      "summary": "Auth guard wrapper that shows a loading spinner during restore, redirects to /login if unauthenticated, or renders children",
+      "tags": ["auth", "route-guard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:AppShell",
+      "type": "function",
+      "name": "AppShell",
+      "filePath": "apps/admin-panel/src/app/layout/AppShell.tsx",
+      "summary": "Main application shell with responsive sidebar navigation (mobile/desktop), header with language/theme toggles, and content area",
+      "tags": ["layout", "shell", "sidebar", "navigation"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ShellContext",
+      "type": "function",
+      "name": "ShellContext",
+      "filePath": "apps/admin-panel/src/app/layout/AppShell.tsx",
+      "summary": "React context providing shell state (title key) and actions (logout) to descendants",
+      "tags": ["context", "shell"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/layout/AppShell.tsx",
+      "type": "file",
+      "name": "AppShell Layout",
+      "filePath": "apps/admin-panel/src/app/layout/AppShell.tsx",
+      "summary": "Main layout shell with responsive sidebar (17 nav items), header, mobile overlay, skip-to-content link, and persistent sidebar collapse state in localStorage",
+      "tags": ["layout", "shell", "sidebar", "navigation", "responsive"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:DashboardLayout",
+      "type": "function",
+      "name": "DashboardLayout",
+      "filePath": "apps/admin-panel/src/app/layout/DashboardLayout.tsx",
+      "summary": "Dashboard layout wrapping AppShell with lazy loading, Reveal animation on route change, and logout integration",
+      "tags": ["layout", "dashboard", "react"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/layout/DashboardLayout.tsx",
+      "type": "file",
+      "name": "DashboardLayout",
+      "filePath": "apps/admin-panel/src/app/layout/DashboardLayout.tsx",
+      "summary": "Dashboard page layout with lazy-loaded AppShell, Reveal transition on navigation change, and AuthProvider logout integration",
+      "tags": ["layout", "dashboard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:AuthProvider",
+      "type": "function",
+      "name": "AuthProvider",
+      "filePath": "apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "summary": "Authentication context provider managing login, logout, session restore from localStorage, and server version tracking",
+      "tags": ["auth", "context", "provider"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useAuth",
+      "type": "function",
+      "name": "useAuth",
+      "filePath": "apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "summary": "Hook to access AuthContext, throws if used outside AuthProvider",
+      "tags": ["auth", "hook"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useOptionalAuth",
+      "type": "function",
+      "name": "useOptionalAuth",
+      "filePath": "apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "summary": "Hook to access AuthContext returning null instead of throwing when outside provider",
+      "tags": ["auth", "hook"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "type": "file",
+      "name": "AuthProvider",
+      "filePath": "apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "summary": "Authentication context with login/logout/restore, localStorage persistence (30-day TTL), server version events, and unauthorized event listener",
+      "tags": ["auth", "context", "provider", "persistence"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:AutoUpdatePrompt",
+      "type": "function",
+      "name": "AutoUpdatePrompt",
+      "filePath": "apps/admin-panel/src/app/update/AutoUpdatePrompt.tsx",
+      "summary": "Auto-update prompt component that checks for updates on mount and shows a toast notification with update details modal",
+      "tags": ["update", "auto-update", "toast"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/update/AutoUpdatePrompt.tsx",
+      "type": "file",
+      "name": "AutoUpdatePrompt",
+      "filePath": "apps/admin-panel/src/app/update/AutoUpdatePrompt.tsx",
+      "summary": "Auto-update component that checks for updates after initial delay, shows a toast with confirm action, and opens UpdateDetailsModal for applying updates",
+      "tags": ["update", "toast", "auto-update"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:UpdateDetailsCard",
+      "type": "function",
+      "name": "UpdateDetailsCard",
+      "filePath": "apps/admin-panel/src/app/update/UpdateDetailsCard.tsx",
+      "summary": "System page card for manual update check with check button, status display, and update details modal integration",
+      "tags": ["update", "system-page", "card"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/update/UpdateDetailsCard.tsx",
+      "type": "file",
+      "name": "UpdateDetailsCard",
+      "filePath": "apps/admin-panel/src/app/update/UpdateDetailsCard.tsx",
+      "summary": "System page component with manual check update button, status display (disabled/no-update/idle), and update details modal",
+      "tags": ["update", "system-page"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:UpdateDetailsModal",
+      "type": "function",
+      "name": "UpdateDetailsModal",
+      "filePath": "apps/admin-panel/src/app/update/UpdateDetailsModal.tsx",
+      "summary": "Full-featured update details modal showing version info, release notes (with markdown), progress console with animated progress bar and live log streaming",
+      "tags": ["update", "modal", "progress", "release-notes"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/update/UpdateDetailsModal.tsx",
+      "type": "file",
+      "name": "UpdateDetailsModal",
+      "filePath": "apps/admin-panel/src/app/update/UpdateDetailsModal.tsx",
+      "summary": "Update details modal with version comparison cards, release notes markdown rendering, animated progress console with log streaming, and stage-based progress bar",
+      "tags": ["update", "modal", "ui", "progress"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/update/updateShared.ts",
+      "type": "file",
+      "name": "Update Shared Utilities",
+      "filePath": "apps/admin-panel/src/app/update/updateShared.ts",
+      "summary": "Shared update utilities including version/comparison helpers, progress state management, heartbeat-based polling, and the applyUpdateFlow orchestrator",
+      "tags": ["update", "shared", "utilities"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:applyUpdateFlow",
+      "type": "function",
+      "name": "applyUpdateFlow",
+      "filePath": "apps/admin-panel/src/app/update/updateShared.ts",
+      "summary": "Orchestrates the update apply flow: calls apply API, polls progress with heartbeat/timeout, and reports completion or failure",
+      "tags": ["update", "flow"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:updateDisplayVersion",
+      "type": "function",
+      "name": "updateDisplayVersion",
+      "filePath": "apps/admin-panel/src/app/update/updateShared.ts",
+      "summary": "Returns the best display version string from an UpdateCheckResponse, preferring UI version if only panel changed",
+      "tags": ["update", "version"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/update/__tests__/AutoUpdatePrompt.test.tsx",
+      "type": "file",
+      "name": "AutoUpdatePrompt Tests",
+      "filePath": "apps/admin-panel/src/app/update/__tests__/AutoUpdatePrompt.test.tsx",
+      "summary": "Tests for AutoUpdatePrompt: toast notification on update available, UI version display, and suppression when updater unavailable",
+      "tags": ["test", "update", "auto-update"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/update/__tests__/UpdateDetailsModal.test.tsx",
+      "type": "file",
+      "name": "UpdateDetailsModal Tests",
+      "filePath": "apps/admin-panel/src/app/update/__tests__/UpdateDetailsModal.test.tsx",
+      "summary": "Tests for UpdateDetailsModal: localized progress messages, percentage display, log streaming, success styling when up-to-date, and reload action on completion",
+      "tags": ["test", "update", "modal"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/app/update/__tests__/updateShared.test.ts",
+      "type": "file",
+      "name": "updateShared Tests",
+      "filePath": "apps/admin-panel/src/app/update/__tests__/updateShared.test.ts",
+      "summary": "Tests for updateShared utilities: formatUpdateStatusMessage splitting and applyUpdateFlow verifying transition before completion",
+      "tags": ["test", "update", "shared"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/hooks/index.ts",
+      "type": "file",
+      "name": "Hooks Barrel Export",
+      "filePath": "apps/admin-panel/src/hooks/index.ts",
+      "summary": "Barrel file re-exporting useDebounce, useMediaQuery, usePagination, and useHeaderRefresh hooks",
+      "tags": ["hooks", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useDebounce",
+      "type": "function",
+      "name": "useDebounce",
+      "filePath": "apps/admin-panel/src/hooks/useDebounce.ts",
+      "summary": "Debounces a value by a configurable delay (default 500ms)",
+      "tags": ["hook", "debounce"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/hooks/useDebounce.ts",
+      "type": "file",
+      "name": "useDebounce Hook",
+      "filePath": "apps/admin-panel/src/hooks/useDebounce.ts",
+      "summary": "React hook that debounces a value using setTimeout/clearTimeout with configurable delay",
+      "tags": ["hook", "debounce"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useEdgeSwipeBack",
+      "type": "function",
+      "name": "useEdgeSwipeBack",
+      "filePath": "apps/admin-panel/src/hooks/useEdgeSwipeBack.ts",
+      "summary": "Touch gesture hook that detects edge swipe-back gestures on mobile with configurable edge size and threshold",
+      "tags": ["hook", "gesture", "swipe", "mobile"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/hooks/useEdgeSwipeBack.ts",
+      "type": "file",
+      "name": "useEdgeSwipeBack Hook",
+      "filePath": "apps/admin-panel/src/hooks/useEdgeSwipeBack.ts",
+      "summary": "Touch gesture hook for edge swipe-back navigation using pointer events with vertical tolerance filtering",
+      "tags": ["hook", "gesture", "mobile"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:triggerHeaderRefresh",
+      "type": "function",
+      "name": "triggerHeaderRefresh",
+      "filePath": "apps/admin-panel/src/hooks/useHeaderRefresh.ts",
+      "summary": "Calls the currently registered header refresh handler, used externally to trigger data refreshes",
+      "tags": ["refresh", "header"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useHeaderRefresh",
+      "type": "function",
+      "name": "useHeaderRefresh",
+      "filePath": "apps/admin-panel/src/hooks/useHeaderRefresh.ts",
+      "summary": "Registers a handler function for header-level data refresh via module-scoped singleton",
+      "tags": ["hook", "refresh"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/hooks/useHeaderRefresh.ts",
+      "type": "file",
+      "name": "useHeaderRefresh Hook",
+      "filePath": "apps/admin-panel/src/hooks/useHeaderRefresh.ts",
+      "summary": "Module-scoped singleton pattern for header refresh: useHeaderRefresh registers a handler, triggerHeaderRefresh invokes it externally",
+      "tags": ["hook", "refresh", "singleton"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useMediaQuery",
+      "type": "function",
+      "name": "useMediaQuery",
+      "filePath": "apps/admin-panel/src/hooks/useMediaQuery.ts",
+      "summary": "React hook that tracks a CSS media query match state with event listener cleanup",
+      "tags": ["hook", "media-query", "responsive"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/hooks/useMediaQuery.ts",
+      "type": "file",
+      "name": "useMediaQuery Hook",
+      "filePath": "apps/admin-panel/src/hooks/useMediaQuery.ts",
+      "summary": "React hook wrapping window.matchMedia with change listener and cleanup for responsive design",
+      "tags": ["hook", "media-query"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:usePagination",
+      "type": "function",
+      "name": "usePagination",
+      "filePath": "apps/admin-panel/src/hooks/usePagination.ts",
+      "summary": "Generic pagination hook managing current page, page size, and slicing items array with navigation controls",
+      "tags": ["hook", "pagination"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/hooks/usePagination.ts",
+      "type": "file",
+      "name": "usePagination Hook",
+      "filePath": "apps/admin-panel/src/hooks/usePagination.ts",
+      "summary": "Generic pagination hook providing currentItems slice, goToPage/nextPage/prevPage navigation, and page size control",
+      "tags": ["hook", "pagination"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useVisualConfig",
+      "type": "function",
+      "name": "useVisualConfig",
+      "filePath": "apps/admin-panel/src/hooks/useVisualConfig.ts",
+      "summary": "Visual config editor hook that parses YAML config into structured form state, tracks dirtiness, and serializes changes back to YAML",
+      "tags": ["hook", "config", "yaml", "visual-editor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:apps/admin-panel/src/hooks/useVisualConfig.ts",
+      "type": "file",
+      "name": "useVisualConfig Hook",
+      "filePath": "apps/admin-panel/src/hooks/useVisualConfig.ts",
+      "summary": "Visual config management hook: parses YAML config into structured values, manages payload rules/default/override/filter editors, serializes back to YAML, and tracks dirty state",
+      "tags": ["hook", "config", "yaml", "payload-rules"],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:apps/admin-panel/src/app/AppRouter.tsx",
+      "target": "file:apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports AuthProvider"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/AppRouter.tsx",
+      "target": "file:apps/admin-panel/src/app/guards/ProtectedRoute.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports ProtectedRoute"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/AppRouter.tsx",
+      "target": "file:apps/admin-panel/src/app/layout/DashboardLayout.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports DashboardLayout"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/AppRouter.tsx",
+      "target": "file:apps/admin-panel/src/app/update/AutoUpdatePrompt.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports AutoUpdatePrompt"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/AppRouter.tsx",
+      "target": "function:AppRouter",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/guards/ProtectedRoute.tsx",
+      "target": "file:apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports useAuth"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/layout/DashboardLayout.tsx",
+      "target": "file:apps/admin-panel/src/app/layout/AppShell.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports AppShell"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/layout/DashboardLayout.tsx",
+      "target": "file:apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports useOptionalAuth"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "target": "function:useAuth",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "target": "function:useOptionalAuth",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "target": "function:AuthProvider",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/AutoUpdatePrompt.tsx",
+      "target": "file:apps/admin-panel/src/app/update/updateShared.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports updateShared"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/AutoUpdatePrompt.tsx",
+      "target": "file:apps/admin-panel/src/app/update/UpdateDetailsModal.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports UpdateDetailsModal"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/AutoUpdatePrompt.tsx",
+      "target": "file:apps/admin-panel/src/app/providers/AuthProvider.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports useAuth"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/UpdateDetailsCard.tsx",
+      "target": "file:apps/admin-panel/src/app/update/updateShared.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports updateShared"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/UpdateDetailsCard.tsx",
+      "target": "file:apps/admin-panel/src/app/update/UpdateDetailsModal.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports UpdateDetailsModal"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/UpdateDetailsModal.tsx",
+      "target": "file:apps/admin-panel/src/app/update/updateShared.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports updateShared"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/__tests__/AutoUpdatePrompt.test.tsx",
+      "target": "file:apps/admin-panel/src/app/update/AutoUpdatePrompt.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "tests"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/__tests__/UpdateDetailsModal.test.tsx",
+      "target": "file:apps/admin-panel/src/app/update/UpdateDetailsModal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "tests"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/__tests__/updateShared.test.ts",
+      "target": "file:apps/admin-panel/src/app/update/updateShared.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "tests"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/updateShared.ts",
+      "target": "function:applyUpdateFlow",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/updateShared.ts",
+      "target": "function:updateDisplayVersion",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/UpdateDetailsModal.tsx",
+      "target": "function:UpdateDetailsModal",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/UpdateDetailsCard.tsx",
+      "target": "function:UpdateDetailsCard",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/update/AutoUpdatePrompt.tsx",
+      "target": "function:AutoUpdatePrompt",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/layout/AppShell.tsx",
+      "target": "function:AppShell",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/guards/ProtectedRoute.tsx",
+      "target": "function:ProtectedRoute",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/bootstrap/dismissAppLoader.ts",
+      "target": "function:dismissAppLoader",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/index.ts",
+      "target": "file:apps/admin-panel/src/hooks/useDebounce.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/index.ts",
+      "target": "file:apps/admin-panel/src/hooks/useMediaQuery.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/index.ts",
+      "target": "file:apps/admin-panel/src/hooks/usePagination.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/index.ts",
+      "target": "file:apps/admin-panel/src/hooks/useHeaderRefresh.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/useDebounce.ts",
+      "target": "function:useDebounce",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/useEdgeSwipeBack.ts",
+      "target": "function:useEdgeSwipeBack",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/useHeaderRefresh.ts",
+      "target": "function:triggerHeaderRefresh",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/useHeaderRefresh.ts",
+      "target": "function:useHeaderRefresh",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/useMediaQuery.ts",
+      "target": "function:useMediaQuery",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/usePagination.ts",
+      "target": "function:usePagination",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/hooks/useVisualConfig.ts",
+      "target": "function:useVisualConfig",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/AppRouter.test.ts",
+      "target": "file:apps/admin-panel/src/app/AppRouter.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "tests"
+    },
+    {
+      "source": "file:apps/admin-panel/src/app/AppRouter.tsx",
+      "target": ".vite.proxy.mjs",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "uses vite proxy config"
+    },
+    {
+      "source": ".vite.proxy.mjs",
+      "target": ".verify.mjs",
+      "type": "depends_on",
+      "weight": 0.2,
+      "label": "verify script uses vite proxy"
+    },
+    {
+      "source": ".helloagents/plan/2026-05-28-resizable-table-columns/tasks.md",
+      "target": "file:apps/admin-panel/src/app/layout/AppShell.tsx",
+      "type": "depends_on",
+      "weight": 0.1,
+      "label": "plan references shell layout"
+    }
+  ]
+}

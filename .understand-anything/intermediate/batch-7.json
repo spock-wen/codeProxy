@@ -1,0 +1,68 @@
+{
+  "nodes": [
+    {
+      "id": "file:packages/i18n/src/locales/en.json",
+      "type": "config",
+      "name": "en.json",
+      "filePath": "packages/i18n/src/locales/en.json",
+      "summary": "English locale/translation file for the admin panel UI. Contains ~3800 lines of i18next-format translation strings covering all UI sections including common components, navigation, dashboard, providers, auth files, quota, logs, config management, monitor, ccswitch, API keys, oauth, system info, and page-specific content.",
+      "tags": ["i18n", "locales", "translations", "english", "config"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/i18n/src/locales/ru.json",
+      "type": "config",
+      "name": "ru.json",
+      "filePath": "packages/i18n/src/locales/ru.json",
+      "summary": "Russian locale/translation file for the admin panel UI. Contains ~2170 lines of i18next-format translation strings. A subset of the English locale with fewer translated sections; covers common UI strings, providers, auth files, quota, logs, config, system info, and auto-update features.",
+      "tags": ["i18n", "locales", "translations", "russian", "config"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/i18n/src/locales/zh-CN.json",
+      "type": "config",
+      "name": "zh-CN.json",
+      "filePath": "packages/i18n/src/locales/zh-CN.json",
+      "summary": "Simplified Chinese locale/translation file for the admin panel UI. Contains ~3825 lines of i18next-format translation strings. The most complete locale, serving as the default/fallback language. Covers the full UI surface including all page-specific sections.",
+      "tags": ["i18n", "locales", "translations", "chinese", "config"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:packages/i18n/src/locales/en.json",
+      "target": "file:packages/i18n/src/index.ts",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "consumed_by"
+    },
+    {
+      "source": "file:packages/i18n/src/locales/ru.json",
+      "target": "file:packages/i18n/src/index.ts",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "consumed_by"
+    },
+    {
+      "source": "file:packages/i18n/src/locales/zh-CN.json",
+      "target": "file:packages/i18n/src/index.ts",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "consumed_by"
+    },
+    {
+      "source": "file:packages/i18n/src/locales/en.json",
+      "target": "file:packages/i18n/src/locales/zh-CN.json",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "parallel_structure"
+    },
+    {
+      "source": "file:packages/i18n/src/locales/ru.json",
+      "target": "file:packages/i18n/src/locales/zh-CN.json",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "parallel_structure"
+    }
+  ]
+}

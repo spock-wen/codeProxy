@@ -1,0 +1,678 @@
+{
+  "nodes": [
+    {
+      "id": "file:packages/i18n/src/index.ts",
+      "type": "file",
+      "name": "i18n/src/index.ts",
+      "filePath": "packages/i18n/src/index.ts",
+      "summary": "i18next initialization and language resource management. Sets up i18next with en/ru/zh-CN translations, exports STORAGE_KEY_LANGUAGE and LANGUAGE_ORDER constants, provides ensureLanguageResources() for async bundle loading, and detects initial language from localStorage or browser navigator.",
+      "tags": ["i18n", "localization", "language", "react-i18next"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/test-utils/package.json",
+      "type": "config",
+      "name": "test-utils/package.json",
+      "filePath": "packages/test-utils/package.json",
+      "summary": "Package manifest for @code-proxy/test-utils. Declares a private utility package with ESM modules.",
+      "tags": ["package", "config", "test"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/package.json",
+      "type": "config",
+      "name": "ui/package.json",
+      "filePath": "packages/ui/package.json",
+      "summary": "Package manifest for @code-proxy/ui. Lists dependencies: react, echarts, echarts-for-react, framer-motion, goey-toast, lucide-react, react-i18next, react-router-dom, @tanstack/react-virtual.",
+      "tags": ["package", "config", "ui", "dependencies"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/charts/ChartLegend.tsx",
+      "type": "file",
+      "name": "ui/src/charts/ChartLegend.tsx",
+      "filePath": "packages/ui/src/charts/ChartLegend.tsx",
+      "summary": "ChartLegend component renders a row of toggleable pill buttons for chart series. Each item has a colored dot, label, and click-to-toggle behavior.",
+      "tags": ["chart", "legend", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ChartLegend",
+      "type": "function",
+      "name": "ChartLegend",
+      "filePath": "packages/ui/src/charts/ChartLegend.tsx",
+      "summary": "Renders a flex-wrap row of toggleable legend pill buttons for ECharts series toggling.",
+      "tags": ["chart", "legend", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "type:ChartLegendItem",
+      "type": "function",
+      "name": "ChartLegendItem",
+      "filePath": "packages/ui/src/charts/ChartLegend.tsx",
+      "summary": "Interface defining shape of a legend item with key, label, colorClass, enabled state, and onToggle callback.",
+      "tags": ["type", "chart"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/charts/EChart.tsx",
+      "type": "file",
+      "name": "ui/src/charts/EChart.tsx",
+      "filePath": "packages/ui/src/charts/EChart.tsx",
+      "summary": "Lazy-loaded wrapper for EChartRenderer. Uses React.Suspense and lazy() to defer loading the echarts renderer bundle until first use.",
+      "tags": ["chart", "lazy-loading", "suspense"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:EChart",
+      "type": "function",
+      "name": "EChart",
+      "filePath": "packages/ui/src/charts/EChart.tsx",
+      "summary": "Suspense-wrapped lazy EChart component with overflow control.",
+      "tags": ["chart", "lazy-loading"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/charts/EChartRenderer.tsx",
+      "type": "file",
+      "name": "ui/src/charts/EChartRenderer.tsx",
+      "filePath": "packages/ui/src/charts/EChartRenderer.tsx",
+      "summary": "ECharts renderer component with custom resize handling via ResizeObserver, requestAnimationFrame batching, and theme support from ThemeProvider. Dispatches resize also on window resize, orientation change, and visual viewport events.",
+      "tags": ["chart", "echarts", "resize-observer", "theme-aware"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:EChartRenderer",
+      "type": "function",
+      "name": "EChartRenderer",
+      "filePath": "packages/ui/src/charts/EChartRenderer.tsx",
+      "summary": "Renders ReactECharts with auto-resize, theme support, animation-frame-batched resize events, and chart instance management.",
+      "tags": ["chart", "echarts", "renderer"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/data-table/DataTable.tsx",
+      "type": "file",
+      "name": "ui/src/data-table/DataTable.tsx",
+      "filePath": "packages/ui/src/data-table/DataTable.tsx",
+      "summary": "Main DataTable component implementing a feature-rich virtualized table with: column resize by dragging right edge, column reorder by drag handle, column width/order persistence to localStorage, scrollbar thumb rendering, infinite scroll with bottom callback, loading/empty states, and row virtualization via @tanstack/react-virtual.",
+      "tags": ["data-table", "virtualization", "column-resize", "column-reorder", "infinite-scroll"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:DataTable",
+      "type": "function",
+      "name": "DataTable",
+      "filePath": "packages/ui/src/data-table/DataTable.tsx",
+      "summary": "Generic virtualized DataTable component with column resize, reorder, localStorage persistence, infinite scroll, and custom scrollbar thumbs.",
+      "tags": ["data-table", "virtualization", "component"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/ui/src/data-table/DataTable.types.ts",
+      "type": "file",
+      "name": "ui/src/data-table/DataTable.types.ts",
+      "filePath": "packages/ui/src/data-table/DataTable.types.ts",
+      "summary": "Type definitions for DataTableColumn and DataTableProps interfaces, separated for independent export.",
+      "tags": ["types", "data-table"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/data-table/index.ts",
+      "type": "file",
+      "name": "ui/src/data-table/index.ts",
+      "filePath": "packages/ui/src/data-table/index.ts",
+      "summary": "Barrel re-export file for data-table module, exporting DataTable, DataTableColumn, DataTableProps, TableCellOverflowTooltip, extractTableCellTextContent.",
+      "tags": ["barrel", "export"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/data-table/TableCellOverflowTooltip.tsx",
+      "type": "file",
+      "name": "ui/src/data-table/TableCellOverflowTooltip.tsx",
+      "filePath": "packages/ui/src/data-table/TableCellOverflowTooltip.tsx",
+      "summary": "TableCellOverflowTooltip component that truncates cell content with an overflow tooltip. Extracts text content from React children recursively and detects managed tooltips to avoid nesting.",
+      "tags": ["tooltip", "table", "overflow"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:TableCellOverflowTooltip",
+      "type": "function",
+      "name": "TableCellOverflowTooltip",
+      "filePath": "packages/ui/src/data-table/TableCellOverflowTooltip.tsx",
+      "summary": "Renders truncated table cell content with OverflowTooltip when content overflows its container.",
+      "tags": ["tooltip", "table"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:extractTableCellTextContent",
+      "type": "function",
+      "name": "extractTableCellTextContent",
+      "filePath": "packages/ui/src/data-table/TableCellOverflowTooltip.tsx",
+      "summary": "Recursively extracts plain text from ReactNode tree for tooltip display.",
+      "tags": ["utility", "text-extraction"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/data-table/tableStorage.ts",
+      "type": "file",
+      "name": "ui/src/data-table/tableStorage.ts",
+      "filePath": "packages/ui/src/data-table/tableStorage.ts",
+      "summary": "Table storage utilities: column width persistence (localStorage), column resize state machine, column reorder state machine, scroll metrics calculation, scrollbar thumb sizing, and column-level operators for resize/reorder/lock logic.",
+      "tags": ["storage", "localStorage", "column-resize", "column-reorder", "scroll"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/feedback/AnimatedNumber.tsx",
+      "type": "file",
+      "name": "ui/src/feedback/AnimatedNumber.tsx",
+      "filePath": "packages/ui/src/feedback/AnimatedNumber.tsx",
+      "summary": "AnimatedNumber component animates numeric value changes with easing. Uses requestAnimationFrame, respects prefers-reduced-motion, and renders formatted output via a format function.",
+      "tags": ["animation", "number", "counter", "ui-component"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:AnimatedNumber",
+      "type": "function",
+      "name": "AnimatedNumber",
+      "filePath": "packages/ui/src/feedback/AnimatedNumber.tsx",
+      "summary": "Animates between numeric values using cubic ease-out interpolation via requestAnimationFrame.",
+      "tags": ["animation", "counter"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/feedback/EmptyState.tsx",
+      "type": "file",
+      "name": "ui/src/feedback/EmptyState.tsx",
+      "filePath": "packages/ui/src/feedback/EmptyState.tsx",
+      "summary": "EmptyState component renders a centered placeholder with optional icon, title, description, and action button for empty list states.",
+      "tags": ["empty-state", "placeholder", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:EmptyState",
+      "type": "function",
+      "name": "EmptyState",
+      "filePath": "packages/ui/src/feedback/EmptyState.tsx",
+      "summary": "Renders an empty state placeholder with optional title, description, icon, and action.",
+      "tags": ["empty-state", "placeholder"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/feedback/Reveal.tsx",
+      "type": "file",
+      "name": "ui/src/feedback/Reveal.tsx",
+      "filePath": "packages/ui/src/feedback/Reveal.tsx",
+      "summary": "Reveal component applies a fade-in + translate-up animation on mount using requestAnimationFrame.",
+      "tags": ["animation", "fade-in", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:Reveal",
+      "type": "function",
+      "name": "Reveal",
+      "filePath": "packages/ui/src/feedback/Reveal.tsx",
+      "summary": "Animates children with fade-in and slight upward translation on initial mount.",
+      "tags": ["animation", "fade-in"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/feedback/ToastProvider.css",
+      "type": "file",
+      "name": "ui/src/feedback/ToastProvider.css",
+      "filePath": "packages/ui/src/feedback/ToastProvider.css",
+      "summary": "CSS overrides for goey-toast library: max-width constraints, text overflow ellipsis for titles, white-space pre-line for descriptions.",
+      "tags": ["css", "toast", "style-overrides"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/feedback/ToastProvider.tsx",
+      "type": "file",
+      "name": "ui/src/feedback/ToastProvider.tsx",
+      "filePath": "packages/ui/src/feedback/ToastProvider.tsx",
+      "summary": "ToastProvider component wrapping goey-toast library. Provides useToast context with notify function supporting success/error/info/warning types, auto title extraction, action buttons, and theme-aware styling.",
+      "tags": ["toast", "notification", "provider", "ui-component"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ToastProvider",
+      "type": "function",
+      "name": "ToastProvider",
+      "filePath": "packages/ui/src/feedback/ToastProvider.tsx",
+      "summary": "Context provider for toast notifications, wrapping goey-toast with theme support and smart title/description splitting.",
+      "tags": ["toast", "notification", "provider"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useToast",
+      "type": "function",
+      "name": "useToast",
+      "filePath": "packages/ui/src/feedback/ToastProvider.tsx",
+      "summary": "Hook to access the ToastContext notify function.",
+      "tags": ["hook", "toast"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/hooks/useInterval.ts",
+      "type": "file",
+      "name": "ui/src/hooks/useInterval.ts",
+      "filePath": "packages/ui/src/hooks/useInterval.ts",
+      "summary": "useInterval hook that sets up a setInterval with a ref-based callback, accepting a delay in ms or null to pause.",
+      "tags": ["hook", "interval", "timer"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useInterval",
+      "type": "function",
+      "name": "useInterval",
+      "filePath": "packages/ui/src/hooks/useInterval.ts",
+      "summary": "Declarative setInterval hook with ref-stable callback.",
+      "tags": ["hook", "interval"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/hooks/useLocalStorage.ts",
+      "type": "file",
+      "name": "ui/src/hooks/useLocalStorage.ts",
+      "filePath": "packages/ui/src/hooks/useLocalStorage.ts",
+      "summary": "useLocalStorage hook that syncs state with localStorage, supporting functional updates.",
+      "tags": ["hook", "localStorage", "persistence"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useLocalStorage",
+      "type": "function",
+      "name": "useLocalStorage",
+      "filePath": "packages/ui/src/hooks/useLocalStorage.ts",
+      "summary": "Hook that reads/writes a value to localStorage with useState integration.",
+      "tags": ["hook", "localStorage"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/index.ts",
+      "type": "file",
+      "name": "ui/src/index.ts",
+      "filePath": "packages/ui/src/index.ts",
+      "summary": "Barrel file re-exporting all public UI components, hooks, and utilities from the @code-proxy/ui package.",
+      "tags": ["barrel", "export", "public-api"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/layout/PageBackground.tsx",
+      "type": "file",
+      "name": "ui/src/layout/PageBackground.tsx",
+      "filePath": "packages/ui/src/layout/PageBackground.tsx",
+      "summary": "PageBackground component renders a full-page container with radial gradient backgrounds and optional animated login variant with conic gradient rotation and pulsing center glow.",
+      "tags": ["layout", "background", "gradient", "animation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:PageBackground",
+      "type": "function",
+      "name": "PageBackground",
+      "filePath": "packages/ui/src/layout/PageBackground.tsx",
+      "summary": "Renders page-level background with decorative gradients and optional login animation.",
+      "tags": ["layout", "background"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/overlays/ConfirmModal.tsx",
+      "type": "file",
+      "name": "ui/src/overlays/ConfirmModal.tsx",
+      "filePath": "packages/ui/src/overlays/ConfirmModal.tsx",
+      "summary": "ConfirmModal component wraps Modal with a confirmation dialog pattern. Supports danger/primary variants, busy state, custom confirm/cancel text, and contextual icon (trash for danger, alert for primary).",
+      "tags": ["modal", "confirm", "dialog", "danger"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ConfirmModal",
+      "type": "function",
+      "name": "ConfirmModal",
+      "filePath": "packages/ui/src/overlays/ConfirmModal.tsx",
+      "summary": "Confirmation dialog modal with danger/primary variants, icon, and action buttons.",
+      "tags": ["modal", "confirm", "dialog"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/overlays/ImagePreviewOverlay.tsx",
+      "type": "file",
+      "name": "ui/src/overlays/ImagePreviewOverlay.tsx",
+      "filePath": "packages/ui/src/overlays/ImagePreviewOverlay.tsx",
+      "summary": "ImagePreviewOverlay component for full-screen image inspection with: zoom (scroll/pinch), pan via drag, rotation (90-degree increments with snap-to-upright), image gallery navigation (prev/next), download, and keyboard shortcut support.",
+      "tags": ["image", "preview", "overlay", "zoom", "gallery", "drag"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ImagePreviewOverlay",
+      "type": "function",
+      "name": "ImagePreviewOverlay",
+      "filePath": "packages/ui/src/overlays/ImagePreviewOverlay.tsx",
+      "summary": "Full-screen image preview with zoom, pan, rotate, gallery navigation, and download.",
+      "tags": ["image", "preview", "overlay"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/ui/src/overlays/Modal.tsx",
+      "type": "file",
+      "name": "ui/src/overlays/Modal.tsx",
+      "filePath": "packages/ui/src/overlays/Modal.tsx",
+      "summary": "Modal component renders a portal-based dialog with: backdrop blur, enter/exit animations, configurable max-width, header (optional via hideHeader), body with overflow scroll, footer slot, and Escape key dismissal.",
+      "tags": ["modal", "dialog", "portal", "overlay"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:Modal",
+      "type": "function",
+      "name": "Modal",
+      "filePath": "packages/ui/src/overlays/Modal.tsx",
+      "summary": "Portal-rendered modal dialog with animation, backdrop, header, body, and footer slots.",
+      "tags": ["modal", "dialog", "portal"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/overlays/Tooltip.tsx",
+      "type": "file",
+      "name": "ui/src/overlays/Tooltip.tsx",
+      "filePath": "packages/ui/src/overlays/Tooltip.tsx",
+      "summary": "Tooltip system with multiple components: TooltipBubble (positioned tooltip), HoverTooltip (hover-triggered inline tooltip), OverflowTooltip (shows only on text overflow), GlobalIconButtonTooltip (auto-detects icon buttons). Handles placement with fallbacks, viewport boundary clamping, and touch support.",
+      "tags": ["tooltip", "overlay", "hover", "overflow"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:TooltipBubble",
+      "type": "function",
+      "name": "TooltipBubble",
+      "filePath": "packages/ui/src/overlays/Tooltip.tsx",
+      "summary": "Positioned tooltip bubble with viewport-aware placement and fallbacks.",
+      "tags": ["tooltip", "bubble"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:HoverTooltip",
+      "type": "function",
+      "name": "HoverTooltip",
+      "filePath": "packages/ui/src/overlays/Tooltip.tsx",
+      "summary": "Hover-triggered tooltip wrapper that shows TooltipBubble on mouse hover.",
+      "tags": ["tooltip", "hover"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:OverflowTooltip",
+      "type": "function",
+      "name": "OverflowTooltip",
+      "filePath": "packages/ui/src/overlays/Tooltip.tsx",
+      "summary": "Tooltip that only activates when the wrapped content overflows its container.",
+      "tags": ["tooltip", "overflow"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:GlobalIconButtonTooltip",
+      "type": "function",
+      "name": "GlobalIconButtonTooltip",
+      "filePath": "packages/ui/src/overlays/Tooltip.tsx",
+      "summary": "Global tooltip provider that auto-detects icon-only buttons and shows tooltips from data-tooltip or aria-label attributes.",
+      "tags": ["tooltip", "global", "icon-button"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/Button.tsx",
+      "type": "file",
+      "name": "ui/src/primitives/Button.tsx",
+      "filePath": "packages/ui/src/primitives/Button.tsx",
+      "summary": "Button component with multiple variants (default, primary, secondary, danger/error, success, warning, ghost), sizes (xs/sm/md), icon-only detection with auto-tooltip, and a standalone buttonClassName utility. Handles tooltip suppression for icon-only buttons.",
+      "tags": ["button", "primitive", "ui-component", "tooltip"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:Button",
+      "type": "function",
+      "name": "Button",
+      "filePath": "packages/ui/src/primitives/Button.tsx",
+      "summary": "Versatile button component with variant/size support and auto tooltip on icon-only buttons.",
+      "tags": ["button", "primitive"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:buttonClassName",
+      "type": "function",
+      "name": "buttonClassName",
+      "filePath": "packages/ui/src/primitives/Button.tsx",
+      "summary": "Utility function that computes the Tailwind className string for a button given variant, size, and iconOnly flags.",
+      "tags": ["utility", "classname", "button"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/charts/ChartLegend.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/charts/EChart.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/charts/EChartRenderer.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/data-table/DataTable.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/data-table/DataTable.types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/data-table/TableCellOverflowTooltip.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/feedback/AnimatedNumber.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/feedback/EmptyState.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/feedback/Reveal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/feedback/ToastProvider.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/layout/PageBackground.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/overlays/ConfirmModal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/overlays/ImagePreviewOverlay.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/overlays/Modal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/overlays/Tooltip.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/primitives/Button.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/hooks/useInterval.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/index.ts",
+      "target": "file:packages/ui/src/hooks/useLocalStorage.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/charts/EChart.tsx",
+      "target": "file:packages/ui/src/charts/EChartRenderer.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "lazy-loads"
+    },
+    {
+      "source": "file:packages/ui/src/charts/EChartRenderer.tsx",
+      "target": "file:packages/ui/src/theme/ThemeProvider.tsx",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "uses useTheme"
+    },
+    {
+      "source": "file:packages/ui/src/data-table/DataTable.tsx",
+      "target": "file:packages/ui/src/data-table/TableCellOverflowTooltip.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports TableCellOverflowTooltip"
+    },
+    {
+      "source": "file:packages/ui/src/data-table/DataTable.tsx",
+      "target": "file:packages/ui/src/data-table/tableStorage.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "uses storage utilities"
+    },
+    {
+      "source": "file:packages/ui/src/data-table/DataTable.tsx",
+      "target": "file:packages/ui/src/data-table/DataTable.types.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "uses type definitions"
+    },
+    {
+      "source": "file:packages/ui/src/data-table/TableCellOverflowTooltip.tsx",
+      "target": "file:packages/ui/src/overlays/Tooltip.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports HoverTooltip, OverflowTooltip"
+    },
+    {
+      "source": "file:packages/ui/src/feedback/ToastProvider.tsx",
+      "target": "file:packages/ui/src/theme/ThemeProvider.tsx",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "uses useTheme"
+    },
+    {
+      "source": "file:packages/ui/src/feedback/ToastProvider.tsx",
+      "target": "file:packages/ui/src/feedback/ToastProvider.css",
+      "type": "configures",
+      "weight": 0.5,
+      "label": "imports CSS overrides"
+    },
+    {
+      "source": "file:packages/ui/src/overlays/ConfirmModal.tsx",
+      "target": "file:packages/ui/src/primitives/Button.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports Button"
+    },
+    {
+      "source": "file:packages/ui/src/overlays/ConfirmModal.tsx",
+      "target": "file:packages/ui/src/overlays/Modal.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders Modal"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/Button.tsx",
+      "target": "file:packages/ui/src/overlays/Tooltip.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports TooltipBubble, TooltipTriggerContext"
+    },
+    {
+      "source": "file:packages/i18n/src/index.ts",
+      "target": "file:packages/ui/src/theme/ThemeProvider.tsx",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "shared i18n dependency"
+    },
+    {
+      "source": "file:packages/ui/src/data-table/index.ts",
+      "target": "file:packages/ui/src/data-table/DataTable.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:packages/ui/src/data-table/index.ts",
+      "target": "file:packages/ui/src/data-table/DataTable.types.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "re-exports types"
+    },
+    {
+      "source": "file:packages/ui/src/data-table/index.ts",
+      "target": "file:packages/ui/src/data-table/TableCellOverflowTooltip.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports"
+    }
+  ]
+}

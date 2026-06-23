@@ -1,0 +1,605 @@
+{
+  "nodes": [
+    {
+      "id": "file:apps/admin-panel/src/i18n/index.ts",
+      "type": "file",
+      "name": "i18n/index.ts",
+      "filePath": "apps/admin-panel/src/i18n/index.ts",
+      "summary": "i18next initialization and locale loading manager. Configures i18n with react-i18next, loads zh-CN/en/ru locale JSON files dynamically, resolves initial language from utils, and exports ensureLanguageResources for lazy-loading translations.",
+      "tags": ["i18n", "internationalization", "locale", "i18next"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ensureLanguageResources",
+      "type": "function",
+      "name": "ensureLanguageResources",
+      "filePath": "apps/admin-panel/src/i18n/index.ts",
+      "summary": "Ensures translation resources for a given language are loaded into i18next, deduplicating in-flight loads.",
+      "tags": ["i18n", "lazy-load"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/lib/connection.ts",
+      "type": "file",
+      "name": "lib/connection.ts",
+      "filePath": "apps/admin-panel/src/lib/connection.ts",
+      "summary": "API base URL normalization and detection utilities. Provides normalizeApiBase, computeManagementApiBase, and detectApiBaseFromLocation for constructing management API endpoints.",
+      "tags": ["api", "connection", "url"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:normalizeApiBase",
+      "type": "function",
+      "name": "normalizeApiBase",
+      "filePath": "apps/admin-panel/src/lib/connection.ts",
+      "summary": "Normalizes an API base URL by stripping trailing v0/management suffix and adding http:// scheme if missing.",
+      "tags": ["api", "url"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:computeManagementApiBase",
+      "type": "function",
+      "name": "computeManagementApiBase",
+      "filePath": "apps/admin-panel/src/lib/connection.ts",
+      "summary": "Computes the full management API base URL by appending MANAGEMENT_API_PREFIX to the normalized base.",
+      "tags": ["api", "url"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:detectApiBaseFromLocation",
+      "type": "function",
+      "name": "detectApiBaseFromLocation",
+      "filePath": "apps/admin-panel/src/lib/connection.ts",
+      "summary": "Detects the API base URL from window.location, falling back to localhost:8317.",
+      "tags": ["api", "auto-detect"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/lib/constants.ts",
+      "type": "file",
+      "name": "lib/constants.ts",
+      "filePath": "apps/admin-panel/src/lib/constants.ts",
+      "summary": "Library-level constants for API communication: management prefix, default port, timeout, storage keys, and version header keys.",
+      "tags": ["constants", "api", "config"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/main.tsx",
+      "type": "file",
+      "name": "main.tsx",
+      "filePath": "apps/admin-panel/src/main.tsx",
+      "summary": "Main application entry point using HashRouter. Renders AppRouter inside StrictMode with GlobalIconButtonTooltip, and dismisses the app loader on mount.",
+      "tags": ["entry", "react", "router"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/manage-entry.tsx",
+      "type": "file",
+      "name": "manage-entry.tsx",
+      "filePath": "apps/admin-panel/src/manage-entry.tsx",
+      "summary": "Management panel entry point using BrowserRouter with /manage basename. Renders AppRouter inside StrictMode and dismisses the app loader.",
+      "tags": ["entry", "react", "router", "manage"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/stores/index.ts",
+      "type": "file",
+      "name": "stores/index.ts",
+      "filePath": "apps/admin-panel/src/stores/index.ts",
+      "summary": "Barrel export file for all Zustand stores: useNotificationStore, useThemeStore, useLanguageStore, useDisabledModelsStore.",
+      "tags": ["stores", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/stores/useDisabledModelsStore.ts",
+      "type": "file",
+      "name": "stores/useDisabledModelsStore.ts",
+      "filePath": "apps/admin-panel/src/stores/useDisabledModelsStore.ts",
+      "summary": "Zustand store managing globally disabled models using a Set of `${source}|||${model}` keys. Provides add, remove, isDisabled, and clearAll operations.",
+      "tags": ["store", "zustand", "models"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useDisabledModelsStore",
+      "type": "function",
+      "name": "useDisabledModelsStore",
+      "filePath": "apps/admin-panel/src/stores/useDisabledModelsStore.ts",
+      "summary": "Zustand hook for reading/writing disabled models set with addDisabledModel, removeDisabledModel, isDisabled, clearAll.",
+      "tags": ["store", "zustand"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/stores/useLanguageStore.ts",
+      "type": "file",
+      "name": "stores/useLanguageStore.ts",
+      "filePath": "apps/admin-panel/src/stores/useLanguageStore.ts",
+      "summary": "Zustand store with persist middleware for language preference. Cycles through LANGUAGE_ORDER, calls ensureLanguageResources and i18n.changeLanguage on set.",
+      "tags": ["store", "zustand", "i18n"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useLanguageStore",
+      "type": "function",
+      "name": "useLanguageStore",
+      "filePath": "apps/admin-panel/src/stores/useLanguageStore.ts",
+      "summary": "Zustand hook for language state with persist middleware.",
+      "tags": ["store", "zustand"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/stores/useNotificationStore.ts",
+      "type": "file",
+      "name": "stores/useNotificationStore.ts",
+      "filePath": "apps/admin-panel/src/stores/useNotificationStore.ts",
+      "summary": "Zustand store wrapping goey-toast for notifications and a custom confirmation dialog management. Supports showNotification, showConfirmation, and state tracking.",
+      "tags": ["store", "zustand", "notification", "toast"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useNotificationStore",
+      "type": "function",
+      "name": "useNotificationStore",
+      "filePath": "apps/admin-panel/src/stores/useNotificationStore.ts",
+      "summary": "Zustand hook for notification and confirmation dialog state.",
+      "tags": ["store", "zustand"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/stores/useThemeStore.ts",
+      "type": "file",
+      "name": "stores/useThemeStore.ts",
+      "filePath": "apps/admin-panel/src/stores/useThemeStore.ts",
+      "summary": "Zustand store with persist middleware for theme management (light/dark/auto). Applies data-theme attribute, listens to system prefers-color-scheme changes in auto mode.",
+      "tags": ["store", "zustand", "theme"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useThemeStore",
+      "type": "function",
+      "name": "useThemeStore",
+      "filePath": "apps/admin-panel/src/stores/useThemeStore.ts",
+      "summary": "Zustand hook for theme state with persist middleware and system preference listener.",
+      "tags": ["store", "zustand", "theme"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/test/setup.ts",
+      "type": "file",
+      "name": "test/setup.ts",
+      "filePath": "apps/admin-panel/src/test/setup.ts",
+      "summary": "Vitest test setup file. Imports @testing-library/jest-dom matchers, registers afterEach cleanup, mocks matchMedia and ResizeObserver for test environment.",
+      "tags": ["test", "setup", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/ampcode.ts",
+      "type": "file",
+      "name": "types/ampcode.ts",
+      "filePath": "apps/admin-panel/src/types/ampcode.ts",
+      "summary": "TypeScript type definitions for AmpcodeConfig and AmpcodeModelMapping interfaces used for Amp CLI integration configuration.",
+      "tags": ["types", "ampcode"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/api.ts",
+      "type": "file",
+      "name": "types/api.ts",
+      "filePath": "apps/admin-panel/src/types/api.ts",
+      "summary": "TypeScript type definitions for HTTP methods, ApiClientConfig, RequestOptions, ServerVersion, and ApiError.",
+      "tags": ["types", "api"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/auth.ts",
+      "type": "file",
+      "name": "types/auth.ts",
+      "filePath": "apps/admin-panel/src/types/auth.ts",
+      "summary": "TypeScript type definitions for LoginCredentials, AuthState, ConnectionStatus, and ConnectionInfo.",
+      "tags": ["types", "auth"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/common.ts",
+      "type": "file",
+      "name": "types/common.ts",
+      "filePath": "apps/admin-panel/src/types/common.ts",
+      "summary": "Common/shared TypeScript type definitions: Theme, Language, Notification, ApiResponse, PaginationState, LoadingState, AsyncState.",
+      "tags": ["types", "common"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/config.ts",
+      "type": "file",
+      "name": "types/config.ts",
+      "filePath": "apps/admin-panel/src/types/config.ts",
+      "summary": "TypeScript type definitions for server configuration: QuotaExceededConfig, RoutingConfig, AutoUpdateConfig, the main Config interface, RawConfigSection, and ConfigCache.",
+      "tags": ["types", "config"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/index.ts",
+      "type": "file",
+      "name": "types/index.ts",
+      "filePath": "apps/admin-panel/src/types/index.ts",
+      "summary": "Barrel re-export file for all type modules: common, api, config, auth, provider, ampcode, usage, log.",
+      "tags": ["types", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/log.ts",
+      "type": "file",
+      "name": "types/log.ts",
+      "filePath": "apps/admin-panel/src/types/log.ts",
+      "summary": "TypeScript type definitions for LogLevel, LogEntry, and LogFilter used in log viewing functionality.",
+      "tags": ["types", "log"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/provider.ts",
+      "type": "file",
+      "name": "types/provider.ts",
+      "filePath": "apps/admin-panel/src/types/provider.ts",
+      "summary": "TypeScript type definitions for AI provider configurations: ModelAlias, ApiKeyEntry, GeminiKeyConfig, ProviderKeyConfig, OpenAIProviderConfig.",
+      "tags": ["types", "provider"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/style.d.ts",
+      "type": "file",
+      "name": "types/style.d.ts",
+      "filePath": "apps/admin-panel/src/types/style.d.ts",
+      "summary": "Ambient module declarations for .module.scss imports and global __APP_VERSION__ constant injected by Vite.",
+      "tags": ["types", "declaration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/usage.ts",
+      "type": "file",
+      "name": "types/usage.ts",
+      "filePath": "apps/admin-panel/src/types/usage.ts",
+      "summary": "TypeScript type definitions for usage statistics: TimePeriod, DataPoint, ModelUsage, UsageStats, and ModelPrice.",
+      "tags": ["types", "usage"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/types/visualConfig.ts",
+      "type": "file",
+      "name": "types/visualConfig.ts",
+      "filePath": "apps/admin-panel/src/types/visualConfig.ts",
+      "summary": "TypeScript type definitions for visual config editor: payload param/model/rule types, StreamingConfig, VisualConfigValues, plus makeClientId helper and DEFAULT_VISUAL_VALUES constant.",
+      "tags": ["types", "visual-config", "payload"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:makeClientId",
+      "type": "function",
+      "name": "makeClientId",
+      "filePath": "apps/admin-panel/src/types/visualConfig.ts",
+      "summary": "Generates a unique client ID using crypto.randomUUID or a timestamp+random fallback.",
+      "tags": ["utility", "id-generation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/utils/clipboard.ts",
+      "type": "file",
+      "name": "utils/clipboard.ts",
+      "filePath": "apps/admin-panel/src/utils/clipboard.ts",
+      "summary": "Cross-browser clipboard utility using navigator.clipboard.writeText with a fallback to document.execCommand('copy') via a hidden textarea.",
+      "tags": ["utility", "clipboard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:copyToClipboard",
+      "type": "function",
+      "name": "copyToClipboard",
+      "filePath": "apps/admin-panel/src/utils/clipboard.ts",
+      "summary": "Copies text to clipboard with navigator.clipboard primary path and hidden-textarea fallback.",
+      "tags": ["utility", "clipboard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/utils/connection.ts",
+      "type": "file",
+      "name": "utils/connection.ts",
+      "filePath": "apps/admin-panel/src/utils/connection.ts",
+      "summary": "API connection utilities: normalizeApiBase, computeApiUrl, detectApiBaseFromLocation, and isLocalhost for determining if a hostname is local.",
+      "tags": ["utility", "api", "connection"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:computeApiUrl",
+      "type": "function",
+      "name": "computeApiUrl",
+      "filePath": "apps/admin-panel/src/utils/connection.ts",
+      "summary": "Computes the full API URL by normalizing the base and appending MANAGEMENT_API_PREFIX.",
+      "tags": ["api", "url"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:isLocalhost",
+      "type": "function",
+      "name": "isLocalhost",
+      "filePath": "apps/admin-panel/src/utils/connection.ts",
+      "summary": "Checks if a hostname is localhost, 127.0.0.1, or [::1].",
+      "tags": ["utility"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/utils/constants.ts",
+      "type": "file",
+      "name": "utils/constants.ts",
+      "filePath": "apps/admin-panel/src/utils/constants.ts",
+      "summary": "Application-wide constants: cache expiry, network defaults, log limits, auth file pagination, storage keys, language config, OAuth card IDs, provider constants, and API endpoint paths.",
+      "tags": ["constants", "config", "i18n", "oauth"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:apps/admin-panel/src/i18n/index.ts",
+      "target": "file:apps/admin-panel/src/utils/constants.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "uses getInitialLanguage from @/utils/language (indirect)"
+    },
+    {
+      "source": "file:apps/admin-panel/src/lib/connection.ts",
+      "target": "file:apps/admin-panel/src/lib/constants.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports DEFAULT_API_PORT, MANAGEMENT_API_PREFIX"
+    },
+    {
+      "source": "file:apps/admin-panel/src/main.tsx",
+      "target": "file:apps/admin-panel/src/i18n/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports @code-proxy/i18n"
+    },
+    {
+      "source": "file:apps/admin-panel/src/manage-entry.tsx",
+      "target": "file:apps/admin-panel/src/i18n/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports @code-proxy/i18n"
+    },
+    {
+      "source": "file:apps/admin-panel/src/stores/index.ts",
+      "target": "file:apps/admin-panel/src/stores/useDisabledModelsStore.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/stores/index.ts",
+      "target": "file:apps/admin-panel/src/stores/useThemeStore.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/stores/index.ts",
+      "target": "file:apps/admin-panel/src/stores/useLanguageStore.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/stores/index.ts",
+      "target": "file:apps/admin-panel/src/stores/useNotificationStore.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/stores/useLanguageStore.ts",
+      "target": "file:apps/admin-panel/src/types/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports Language type"
+    },
+    {
+      "source": "file:apps/admin-panel/src/stores/useLanguageStore.ts",
+      "target": "file:apps/admin-panel/src/utils/constants.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports LANGUAGE_ORDER, STORAGE_KEY_LANGUAGE"
+    },
+    {
+      "source": "file:apps/admin-panel/src/stores/useLanguageStore.ts",
+      "target": "file:apps/admin-panel/src/i18n/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports i18n, ensureLanguageResources from @code-proxy/i18n"
+    },
+    {
+      "source": "file:apps/admin-panel/src/stores/useThemeStore.ts",
+      "target": "file:apps/admin-panel/src/types/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports Theme type"
+    },
+    {
+      "source": "file:apps/admin-panel/src/stores/useThemeStore.ts",
+      "target": "file:apps/admin-panel/src/utils/constants.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports STORAGE_KEY_THEME"
+    },
+    {
+      "source": "file:apps/admin-panel/src/test/setup.ts",
+      "target": "file:apps/admin-panel/src/i18n/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports @code-proxy/i18n"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/config.ts",
+      "target": "file:apps/admin-panel/src/types/provider.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports GeminiKeyConfig, ProviderKeyConfig, OpenAIProviderConfig"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/config.ts",
+      "target": "file:apps/admin-panel/src/types/ampcode.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports AmpcodeConfig"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/index.ts",
+      "target": "file:apps/admin-panel/src/types/common.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/index.ts",
+      "target": "file:apps/admin-panel/src/types/api.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/index.ts",
+      "target": "file:apps/admin-panel/src/types/config.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/index.ts",
+      "target": "file:apps/admin-panel/src/types/auth.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/index.ts",
+      "target": "file:apps/admin-panel/src/types/provider.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/index.ts",
+      "target": "file:apps/admin-panel/src/types/ampcode.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/index.ts",
+      "target": "file:apps/admin-panel/src/types/usage.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/types/index.ts",
+      "target": "file:apps/admin-panel/src/types/log.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:apps/admin-panel/src/utils/connection.ts",
+      "target": "file:apps/admin-panel/src/utils/constants.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports DEFAULT_API_PORT, MANAGEMENT_API_PREFIX"
+    },
+    {
+      "source": "file:apps/admin-panel/src/utils/constants.ts",
+      "target": "file:apps/admin-panel/src/types/index.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports Language type"
+    },
+    {
+      "source": "function:useDisabledModelsStore",
+      "target": "file:apps/admin-panel/src/stores/useDisabledModelsStore.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:useLanguageStore",
+      "target": "file:apps/admin-panel/src/stores/useLanguageStore.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:useNotificationStore",
+      "target": "file:apps/admin-panel/src/stores/useNotificationStore.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:useThemeStore",
+      "target": "file:apps/admin-panel/src/stores/useThemeStore.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:ensureLanguageResources",
+      "target": "file:apps/admin-panel/src/i18n/index.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:normalizeApiBase",
+      "target": "file:apps/admin-panel/src/lib/connection.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:computeManagementApiBase",
+      "target": "file:apps/admin-panel/src/lib/connection.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:detectApiBaseFromLocation",
+      "target": "file:apps/admin-panel/src/lib/connection.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:makeClientId",
+      "target": "file:apps/admin-panel/src/types/visualConfig.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:copyToClipboard",
+      "target": "file:apps/admin-panel/src/utils/clipboard.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:computeApiUrl",
+      "target": "file:apps/admin-panel/src/utils/connection.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    },
+    {
+      "source": "function:isLocalhost",
+      "target": "file:apps/admin-panel/src/utils/connection.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in file"
+    }
+  ]
+}

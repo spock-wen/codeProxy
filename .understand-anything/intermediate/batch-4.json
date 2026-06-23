@@ -1,0 +1,221 @@
+{
+  "nodes": [
+    {
+      "id": "file:apps/admin-panel/src/i18n/locales/en.json",
+      "type": "config",
+      "name": "en.json",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "English (en) i18n translation resource file for the admin panel UI. Contains ~55 top-level namespaces covering all UI strings: common labels, dashboard, providers, auth files, quota displays, logs, monitor, config, channel groups, ccswitch import, visual config, system info, notifications, themes, and page-specific texts for ~30 pages/features.",
+      "tags": ["i18n", "locale", "english", "translations", "json"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/i18n/locales/ru.json",
+      "type": "config",
+      "name": "ru.json",
+      "filePath": "apps/admin-panel/src/i18n/locales/ru.json",
+      "summary": "Russian (ru) i18n translation resource file for the admin panel UI. Mirrors the en.json key structure with Russian translations for all UI namespaces. Slightly smaller (2171 lines) indicating incomplete coverage compared to en.json.",
+      "tags": ["i18n", "locale", "russian", "translations", "json"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/i18n/locales/zh-CN.json",
+      "type": "config",
+      "name": "zh-CN.json",
+      "filePath": "apps/admin-panel/src/i18n/locales/zh-CN.json",
+      "summary": "Simplified Chinese (zh-CN) i18n translation resource file for the admin panel UI. Largest locale file (3824 lines) with full coverage of all UI namespaces. Serves as the fallback locale (configured in i18n/index.ts).",
+      "tags": ["i18n", "locale", "chinese", "translations", "json"],
+      "complexity": "simple"
+    },
+    {
+      "id": "namespace:common",
+      "type": "config",
+      "name": "common",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Common UI labels and actions: login/logout, save/delete/edit, status indicators, button texts, copy actions, basic form labels (api_key, base_url, proxy_url), model placeholders, and common success/error/info/warning messages.",
+      "tags": ["i18n", "translations", "ui-common"],
+      "complexity": "simple"
+    },
+    {
+      "id": "namespace:login",
+      "type": "config",
+      "name": "login",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Login page translations: form labels (username, password), error messages (invalid credentials, expired session), and action buttons for authentication flow.",
+      "tags": ["i18n", "translations", "auth"],
+      "complexity": "simple"
+    },
+    {
+      "id": "namespace:dashboard",
+      "type": "config",
+      "name": "dashboard",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Dashboard page translations: KPI labels, status indicators, system health metrics, and summary cards for the main landing page.",
+      "tags": ["i18n", "translations", "dashboard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "namespace:auth_files",
+      "type": "config",
+      "name": "auth_files",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Auth files page translations: file listing, quota preview panels for multiple providers (antigravity, claude, codex, gemini-cli, kiro), file actions (rename, delete, upload), status filters, file type badges, tags, model owner groups, and alias management.",
+      "tags": ["i18n", "translations", "auth-files", "quota"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "namespace:providers",
+      "type": "config",
+      "name": "providers",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Providers page translations: provider configuration forms, API key management, model discovery, connection testing, OpenCodeGo integration, Bedrock setup, OpenAI provider sections, proxy pool binding, excluded models, and provider status badges.",
+      "tags": ["i18n", "translations", "providers", "models"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "namespace:monitor",
+      "type": "config",
+      "name": "monitor",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Monitor/usage analytics page translations: time range selectors, KPI cards, charts (daily trend, hourly breakdown, model distribution), usage statistics, and data formatting labels.",
+      "tags": ["i18n", "translations", "monitor", "analytics", "charts"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "namespace:ccswitch",
+      "type": "config",
+      "name": "ccswitch",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "CCSwitch import feature translations: configuration import from ChatGPT/Claude Code, provider name mapping, model selection, permission compatibility, and import settings forms.",
+      "tags": ["i18n", "translations", "ccswitch", "import"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "namespace:config_page",
+      "type": "config",
+      "name": "config_page",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Main config page translations: runtime config panel, YAML editor, floating save bar, config sections (API keys, quota strategy, channel groups routing, request logs toggle, and system settings).",
+      "tags": ["i18n", "translations", "config", "settings"],
+      "complexity": "simple"
+    },
+    {
+      "id": "namespace:system_page",
+      "type": "config",
+      "name": "system_page",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "System settings page translations: API key configuration, CORS settings, quota strategy (switch project/preview model), identity fingerprint, encryption settings, and system-level configuration options.",
+      "tags": ["i18n", "translations", "system", "settings"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "namespace:request_logs",
+      "type": "config",
+      "name": "request_logs",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Request logs page translations: log listing, filtering by status/method/path, pagination, log detail views, timestamps, latency formatting, and API call error messages.",
+      "tags": ["i18n", "translations", "logs", "requests"],
+      "complexity": "simple"
+    },
+    {
+      "id": "namespace:channel_groups_page",
+      "type": "config",
+      "name": "channel_groups_page",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Channel groups management page translations: routing configuration, channel group CRUD, path-based routing rules, priority settings, model routing options, and tag-based channel filtering.",
+      "tags": ["i18n", "translations", "routing", "channels"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "namespace:visual_config",
+      "type": "config",
+      "name": "visual_config",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Visual config editor translations: payload rules editor, filter rules, protocol options, payload value types, and visual configuration form labels.",
+      "tags": ["i18n", "translations", "visual-config", "editor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "namespace:auto_update",
+      "type": "config",
+      "name": "auto_update",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Auto-update feature translations: update prompts, heartbeat status, version display, update progress indicators, and updater sidecar connectivity messages.",
+      "tags": ["i18n", "translations", "update", "updater"],
+      "complexity": "simple"
+    },
+    {
+      "id": "namespace:log_content",
+      "type": "config",
+      "name": "log_content",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Log content viewer translations: rich markdown rendering, message blocks, content modal labels, copy actions, and log content formatting strings.",
+      "tags": ["i18n", "translations", "logs", "content-viewer"],
+      "complexity": "simple"
+    },
+    {
+      "id": "namespace:models_page",
+      "type": "config",
+      "name": "models_page",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "Models management page translations: model CRUD forms, pricing configuration, model capability badges, model vendor icons, availability toggles, owner presets, and OpenRouter sync settings.",
+      "tags": ["i18n", "translations", "models", "pricing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "namespace:api_keys_page",
+      "type": "config",
+      "name": "api_keys_page",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "API keys management page translations: key creation/editing forms, key masking, spending limits, permission profiles, CcSwitch import cards, usage modals, and key status indicators.",
+      "tags": ["i18n", "translations", "api-keys", "permissions"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "namespace:oauth",
+      "type": "config",
+      "name": "oauth",
+      "filePath": "apps/admin-panel/src/i18n/locales/en.json",
+      "summary": "OAuth login flow translations: OAuth dialog, provider selection, authorization page texts, redirect messages, and OAuth-related error/success messages.",
+      "tags": ["i18n", "translations", "oauth", "auth"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:apps/admin-panel/src/i18n/index.ts",
+      "target": "file:apps/admin-panel/src/i18n/locales/en.json",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "dynamic imports via localeLoaders"
+    },
+    {
+      "source": "file:apps/admin-panel/src/i18n/index.ts",
+      "target": "file:apps/admin-panel/src/i18n/locales/ru.json",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "dynamic imports via localeLoaders"
+    },
+    {
+      "source": "file:apps/admin-panel/src/i18n/index.ts",
+      "target": "file:apps/admin-panel/src/i18n/locales/zh-CN.json",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "dynamic imports via localeLoaders"
+    },
+    {
+      "source": "file:apps/admin-panel/src/i18n/locales/zh-CN.json",
+      "target": "file:apps/admin-panel/src/i18n/locales/en.json",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "shared key structure (zh-CN is superset of en)"
+    },
+    {
+      "source": "file:apps/admin-panel/src/i18n/locales/ru.json",
+      "target": "file:apps/admin-panel/src/i18n/locales/en.json",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "shared key structure (ru maps to en keys)"
+    }
+  ]
+}

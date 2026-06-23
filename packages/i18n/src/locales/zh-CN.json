@@ -726,6 +726,8 @@
     "trend_last_7_days_requests": "近 7 天请求数",
     "trend_current_weekly_cycle": "当前周周期",
     "trend_current_cycle_cost": "当前周期费用消耗",
+    "trend_predicted_5h_window_quota": "预测 5 小时窗口额度",
+    "trend_predicted_week_window_quota": "预测周窗口额度",
     "trend_weekly_quota_used": "周额度已消耗",
     "trend_cycle_start": "周期开始",
     "trend_window_title": "额度与请求趋势",
@@ -856,7 +858,11 @@
     "missing_auth_index": "认证文件缺少 auth_index",
     "empty_models": "暂无额度数据",
     "refresh_button": "刷新额度",
-    "fetch_all": "获取全部"
+    "fetch_all": "获取全部",
+    "gemini3_pro": "Gemini 3 Pro",
+    "gemini3_flash": "Gemini 3 Flash",
+    "gemini_image": "Gemini 3.1 Flash Image",
+    "claude": "Claude"
   },
   "claude_quota": {
     "title": "Claude 额度",
@@ -2725,7 +2731,16 @@
     "clear_key_filter": "清空密钥筛选",
     "clear_model_filter": "清空模型筛选",
     "clear_channel_filter": "清空渠道筛选",
-    "clear_status_filter": "清空状态筛选"
+    "clear_status_filter": "清空状态筛选",
+    "export_summary": "导出汇总",
+    "export_summary_empty": "导出汇总无数据",
+    "csv_person_name": "人员名",
+    "csv_api_key": "API Key",
+    "csv_request_count": "请求数",
+    "csv_input_tokens": "输入Token",
+    "csv_output_tokens": "输出Token",
+    "csv_total_tokens": "总Token",
+    "csv_total_cost": "费用(USD)"
   },
   "ccswitch": {
     "import_to_ccswitch": "导入到 CC Switch",

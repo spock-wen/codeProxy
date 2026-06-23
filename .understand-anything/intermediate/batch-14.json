@@ -1,0 +1,532 @@
+{
+  "nodes": [
+    {
+      "id": "file:packages/api-client/src/endpoints/helpers.ts",
+      "type": "file",
+      "name": "helpers.ts",
+      "filePath": "packages/api-client/src/endpoints/helpers.ts",
+      "summary": "Shared normalization and serialization utilities for API endpoint data. Provides functions like isRecord, extractArrayPayload, normalizeString, normalizeHeaders, normalizeModels, normalizeExcludedModels, and serializers (serializeProviderKey, serializeGeminiKey, serializeBedrockKey, serializeOpenAIProvider) for converting between API DTO types and their wire formats.",
+      "tags": ["api-client", "normalization", "serialization", "helpers", "endpoints"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/identity-fingerprint.ts",
+      "type": "file",
+      "name": "identity-fingerprint.ts",
+      "filePath": "packages/api-client/src/endpoints/identity-fingerprint.ts",
+      "summary": "API client for identity fingerprint configuration. Defines interfaces for CodexIdentityFingerprint, ClaudeIdentityFingerprint, IdentityFingerprintConfig, and IdentityFingerprintResponse. Provides get/update methods via identityFingerprintApi.",
+      "tags": ["api-client", "identity-fingerprint", "endpoints"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/image-generation.ts",
+      "type": "file",
+      "name": "image-generation.ts",
+      "filePath": "packages/api-client/src/endpoints/image-generation.ts",
+      "summary": "API client for image generation testing. Defines request/response types for image generation and edit tasks. Provides imageGenerationApi with startTestTask and getTestTask methods, including FormData support for edit requests.",
+      "tags": ["api-client", "image-generation", "endpoints"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/logs.ts",
+      "type": "file",
+      "name": "logs.ts",
+      "filePath": "packages/api-client/src/endpoints/logs.ts",
+      "summary": "API client for system logs. Provides logsApi with fetchLogs, clearLogs, fetchErrorLogs, downloadErrorLog, and downloadRequestLogById methods.",
+      "tags": ["api-client", "logs", "endpoints"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/models.ts",
+      "type": "file",
+      "name": "models.ts",
+      "filePath": "packages/api-client/src/endpoints/models.ts",
+      "summary": "API client for model management. Defines ModelInfo, ModelConfigItem, ModelOwnerPresetItem types. Provides modelsApi with methods for listing available models, getting/configuring model configs, fetching models from external APIs (OpenAI v1, Claude, generic), and owner presets.",
+      "tags": ["api-client", "models", "endpoints", "model-discovery"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/oauth.ts",
+      "type": "file",
+      "name": "oauth.ts",
+      "filePath": "packages/api-client/src/endpoints/oauth.ts",
+      "summary": "API client for OAuth authentication flows. Provides oauthApi with startAuth, getAuthStatus, submitCallback, and iflowCookieAuth methods for various OAuth providers (codex, anthropic, antigravity, gemini-cli).",
+      "tags": ["api-client", "oauth", "authentication", "endpoints"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/providers.ts",
+      "type": "file",
+      "name": "providers.ts",
+      "filePath": "packages/api-client/src/endpoints/providers.ts",
+      "summary": "API client for provider management (Gemini, Codex, OpenCodeGo, Claude, Bedrock, Vertex, OpenAI-compatible). Provides providersApi with CRUD operations for each provider type, including normalization of responses and serialization of requests.",
+      "tags": ["api-client", "providers", "endpoints", "configuration"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/proxies.ts",
+      "type": "file",
+      "name": "proxies.ts",
+      "filePath": "packages/api-client/src/endpoints/proxies.ts",
+      "summary": "API client for proxy pool management. Defines ProxyPoolEntry, ProxyCheckRequest, ProxyCheckResult types. Provides proxiesApi with list, saveAll, and check methods, plus normalization utilities for proxy entries and check results.",
+      "tags": ["api-client", "proxies", "proxy-pool", "endpoints"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/quota.ts",
+      "type": "file",
+      "name": "quota.ts",
+      "filePath": "packages/api-client/src/endpoints/quota.ts",
+      "summary": "API client for quota reconciliation. Provides a single reconcile endpoint that accepts an authIndex parameter.",
+      "tags": ["api-client", "quota", "endpoints"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/routing-config.ts",
+      "type": "file",
+      "name": "routing-config.ts",
+      "filePath": "packages/api-client/src/endpoints/routing-config.ts",
+      "summary": "API client for routing configuration management. Defines RoutingConfigGroupItem, RoutingConfigPathRouteItem, and RoutingConfigItem types. Provides routingConfigApi with get and update methods.",
+      "tags": ["api-client", "routing", "configuration", "endpoints"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/update.ts",
+      "type": "file",
+      "name": "update.ts",
+      "filePath": "packages/api-client/src/endpoints/update.ts",
+      "summary": "API client for update management. Defines types for update check responses, progress tracking, and apply responses. Provides updateApi with check, current, progress, and apply methods.",
+      "tags": ["api-client", "update", "endpoints"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/usage.ts",
+      "type": "file",
+      "name": "usage.ts",
+      "filePath": "packages/api-client/src/endpoints/usage.ts",
+      "summary": "API client for usage data and analytics. Defines extensive types for usage export/import, trends, quota snapshots, log content, dashboard summaries. Provides usageApi with methods for usage data, chart data, entity stats, auth file trends, usage logs CRUD, and log content retrieval.",
+      "tags": ["api-client", "usage", "analytics", "logs", "endpoints", "dashboard"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/version.ts",
+      "type": "file",
+      "name": "version.ts",
+      "filePath": "packages/api-client/src/endpoints/version.ts",
+      "summary": "API client for version checking. Provides versionApi with a checkLatest method to fetch the latest version info.",
+      "tags": ["api-client", "version", "endpoints"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/vertex.ts",
+      "type": "file",
+      "name": "vertex.ts",
+      "filePath": "packages/api-client/src/endpoints/vertex.ts",
+      "summary": "API client for Vertex AI credential import. Provides vertexApi with importCredential method using FormData for uploading credential files.",
+      "tags": ["api-client", "vertex", "credentials", "endpoints"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/index.ts",
+      "type": "file",
+      "name": "index.ts (api-client)",
+      "filePath": "packages/api-client/src/index.ts",
+      "summary": "Barrel export file for the api-client package. Re-exports all public API classes, types, endpoint functions, and helper utilities from submodules.",
+      "tags": ["api-client", "barrel", "exports"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/assets/package.json",
+      "type": "config",
+      "name": "package.json (assets)",
+      "filePath": "packages/assets/package.json",
+      "summary": "Package configuration for @code-proxy/assets. Declares React dependency and TypeScript react types.",
+      "tags": ["assets", "package", "config"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/assets/src/index.ts",
+      "type": "file",
+      "name": "index.ts (assets)",
+      "filePath": "packages/assets/src/index.ts",
+      "summary": "Barrel export file for the assets package. Re-exports provider logo components and VendorIcon.",
+      "tags": ["assets", "barrel", "exports"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/assets/src/logoInline.ts",
+      "type": "file",
+      "name": "logoInline.ts",
+      "filePath": "packages/assets/src/logoInline.ts",
+      "summary": "Exports a single inline JPEG logo as a constant.",
+      "tags": ["assets", "logo"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/assets/src/vendor-icons/ProviderLogos.tsx",
+      "type": "file",
+      "name": "ProviderLogos.tsx",
+      "filePath": "packages/assets/src/vendor-icons/ProviderLogos.tsx",
+      "summary": "SVG icon components for AI providers (OpenAI, Gemini, Claude, Vertex AI) using official simple-icons SVG paths.",
+      "tags": ["assets", "icons", "react-components", "providers"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/assets/src/vendor-icons/VendorIcon.tsx",
+      "type": "file",
+      "name": "VendorIcon.tsx",
+      "filePath": "packages/assets/src/vendor-icons/VendorIcon.tsx",
+      "summary": "Dynamic vendor icon component that maps model ID prefixes to appropriate light/dark SVG icons for various AI providers (Claude, Codex, DeepSeek, Gemini, GLM, GPT, Grok, iFlow, Kimi, Kiro, MiniMax, Qwen, Vertex).",
+      "tags": ["assets", "icons", "react-components", "vendors"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/domain/package.json",
+      "type": "config",
+      "name": "package.json (domain)",
+      "filePath": "packages/domain/package.json",
+      "summary": "Package configuration for @code-proxy/domain. Declares Chart.js dependency for charting functionality.",
+      "tags": ["domain", "package", "config"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "file",
+      "name": "authFiles.ts",
+      "filePath": "packages/domain/src/auth-files/authFiles.ts",
+      "summary": "Core domain logic for auth file management. Contains types (AuthFileModelItem, AuthFileModelOwnerGroup, AuthFilesUiState, AuthFilesDataCache, etc.), constants (storage keys, page sizes, status filters), and extensive utility functions for reading/writing UI state, data caching, file formatting, status filtering, subscription handling, tag management, quota preview, and usage index building.",
+      "tags": ["domain", "auth-files", "utilities", "storage", "ui-state"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/domain/src/auth-files/types.ts",
+      "type": "file",
+      "name": "types.ts (auth-files)",
+      "filePath": "packages/domain/src/auth-files/types.ts",
+      "summary": "Type definitions for auth file domain. Includes AuthFileRestriction, AuthFileItem, EntityStatPoint, EntityStatsResponse, OAuthModelAliasEntry, and AuthFileSubscriptionPeriod types.",
+      "tags": ["domain", "auth-files", "types"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/domain/src/ccswitch/ccswitchImport.ts",
+      "type": "file",
+      "name": "ccswitchImport.ts",
+      "filePath": "packages/domain/src/ccswitch/ccswitchImport.ts",
+      "summary": "Domain logic for CcSwitch import functionality. Defines client configurations (Claude Code, Codex, Gemini CLI), model mappings, base URL normalization, usage script generation, default model selection, import config resolution, and ccswitch:// protocol URL building for one-click provider imports.",
+      "tags": ["domain", "ccswitch", "import", "providers"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/domain/src/ccswitch/ccswitchImportCompatibility.ts",
+      "type": "file",
+      "name": "ccswitchImportCompatibility.ts",
+      "filePath": "packages/domain/src/ccswitch/ccswitchImportCompatibility.ts",
+      "summary": "Compatibility checking utilities for CcSwitch import configuration. Provides functions to normalize permission lists, get target models from config, and check if a config matches allowed models or API key permission entries.",
+      "tags": ["domain", "ccswitch", "compatibility", "permissions"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports ApiClient, apiClient, RequestOptions"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/client/constants.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports constants and URL helpers"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/dto/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports all DTO types"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/config.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports configApi"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/usage.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports usageApi and types"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/providers.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports providersApi"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/logs.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports logsApi"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/oauth.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports oauthApi"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/version.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports versionApi"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/quota.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports quotaApi"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/identity-fingerprint.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports identityFingerprintApi"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/update.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports updateApi and types"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/image-generation.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports imageGenerationApi"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/proxies.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports proxiesApi and types"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/models.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports modelsApi and types"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/routing-config.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports routingConfigApi and types"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/vertex.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports vertexApi"
+    },
+    {
+      "source": "file:packages/api-client/src/index.ts",
+      "target": "file:packages/api-client/src/endpoints/helpers.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports helper utilities"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/providers.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/providers.ts",
+      "target": "file:packages/api-client/src/endpoints/helpers.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports normalization/serialization helpers"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/models.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/models.ts",
+      "target": "file:packages/api-client/src/endpoints/api-call.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiCallApi, getApiCallErrorMessage"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/usage.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/logs.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/oauth.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/identity-fingerprint.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/image-generation.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/proxies.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/quota.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/routing-config.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/update.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient, RequestOptions"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/version.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/vertex.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/domain/src/auth-files/authFiles.ts",
+      "target": "file:packages/domain/src/auth-files/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports types"
+    },
+    {
+      "source": "file:packages/domain/src/auth-files/authFiles.ts",
+      "target": "file:packages/domain/src/providers/providerUsage.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizeUsageSourceId, KeyStatBucket"
+    },
+    {
+      "source": "file:packages/domain/src/auth-files/authFiles.ts",
+      "target": "file:packages/domain/src/quota/resolvers.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports resolveCodexPlanType"
+    },
+    {
+      "source": "file:packages/domain/src/auth-files/authFiles.ts",
+      "target": "file:packages/domain/src/quota/parsers.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports normalizePlanType"
+    },
+    {
+      "source": "file:packages/domain/src/auth-files/authFiles.ts",
+      "target": "file:packages/domain/src/quota/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports QuotaItem, QuotaState, QuotaStatus"
+    },
+    {
+      "source": "file:packages/domain/src/auth-files/authFiles.ts",
+      "target": "file:packages/domain/src/usage/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports StatusBarData, StatusBlockDetail, StatusBlockState"
+    },
+    {
+      "source": "file:packages/domain/src/ccswitch/ccswitchImport.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports DEFAULT_CC_SWITCH_IMPORT_SETTINGS and helpers"
+    },
+    {
+      "source": "file:packages/domain/src/ccswitch/ccswitchImportCompatibility.ts",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports CcSwitchImportConfigListItem type"
+    },
+    {
+      "source": "file:packages/assets/src/index.ts",
+      "target": "file:packages/assets/src/vendor-icons/ProviderLogos.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports logo components"
+    },
+    {
+      "source": "file:packages/assets/src/index.ts",
+      "target": "file:packages/assets/src/vendor-icons/VendorIcon.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports VendorIcon"
+    }
+  ]
+}

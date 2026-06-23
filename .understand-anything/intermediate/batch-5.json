@@ -1,0 +1,240 @@
+{
+  "nodes": [
+    {
+      "id": "file:apps/admin-panel/src/styles/variables.scss",
+      "type": "file",
+      "name": "variables.scss",
+      "filePath": "apps/admin-panel/src/styles/variables.scss",
+      "summary": "SCSS design tokens defining the project's color palette, gray scale, spacing units, border radii, box shadows, transition durations, responsive breakpoints, z-index layers, and font stacks. Used as the foundational variable layer imported by all other SCSS files.",
+      "tags": ["scss", "variables", "design-tokens", "styles"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/mixins.scss",
+      "type": "file",
+      "name": "mixins.scss",
+      "filePath": "apps/admin-panel/src/styles/mixins.scss",
+      "summary": "SCSS mixins for responsive breakpoints (mobile, tablet, desktop), flexbox centering, single and multi-line text ellipsis truncation, and button reset styles. Depends on variables.scss for breakpoint values and the primary color.",
+      "tags": ["scss", "mixins", "responsive", "styles"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/reset.scss",
+      "type": "file",
+      "name": "reset.scss",
+      "filePath": "apps/admin-panel/src/styles/reset.scss",
+      "summary": "CSS reset/normalize styles: box-sizing border-box on all elements, full-height html/body, font smoothing, root element sizing, form element font inheritance, link color reset, and list-style removal.",
+      "tags": ["scss", "reset", "normalize", "styles"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/themes.scss",
+      "type": "file",
+      "name": "themes.scss",
+      "filePath": "apps/admin-panel/src/styles/themes.scss",
+      "summary": "CSS custom property definitions for light and dark themes. Light theme uses :root with white/light backgrounds and dark text. Dark theme (triggered by [data-theme='dark']) uses near-black backgrounds and light text. Defines background colors, text colors, border colors, semantic colors (primary, success, warning, error), badge colors, shadows, and accent variables.",
+      "tags": ["scss", "themes", "dark-mode", "light-mode", "css-custom-properties", "styles"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/global.scss",
+      "type": "file",
+      "name": "global.scss",
+      "filePath": "apps/admin-panel/src/styles/global.scss",
+      "summary": "Global styles entry point that imports all other SCSS partials (variables, mixins, reset, themes, components, layout). Adds default cursor styles for interactive elements, body background/color with theme transition, modal-open overflow locking, custom scrollbar styling, and utility classes (.container, .flex-center, .text-ellipsis, fade-enter/fade-exit animations).",
+      "tags": ["scss", "global", "entry-point", "styles"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/index.css",
+      "type": "file",
+      "name": "index.css",
+      "filePath": "apps/admin-panel/src/styles/index.css",
+      "summary": "Main CSS entry file using Tailwind CSS v4 (@import 'tailwindcss'). Configures Tailwind typography plugin, scans multiple source directories (apps/admin-panel/src, pages, features, packages), defines a dark variant, custom font-family theme. Adds utility classes for hidden scrollbars (.scrollbar-hidden, .table-scrollbar), dark mode scrollbar styles, fade-in-up animation, and decorative animated layers for the image generation page (.image-generation-dots-layer, .image-generation-flow-layer) with keyframe animations.",
+      "tags": ["css", "tailwind", "entry-point", "animations", "styles"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/layout.scss",
+      "type": "file",
+      "name": "layout.scss",
+      "filePath": "apps/admin-panel/src/styles/layout.scss",
+      "summary": "Application layout styles defining the app shell flexbox structure, sticky main header with brand logo, sidebar toggle, brand title, language menu, connection status, responsive mobile sidebar (slide-in drawer), main content area, and a grid system. Includes collapsed sidebar mode and mobile-responsive adaptations.",
+      "tags": ["scss", "layout", "header", "sidebar", "responsive", "styles"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/components.scss",
+      "type": "file",
+      "name": "components.scss",
+      "filePath": "apps/admin-panel/src/styles/components.scss",
+      "summary": "Comprehensive component stylesheet covering the UI component library: buttons (primary, secondary, ghost, danger variants with sm/full modifiers), form inputs and form groups, cards and card headers, status badges (success, warning, error, muted), notification container with enter/exit animations, toggle switches, pills, loading spinners, modal system (overlay, scale-in/collapse animations, header/body/footer sections, floating close button), empty states, header input lists, item rows, latency badges, error boxes, filter grids, table layouts, pagination bars, stat cards, and log viewer styling.",
+      "tags": ["scss", "components", "buttons", "modals", "forms", "notifications", "tables", "styles"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/index.css:tailwind",
+      "type": "config",
+      "name": "Tailwind CSS v4 Configuration",
+      "filePath": "apps/admin-panel/src/styles/index.css",
+      "summary": "Tailwind CSS v4 configuration embedded in index.css via @import, @plugin, @source, @custom-variant, and @theme directives. Configures the typography plugin, source scanning paths, dark variant, and custom font stack.",
+      "tags": ["tailwind", "configuration", "styles"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/themes.scss:light-theme",
+      "type": "function",
+      "name": "Light Theme (:root)",
+      "filePath": "apps/admin-panel/src/styles/themes.scss",
+      "summary": "Light theme CSS custom properties defining the default visual appearance: white backgrounds, dark gray text, blue primary accents, and light-border styling.",
+      "tags": ["theme", "light", "css-custom-properties"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/themes.scss:dark-theme",
+      "type": "function",
+      "name": "Dark Theme ([data-theme='dark'])",
+      "filePath": "apps/admin-panel/src/styles/themes.scss",
+      "summary": "Dark theme CSS custom properties triggered by [data-theme='dark'] attribute: near-black backgrounds, white text, muted borders, and adjusted shadow/badge colors for dark backgrounds.",
+      "tags": ["theme", "dark", "css-custom-properties"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/styles/layout.scss:app-shell-header",
+      "type": "function",
+      "name": "App Shell Header & Sidebar Layout",
+      "filePath": "apps/admin-panel/src/styles/layout.scss",
+      "summary": "Defines the .app-shell, .main-header, .sidebar, .main-body, .content, and .main-content layout classes. Header is sticky with brand logo, sidebar toggle, connection status. Sidebar supports collapsed mode and mobile drawer. Content area fills remaining space with overflow handling.",
+      "tags": ["layout", "header", "sidebar", "responsive"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:apps/admin-panel/src/styles/global.scss",
+      "target": "file:apps/admin-panel/src/styles/variables.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses variables"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/global.scss",
+      "target": "file:apps/admin-panel/src/styles/mixins.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses mixins"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/global.scss",
+      "target": "file:apps/admin-panel/src/styles/reset.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses reset"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/global.scss",
+      "target": "file:apps/admin-panel/src/styles/themes.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses themes"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/global.scss",
+      "target": "file:apps/admin-panel/src/styles/components.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses components"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/global.scss",
+      "target": "file:apps/admin-panel/src/styles/layout.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses layout"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/mixins.scss",
+      "target": "file:apps/admin-panel/src/styles/variables.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses variables"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/reset.scss",
+      "target": "file:apps/admin-panel/src/styles/variables.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses variables"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/components.scss",
+      "target": "file:apps/admin-panel/src/styles/variables.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses variables"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/layout.scss",
+      "target": "file:apps/admin-panel/src/styles/variables.scss",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "@uses variables"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/components.scss",
+      "target": "file:apps/admin-panel/src/styles/themes.scss",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "references theme CSS custom properties"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/layout.scss",
+      "target": "file:apps/admin-panel/src/styles/themes.scss",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "references theme CSS custom properties"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/global.scss",
+      "target": "file:apps/admin-panel/src/styles/themes.scss:light-theme",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "references theme variables via :root"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/global.scss",
+      "target": "file:apps/admin-panel/src/styles/themes.scss:dark-theme",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "references theme variables via [data-theme='dark']"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/components.scss",
+      "target": "file:apps/admin-panel/src/styles/themes.scss:dark-theme",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "provides :global dark theme overrides for buttons"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/layout.scss",
+      "target": "file:apps/admin-panel/src/styles/layout.scss:app-shell-header",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines app shell layout classes"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/components.scss:modals",
+      "target": "file:apps/admin-panel/src/styles/components.scss",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "modal styles defined within components"
+    },
+    {
+      "source": "file:apps/admin-panel/src/styles/index.css",
+      "target": "file:apps/admin-panel/src/styles/index.css:tailwind",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "embeds Tailwind configuration"
+    }
+  ]
+}

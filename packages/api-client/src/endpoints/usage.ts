@@ -3,6 +3,7 @@ import type {
   UsageData,
   ChartDataResponse,
   EntityStatsResponse,
+  UsageSummaryItem,
 } from "../dto/types";
 
 export interface UsageExportPayload {
@@ -80,6 +81,7 @@ export interface AuthFileTrendResponse {
   cycle_request_total: number;
   cycle_cost_total: number;
   weekly_quota_used_percent: number | null;
+  cycle_known?: boolean;
   cycle_start: string;
   daily_usage: AuthFileTrendUsagePoint[];
   hourly_usage: AuthFileTrendUsagePoint[];
@@ -258,6 +260,7 @@ export const usageApi = {
         Number.isFinite(resp.weekly_quota_used_percent)
           ? resp.weekly_quota_used_percent
           : null,
+      cycle_known: resp?.cycle_known === true,
       cycle_start: resp?.cycle_start ?? "",
       daily_usage: Array.isArray(resp?.daily_usage) ? resp.daily_usage : [],
       hourly_usage: Array.isArray(resp?.hourly_usage) ? resp.hourly_usage : [],
@@ -346,6 +349,16 @@ export const usageApi = {
 
   exportUsage(): Promise<UsageExportPayload> {
     return apiClient.get<UsageExportPayload>("/usage/export");
+  },
+
+  async exportSummary(params?: {
+    days?: number;
+    api_key?: string;
+  }): Promise<UsageSummaryItem[]> {
+    const resp = await apiClient.get<UsageSummaryItem[]>("/usage/export/summary", {
+      params: { days: params?.days, api_key: params?.api_key },
+    });
+    return Array.isArray(resp) ? resp : [];
   },
 
   importUsage(payload: unknown): Promise<UsageImportResponse> {

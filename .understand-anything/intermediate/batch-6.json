@@ -1,0 +1,70 @@
+{
+  "nodes": [
+    {
+      "id": "file:docs/superpowers/plans/2026-04-27-proxy-pool-management.md",
+      "type": "document",
+      "name": "Proxy Pool Management Implementation Plan",
+      "filePath": "docs/superpowers/plans/2026-04-27-proxy-pool-management.md",
+      "summary": "Implementation plan for building a reusable proxy pool with UI management, connectivity checking, proxy-id runtime resolution, and provider/auth-file binding controls. Covers backend Go model, management API, runtime resolution, frontend page, and binding controls across 6 tasks.",
+      "tags": ["plan", "proxy-pool", "backend", "frontend", "go", "react"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:docs/superpowers/plans/2026-05-01-auth-file-quota-trends.md",
+      "type": "document",
+      "name": "Auth File Quota Trends Implementation Plan",
+      "filePath": "docs/superpowers/plans/2026-05-01-auth-file-quota-trends.md",
+      "summary": "Implementation plan for adding first-tab auth-file trend view for Kimi and Codex credentials, backed by persisted quota snapshots and request logs. Covers Codex quota dimensions, backend SQLite persistence/API, and frontend ECharts-based detail tab.",
+      "tags": ["plan", "quota", "auth-files", "trends", "backend", "frontend", "echarts"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:docs/superpowers/plans/2026-05-06-api-key-permissions.md",
+      "type": "document",
+      "name": "API Key Permission Profiles Fix Plan",
+      "filePath": "docs/superpowers/plans/2026-05-06-api-key-permissions.md",
+      "summary": "Plan to refactor API Key permission configuration from batch edit page into reusable permission profiles. Adds YAML-based profiles, refactors ApiKeyPermissionsPage with VirtualTable, and updates API Key forms with profile selection dropdown.",
+      "tags": ["plan", "api-keys", "permissions", "profiles", "refactoring"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/superpowers/plans/2026-05-08-provider-import-export.md",
+      "type": "document",
+      "name": "Provider Config Import/Export with Diff Preview Plan",
+      "filePath": "docs/superpowers/plans/2026-05-08-provider-import-export.md",
+      "summary": "Plan to add per-tab import/export of provider configurations as JSON with normalized diff preview before import, deduplication, and normalized serialization for the /ai-providers page.",
+      "tags": ["plan", "providers", "import-export", "diff-preview", "json"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:docs/superpowers/plans/2026-04-27-proxy-pool-management.md",
+      "target": "file:docs/superpowers/specs/2026-04-27-proxy-pool-management-design.md",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "references design spec"
+    },
+    {
+      "source": "file:docs/superpowers/plans/2026-05-06-api-key-permissions.md",
+      "target": "file:docs/superpowers/specs/2026-05-06-api-key-permissions-design.md",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "references design spec"
+    },
+    {
+      "source": "file:docs/superpowers/plans/2026-04-27-proxy-pool-management.md",
+      "target": "file:docs/superpowers/plans/2026-05-01-auth-file-quota-trends.md",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "related plan (both modify auth-file forms)"
+    },
+    {
+      "source": "file:docs/superpowers/plans/2026-05-06-api-key-permissions.md",
+      "target": "file:docs/superpowers/plans/2026-05-08-provider-import-export.md",
+      "type": "depends_on",
+      "weight": 0.2,
+      "label": "related plan (both modify providers/api-keys modules)"
+    }
+  ]
+}

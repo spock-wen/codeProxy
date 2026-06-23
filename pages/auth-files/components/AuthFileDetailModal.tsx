@@ -41,9 +41,17 @@ import {
 
 type DetailTab = "usage" | "fields" | "models";
 type DetailTrendWindow = "5h" | "week";
+type TrendQuotaSeries = AuthFileTrendResponse["quota_series"][number];
+type TrendUsagePoint = AuthFileTrendResponse["hourly_usage"][number];
 
+const FIVE_HOUR_WINDOW_SECONDS = 18000;
+const WEEK_WINDOW_SECONDS = 604800;
 const TREND_CHART_ANIMATION_MS = 680;
 const TREND_CHART_ANIMATION_GUARD_MS = TREND_CHART_ANIMATION_MS + 120;
+const SUMMARY_CARD_CLASS_NAME = "min-w-0 rounded-lg bg-slate-50/80 px-3 py-3 dark:bg-white/[0.04]";
+const SUMMARY_LABEL_CLASS_NAME = "text-xs font-semibold text-slate-500 dark:text-white/55";
+const SUMMARY_VALUE_CLASS_NAME =
+  "mt-2 min-w-0 break-words text-2xl font-semibold leading-tight text-slate-950 dark:text-white";
 
 const padTwo = (value: number) => String(value).padStart(2, "0");
 
@@ -73,6 +81,44 @@ const formatPercent = (value: number | null | undefined) => {
   return `${new Intl.NumberFormat(undefined, {
     maximumFractionDigits: Number.isInteger(value) ? 0 : 1,
   }).format(clampPercent(value))}%`;
+};
+
+const sumUsageCost = (points: TrendUsagePoint[]) =>
+  points.reduce((total, point) => {
+    const cost = typeof point.cost === "number" && Number.isFinite(point.cost) ? point.cost : 0;
+    return total + Math.max(0, cost);
+  }, 0);
+
+const latestQuotaUsedPercent = (
+  seriesList: TrendQuotaSeries[],
+  quotaKey: string,
+  matchesWindow: (windowSeconds: number) => boolean,
+) => {
+  let latestTimestamp = -Infinity;
+  let latestUsedPercent: number | null = null;
+
+  seriesList.forEach((series) => {
+    if (!matchesWindow(series.window_seconds) || series.quota_key !== quotaKey) return;
+
+    series.points.forEach((point) => {
+      const usedPercent = toQuotaUsedPercent(point.percent);
+      if (usedPercent === null) return;
+      const timestamp = Date.parse(point.timestamp);
+      if (!Number.isFinite(timestamp) || timestamp < latestTimestamp) return;
+      latestTimestamp = timestamp;
+      latestUsedPercent = usedPercent;
+    });
+  });
+
+  return latestUsedPercent;
+};
+
+const estimateQuotaBudget = (cost: number, usedPercent: number | null | undefined) => {
+  if (!Number.isFinite(cost) || cost <= 0) return 0;
+  if (typeof usedPercent !== "number" || !Number.isFinite(usedPercent)) return 0;
+  const normalizedUsedPercent = clampPercent(usedPercent);
+  if (normalizedUsedPercent <= 0) return 0;
+  return cost / (normalizedUsedPercent / 100);
 };
 
 interface AuthFileDetailModalProps {
@@ -202,7 +248,9 @@ export function AuthFileDetailModal({
   const activeQuotaSeries = useMemo(() => {
     const series = detailTrend?.quota_series ?? [];
     return series.filter((item) =>
-      detailTrendWindow === "5h" ? item.window_seconds === 18000 : item.window_seconds >= 604800,
+      detailTrendWindow === "5h"
+        ? item.window_seconds === FIVE_HOUR_WINDOW_SECONDS
+        : item.window_seconds >= WEEK_WINDOW_SECONDS,
     );
   }, [detailTrend, detailTrendWindow]);
   useLayoutEffect(() => {
@@ -218,15 +266,11 @@ export function AuthFileDetailModal({
     setDetailOpenKey(`${fileName}:${detailOpenCounterRef.current}`);
   }, [detailFile?.name, open]);
   const trendAnimationKey =
-    detailFile && detailTrend && detailOpenKey
-      ? `${detailOpenKey}:${detailTrend.auth_index}`
-      : "";
+    detailFile && detailTrend && detailOpenKey ? `${detailOpenKey}:${detailTrend.auth_index}` : "";
   const shouldAnimateTrend = Boolean(trendAnimationKey && animatedTrendKey !== trendAnimationKey);
   const markTrendAnimationDone = useCallback(() => {
     if (!trendAnimationKey) return;
-    setAnimatedTrendKey((current) =>
-      current === trendAnimationKey ? current : trendAnimationKey,
-    );
+    setAnimatedTrendKey((current) => (current === trendAnimationKey ? current : trendAnimationKey));
   }, [trendAnimationKey]);
   useEffect(() => {
     if (!shouldAnimateTrend) return;
@@ -392,7 +436,14 @@ export function AuthFileDetailModal({
         })),
       ],
     };
-  }, [activeQuotaSeries, detailTrend, detailTrendWindow, shouldAnimateTrend, t, translateQuotaLabel]);
+  }, [
+    activeQuotaSeries,
+    detailTrend,
+    detailTrendWindow,
+    shouldAnimateTrend,
+    t,
+    translateQuotaLabel,
+  ]);
 
   const closeModal = () => {
     setDetailOpen(false);
@@ -410,14 +461,19 @@ export function AuthFileDetailModal({
   };
 
   const renderUsageTrend = () => {
+    const isCodexDetail = detailProviderKey === "codex";
+    const summaryGridClassName = isCodexDetail
+      ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
+      : "grid gap-3 sm:grid-cols-2 xl:grid-cols-5";
+    const summarySkeletonCount = isCodexDetail ? 6 : 5;
+
     if (detailTrendLoading && !detailTrend) {
-      const skeletonClass =
-        "animate-pulse rounded-lg bg-slate-100/80 dark:bg-white/[0.06]";
+      const skeletonClass = "animate-pulse rounded-lg bg-slate-100/80 dark:bg-white/[0.06]";
 
       return (
         <div className="space-y-4" data-testid="auth-file-trend-loading" aria-hidden="true">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, index) => (
+          <div className={summaryGridClassName}>
+            {Array.from({ length: summarySkeletonCount }).map((_, index) => (
               <div key={index} className={`${skeletonClass} h-20`} />
             ))}
           </div>
@@ -451,46 +507,76 @@ export function AuthFileDetailModal({
       ? new Date(detailTrend.cycle_start).toLocaleString()
       : "--";
     const weeklyQuotaUsed = formatPercent(detailTrend.weekly_quota_used_percent);
+    const fiveHourQuotaUsedPercent = isCodexDetail
+      ? latestQuotaUsedPercent(
+          detailTrend.quota_series,
+          "code_5h",
+          (windowSeconds) => windowSeconds === FIVE_HOUR_WINDOW_SECONDS,
+        )
+      : null;
+    const weeklyQuotaUsedPercent =
+      detailTrend.weekly_quota_used_percent ??
+      (isCodexDetail
+        ? latestQuotaUsedPercent(
+            detailTrend.quota_series,
+            "code_week",
+            (windowSeconds) => windowSeconds >= WEEK_WINDOW_SECONDS,
+          )
+        : null);
+    const estimatedFiveHourQuota = estimateQuotaBudget(
+      sumUsageCost(detailTrend.hourly_usage),
+      fiveHourQuotaUsedPercent,
+    );
+    const estimatedWeeklyQuota = estimateQuotaBudget(
+      detailTrend.cycle_cost_total,
+      weeklyQuotaUsedPercent,
+    );
 
     return (
       <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-lg bg-slate-50/80 px-3 py-3 dark:bg-white/[0.04]">
-            <p className="text-xs font-semibold text-slate-500 dark:text-white/55">
-              {t("auth_files.trend_last_7_days_requests")}
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
-              {formatCount(detailTrend.request_total)}
-            </p>
-          </div>
-          <div className="rounded-lg bg-slate-50/80 px-3 py-3 dark:bg-white/[0.04]">
-            <p className="text-xs font-semibold text-slate-500 dark:text-white/55">
-              {t("auth_files.trend_current_weekly_cycle")}
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
+        <div className={summaryGridClassName}>
+          {!isCodexDetail ? (
+            <div className={SUMMARY_CARD_CLASS_NAME}>
+              <p className={SUMMARY_LABEL_CLASS_NAME}>
+                {t("auth_files.trend_last_7_days_requests")}
+              </p>
+              <p className={SUMMARY_VALUE_CLASS_NAME}>{formatCount(detailTrend.request_total)}</p>
+            </div>
+          ) : null}
+          <div className={SUMMARY_CARD_CLASS_NAME}>
+            <p className={SUMMARY_LABEL_CLASS_NAME}>{t("auth_files.trend_current_weekly_cycle")}</p>
+            <p className={SUMMARY_VALUE_CLASS_NAME}>
               {formatCount(detailTrend.cycle_request_total)}
             </p>
           </div>
-          <div className="rounded-lg bg-slate-50/80 px-3 py-3 dark:bg-white/[0.04]">
-            <p className="text-xs font-semibold text-slate-500 dark:text-white/55">
-              {t("auth_files.trend_current_cycle_cost")}
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
+          <div className={SUMMARY_CARD_CLASS_NAME}>
+            <p className={SUMMARY_LABEL_CLASS_NAME}>{t("auth_files.trend_current_cycle_cost")}</p>
+            <p className={SUMMARY_VALUE_CLASS_NAME}>
               {formatCurrency(detailTrend.cycle_cost_total)}
             </p>
           </div>
-          <div className="rounded-lg bg-slate-50/80 px-3 py-3 dark:bg-white/[0.04]">
-            <p className="text-xs font-semibold text-slate-500 dark:text-white/55">
-              {t("auth_files.trend_weekly_quota_used")}
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
-              {weeklyQuotaUsed}
-            </p>
+          {isCodexDetail ? (
+            <>
+              <div className={SUMMARY_CARD_CLASS_NAME}>
+                <p className={SUMMARY_LABEL_CLASS_NAME}>
+                  {t("auth_files.trend_predicted_5h_window_quota")}
+                </p>
+                <p className={SUMMARY_VALUE_CLASS_NAME}>{formatCurrency(estimatedFiveHourQuota)}</p>
+              </div>
+              <div className={SUMMARY_CARD_CLASS_NAME}>
+                <p className={SUMMARY_LABEL_CLASS_NAME}>
+                  {t("auth_files.trend_predicted_week_window_quota")}
+                </p>
+                <p className={SUMMARY_VALUE_CLASS_NAME}>{formatCurrency(estimatedWeeklyQuota)}</p>
+              </div>
+            </>
+          ) : null}
+          <div className={SUMMARY_CARD_CLASS_NAME}>
+            <p className={SUMMARY_LABEL_CLASS_NAME}>{t("auth_files.trend_weekly_quota_used")}</p>
+            <p className={SUMMARY_VALUE_CLASS_NAME}>{weeklyQuotaUsed}</p>
           </div>
-          <div className="rounded-lg bg-slate-50/80 px-3 py-3 dark:bg-white/[0.04]">
-            <p className="text-xs font-semibold text-slate-500 dark:text-white/55">
-              {t("auth_files.trend_cycle_start")}
-            </p>
+          <div className={SUMMARY_CARD_CLASS_NAME}>
+            <p className={SUMMARY_LABEL_CLASS_NAME}>{t("auth_files.trend_cycle_start")}</p>
             <p className="mt-2 truncate text-sm font-semibold text-slate-800 dark:text-white/85">
               {cycleStart}
             </p>
@@ -544,7 +630,7 @@ export function AuthFileDetailModal({
           </span>
         ) : undefined
       }
-      maxWidth="max-w-4xl"
+      maxWidth="max-w-6xl"
       bodyHeightClassName="h-[70vh]"
       bodyClassName="flex flex-col !overflow-hidden"
       bodyTestId="auth-file-detail-body"
@@ -638,56 +724,121 @@ export function AuthFileDetailModal({
                     {t("common.loading_ellipsis")}
                   </div>
                 ) : (
-                  <div className="max-w-3xl space-y-5" data-testid="auth-file-fields-grid">
-                    {canRenameChannel ? (
-                      <div className="grid gap-2">
-                        <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
-                          {t("auth_files.channel_name_label")}
-                        </p>
-                        <TextInput
-                          value={channelLabelValue}
-                          onChange={(e) => {
-                            const value = e.currentTarget.value;
-                            setChannelEditor((prev) => ({
-                              ...prev,
-                              fileName: detailFile.name,
-                              label: value,
-                              error: null,
-                            }));
-                          }}
-                          placeholder={t("auth_files.channel_name_placeholder")}
-                        />
-                        {channelEditor.error ? (
-                          <p className="text-sm text-rose-600 dark:text-rose-300">
-                            {channelEditor.error}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-slate-500 dark:text-white/55">
-                            {t("auth_files.channel_name_hint")}
-                          </p>
-                        )}
+                  <div
+                    className="grid max-w-none items-start gap-x-10 gap-y-5 lg:grid-cols-2"
+                    data-testid="auth-file-fields-grid"
+                  >
+                    {canRenameChannel || prefixProxyEditor.json ? (
+                      <div className="min-w-0 space-y-5">
+                        {canRenameChannel ? (
+                          <div className="grid gap-2">
+                            <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
+                              {t("auth_files.channel_name_label")}
+                            </p>
+                            <TextInput
+                              value={channelLabelValue}
+                              onChange={(e) => {
+                                const value = e.currentTarget.value;
+                                setChannelEditor((prev) => ({
+                                  ...prev,
+                                  fileName: detailFile.name,
+                                  label: value,
+                                  error: null,
+                                }));
+                              }}
+                              placeholder={t("auth_files.channel_name_placeholder")}
+                            />
+                            {channelEditor.error ? (
+                              <p className="text-sm text-rose-600 dark:text-rose-300">
+                                {channelEditor.error}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-slate-500 dark:text-white/55">
+                                {t("auth_files.channel_name_hint")}
+                              </p>
+                            )}
+                          </div>
+                        ) : null}
+
+                        {prefixProxyEditor.json ? (
+                          <>
+                            <div className="grid gap-2">
+                              <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
+                                {t("auth_files.prefix_label")}
+                              </p>
+                              <TextInput
+                                value={prefixProxyEditor.prefix}
+                                onChange={(e) => {
+                                  const value = e.currentTarget.value;
+                                  setPrefixProxyEditor((prev) => ({ ...prev, prefix: value }));
+                                }}
+                                placeholder={t("auth_files.prefix_placeholder")}
+                              />
+                              <p className="text-xs text-slate-500 dark:text-white/55">
+                                {t("auth_files.leave_empty_prefix")}
+                              </p>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
+                                {t("auth_files.subscription_started_at_label")}
+                              </p>
+                              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                                <DateTimePicker
+                                  value={prefixProxyEditor.subscriptionStartedAt}
+                                  onChange={(value) => {
+                                    setPrefixProxyEditor((prev) => ({
+                                      ...prev,
+                                      subscriptionStartedAt: value,
+                                    }));
+                                  }}
+                                  aria-label={t("auth_files.subscription_started_at_label")}
+                                  locale={i18n.language}
+                                  labels={{
+                                    picker: t("auth_files.subscription_date_picker"),
+                                    open: t("auth_files.subscription_date_picker_open"),
+                                    previousMonth: t(
+                                      "auth_files.subscription_date_picker_previous_month",
+                                    ),
+                                    nextMonth: t("auth_files.subscription_date_picker_next_month"),
+                                    today: t("auth_files.subscription_date_picker_today"),
+                                    clear: t("auth_files.subscription_date_picker_clear"),
+                                    hour: t("auth_files.subscription_date_picker_hour"),
+                                    minute: t("auth_files.subscription_date_picker_minute"),
+                                  }}
+                                />
+                                <Select
+                                  value={prefixProxyEditor.subscriptionPeriod}
+                                  onChange={(value) =>
+                                    setPrefixProxyEditor((prev) => ({
+                                      ...prev,
+                                      subscriptionPeriod: value as AuthFileSubscriptionPeriod,
+                                    }))
+                                  }
+                                  options={[
+                                    {
+                                      value: "monthly",
+                                      label: t("auth_files.subscription_period_monthly"),
+                                    },
+                                    {
+                                      value: "yearly",
+                                      label: t("auth_files.subscription_period_yearly"),
+                                    },
+                                  ]}
+                                  aria-label={t("auth_files.subscription_period_label")}
+                                />
+                              </div>
+                              <p className="text-xs text-slate-500 dark:text-white/55">
+                                {t("auth_files.subscription_started_at_hint")}
+                              </p>
+                            </div>
+                          </>
+                        ) : null}
                       </div>
                     ) : null}
 
                     {prefixProxyEditor.json ? (
-                      <>
-                        <div className="grid gap-2">
-                          <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
-                            {t("auth_files.prefix_label")}
-                          </p>
-                          <TextInput
-                            value={prefixProxyEditor.prefix}
-                            onChange={(e) => {
-                              const value = e.currentTarget.value;
-                              setPrefixProxyEditor((prev) => ({ ...prev, prefix: value }));
-                            }}
-                            placeholder={t("auth_files.prefix_placeholder")}
-                          />
-                          <p className="text-xs text-slate-500 dark:text-white/55">
-                            {t("auth_files.leave_empty_prefix")}
-                          </p>
-                        </div>
-
+                      <div className="min-w-0 space-y-5">
                         <div className="grid gap-2">
                           <ProxyPoolSelect
                             value={prefixProxyEditor.proxyId}
@@ -719,66 +870,14 @@ export function AuthFileDetailModal({
                             {t("auth_files.leave_empty_proxy")}
                           </p>
                         </div>
-
-                        <div className="grid gap-2">
-                          <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
-                            {t("auth_files.subscription_started_at_label")}
-                          </p>
-                          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
-                            <DateTimePicker
-                              value={prefixProxyEditor.subscriptionStartedAt}
-                              onChange={(value) => {
-                                setPrefixProxyEditor((prev) => ({
-                                  ...prev,
-                                  subscriptionStartedAt: value,
-                                }));
-                              }}
-                              aria-label={t("auth_files.subscription_started_at_label")}
-                              locale={i18n.language}
-                              labels={{
-                                picker: t("auth_files.subscription_date_picker"),
-                                open: t("auth_files.subscription_date_picker_open"),
-                                previousMonth: t(
-                                  "auth_files.subscription_date_picker_previous_month",
-                                ),
-                                nextMonth: t("auth_files.subscription_date_picker_next_month"),
-                                today: t("auth_files.subscription_date_picker_today"),
-                                clear: t("auth_files.subscription_date_picker_clear"),
-                                hour: t("auth_files.subscription_date_picker_hour"),
-                                minute: t("auth_files.subscription_date_picker_minute"),
-                              }}
-                            />
-                            <Select
-                              value={prefixProxyEditor.subscriptionPeriod}
-                              onChange={(value) =>
-                                setPrefixProxyEditor((prev) => ({
-                                  ...prev,
-                                  subscriptionPeriod: value as AuthFileSubscriptionPeriod,
-                                }))
-                              }
-                              options={[
-                                {
-                                  value: "monthly",
-                                  label: t("auth_files.subscription_period_monthly"),
-                                },
-                                {
-                                  value: "yearly",
-                                  label: t("auth_files.subscription_period_yearly"),
-                                },
-                              ]}
-                              aria-label={t("auth_files.subscription_period_label")}
-                            />
-                          </div>
-                          <p className="text-xs text-slate-500 dark:text-white/55">
-                            {t("auth_files.subscription_started_at_hint")}
-                          </p>
-                        </div>
-                      </>
+                      </div>
                     ) : (
-                      <EmptyState
-                        title={t("auth_files_page.cannot_edit")}
-                        description={prefixProxyEditor.error || t("auth_files.unknown_error")}
-                      />
+                      <div className={canRenameChannel ? "min-w-0" : "min-w-0 lg:col-span-2"}>
+                        <EmptyState
+                          title={t("auth_files_page.cannot_edit")}
+                          description={prefixProxyEditor.error || t("auth_files.unknown_error")}
+                        />
+                      </div>
                     )}
                   </div>
                 )}

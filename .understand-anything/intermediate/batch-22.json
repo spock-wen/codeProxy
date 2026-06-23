@@ -1,0 +1,794 @@
+{
+  "nodes": [
+    {
+      "id": "file:pages/logs/LogsPage.tsx",
+      "type": "file",
+      "name": "LogsPage.tsx",
+      "filePath": "pages/logs/LogsPage.tsx",
+      "summary": "Main LogsPage component with live log content tab and error logs tab. Manages log buffer, incremental loading, auto-refresh, scroll-to-bottom, filtering, and server log management (clear, download).",
+      "tags": ["logs", "live-logs", "error-logs", "page-component"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/logs/logsHelpers.ts",
+      "type": "file",
+      "name": "logsHelpers.ts",
+      "filePath": "pages/logs/logsHelpers.ts",
+      "summary": "Utility module for log parsing (timestamp, level, source, request ID, status code, latency, IP, HTTP method/path), management traffic detection, blob download, and level/status color styling.",
+      "tags": ["logs", "parsing", "utilities", "formatting"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/logs/components/LiveLogsTab.tsx",
+      "type": "file",
+      "name": "LiveLogsTab.tsx",
+      "filePath": "pages/logs/components/LiveLogsTab.tsx",
+      "summary": "Presentational component for live log content tab with search input, options panel (auto-refresh, hide management, raw view), scrollable log view with parsed line rendering using badges for level, source, status code, latency, IP, method, path.",
+      "tags": ["logs", "ui-component", "live-view"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/logs/components/ErrorLogsTab.tsx",
+      "type": "file",
+      "name": "ErrorLogsTab.tsx",
+      "filePath": "pages/logs/components/ErrorLogsTab.tsx",
+      "summary": "Presentational component for error logs tab with request ID download input and error log file listing with download buttons.",
+      "tags": ["logs", "ui-component", "error-logs"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/logs/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/logs/index.ts",
+      "summary": "Barrel export for LogsPage component and logsRoute definition.",
+      "tags": ["barrel", "exports"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/logs/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/logs/route.tsx",
+      "summary": "Route definition for /logs page with lazy-loaded LogsPage, auth requirement, dashboard layout, and nav label.",
+      "tags": ["route", "lazy-loading"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/logs/__tests__/LogsPage.test.tsx",
+      "type": "file",
+      "name": "LogsPage.test.tsx",
+      "filePath": "pages/logs/__tests__/LogsPage.test.tsx",
+      "summary": "Test suite for LogsPage verifying empty error log list is treated as loaded (not retried) and tab switching works.",
+      "tags": ["test", "logs"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/models/ModelsPage.tsx",
+      "type": "file",
+      "name": "ModelsPage.tsx",
+      "filePath": "pages/models/ModelsPage.tsx",
+      "summary": "Main ModelsPage component with full CRUD for model configurations and owner presets. Features active/library tabs, search, filtering, bulk delete, DataTable display, OpenRouter sync management, and model availability integration.",
+      "tags": ["models", "crud", "page-component", "admin"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/models/modelsUtils.ts",
+      "type": "file",
+      "name": "modelsUtils.ts",
+      "filePath": "pages/models/modelsUtils.ts",
+      "summary": "Utility functions for model CRUD operations: normalization of config responses, building payloads, merging availability data, formatting prices, owner preset management, OpenRouter sync state handling.",
+      "tags": ["models", "utilities", "normalization", "api"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/models/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "pages/models/types.ts",
+      "summary": "TypeScript type definitions for ModelItem, ModelOwnerPreset, ModelFormState, OwnerFormState, OpenRouterModelSyncState, and re-exports from @features/model-availability.",
+      "tags": ["models", "types", "interfaces"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/models/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/models/index.ts",
+      "summary": "Barrel export for ModelsPage component and modelsRoute definition.",
+      "tags": ["barrel", "exports"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/models/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/models/route.tsx",
+      "summary": "Route definition for /models page with lazy-loaded ModelsPage including redirect from legacy /manage/models path.",
+      "tags": ["route", "lazy-loading", "redirect"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/models/components/ModelFormModal.tsx",
+      "type": "file",
+      "name": "ModelFormModal.tsx",
+      "filePath": "pages/models/components/ModelFormModal.tsx",
+      "summary": "Modal form for creating/editing model configurations with fields for model ID (with reusable suggestions), owner, description, enable toggle, pricing mode, and price inputs.",
+      "tags": ["models", "modal", "form", "ui-component"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/models/components/ModelsPageTabs.tsx",
+      "type": "file",
+      "name": "ModelsPageTabs.tsx",
+      "filePath": "pages/models/components/ModelsPageTabs.tsx",
+      "summary": "Tab switcher component for toggling between active models and model library views.",
+      "tags": ["models", "tabs", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/models/components/ModelsStatsCards.tsx",
+      "type": "file",
+      "name": "ModelsStatsCards.tsx",
+      "filePath": "pages/models/components/ModelsStatsCards.tsx",
+      "summary": "Stats card row displaying available model count, enabled/priced model count, and total quota cost.",
+      "tags": ["models", "stats", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/models/components/ModelVendorIcon.tsx",
+      "type": "file",
+      "name": "ModelVendorIcon.tsx",
+      "filePath": "pages/models/components/ModelVendorIcon.tsx",
+      "summary": "Renders vendor-specific icon for a model ID by matching prefix (claude, gpt, gemini, etc.) against known vendor icon SVGs.",
+      "tags": ["models", "icons", "vendor", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/models/components/ModelCapabilityBadges.tsx",
+      "type": "file",
+      "name": "ModelCapabilityBadges.tsx",
+      "filePath": "pages/models/components/ModelCapabilityBadges.tsx",
+      "summary": "Renders capability badges for a model item: text, vision, image-output, or unknown based on modalities.",
+      "tags": ["models", "capabilities", "badges", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/models/components/OwnerFormModal.tsx",
+      "type": "file",
+      "name": "OwnerFormModal.tsx",
+      "filePath": "pages/models/components/OwnerFormModal.tsx",
+      "summary": "Modal form for creating/editing model owner presets with value, label, description, and enabled toggle.",
+      "tags": ["models", "modal", "form", "owner", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/models/hooks/useModelColumns.tsx",
+      "type": "file",
+      "name": "useModelColumns.tsx",
+      "filePath": "pages/models/hooks/useModelColumns.tsx",
+      "summary": "Hook that defines DataTable column configuration for model list including selection checkboxes, model ID with vendor icon, owner, capabilities, pricing mode, price, status badge, and action buttons.",
+      "tags": ["models", "hooks", "data-table", "columns"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/models/__tests__/ModelsPage.test.tsx",
+      "type": "file",
+      "name": "ModelsPage.test.tsx",
+      "filePath": "pages/models/__tests__/ModelsPage.test.tsx",
+      "summary": "Test suite for ModelsPage with mocked API client covering various CRUD scenarios.",
+      "tags": ["test", "models"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/models/__tests__/modelAvailability.test.ts",
+      "type": "file",
+      "name": "modelAvailability.test.ts",
+      "filePath": "pages/models/__tests__/modelAvailability.test.ts",
+      "summary": "Tests for model availability normalization ensuring scoped empty response restricts models and unscoped response allows all.",
+      "tags": ["test", "models", "availability"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/monitor/__tests__/ErrorDetailModal.test.tsx",
+      "type": "file",
+      "name": "ErrorDetailModal.test.tsx",
+      "filePath": "pages/monitor/__tests__/ErrorDetailModal.test.tsx",
+      "summary": "Tests for ErrorDetailModal component verifying historical-missing hint and real upstream error body display.",
+      "tags": ["test", "monitor", "error-detail"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/monitor/__tests__/LogContentModal.test.tsx",
+      "type": "file",
+      "name": "LogContentModal.test.tsx",
+      "filePath": "pages/monitor/__tests__/LogContentModal.test.tsx",
+      "summary": "Tests for LogContentModal verifying viewport-safe dimensions, animation presets, virtual scrolling for large content, and progressive mount rendering.",
+      "tags": ["test", "monitor", "log-content", "virtual-scroll"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/monitor/__tests__/MonitorPage.test.tsx",
+      "type": "file",
+      "name": "MonitorPage.test.tsx",
+      "filePath": "pages/monitor/__tests__/MonitorPage.test.tsx",
+      "summary": "Tests for MonitorPage distribution sections verifying legend toggle buttons render and respond to clicks.",
+      "tags": ["test", "monitor", "dashboard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/monitor/__tests__/MonitorPagePieces.test.tsx",
+      "type": "file",
+      "name": "MonitorPagePieces.test.tsx",
+      "filePath": "pages/monitor/__tests__/MonitorPagePieces.test.tsx",
+      "summary": "Tests for MonitorCard component verifying loading overlay does not intercept pointer events.",
+      "tags": ["test", "monitor", "ui-component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:LogsPage",
+      "type": "function",
+      "name": "LogsPage",
+      "filePath": "pages/logs/LogsPage.tsx",
+      "summary": "Main log viewer page with live content and error log tabs, incremental loading, auto-refresh, search/filter, scroll management.",
+      "tags": ["logs", "page", "live-logs"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:LiveLogsTab",
+      "type": "function",
+      "name": "LiveLogsTab",
+      "filePath": "pages/logs/components/LiveLogsTab.tsx",
+      "summary": "UI component rendering parsed log lines with rich badge display for log metadata.",
+      "tags": ["logs", "ui"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ErrorLogsTab",
+      "type": "function",
+      "name": "ErrorLogsTab",
+      "filePath": "pages/logs/components/ErrorLogsTab.tsx",
+      "summary": "UI component for error log file listing and request ID download.",
+      "tags": ["logs", "ui", "error"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:parseLogLine",
+      "type": "function",
+      "name": "parseLogLine",
+      "filePath": "pages/logs/logsHelpers.ts",
+      "summary": "Parses a raw log line string extracting timestamp, level, source, requestId, statusCode, latency, IP, method, and path.",
+      "tags": ["logs", "parsing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:downloadBlob",
+      "type": "function",
+      "name": "downloadBlob",
+      "filePath": "pages/logs/logsHelpers.ts",
+      "summary": "Triggers a browser file download from a Blob with the given filename.",
+      "tags": ["utilities", "download"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ModelsPage",
+      "type": "function",
+      "name": "ModelsPage",
+      "filePath": "pages/models/ModelsPage.tsx",
+      "summary": "Full CRUD page for model configurations with active/library tabs, search, DataTable, OpenRouter sync, and owner preset management.",
+      "tags": ["models", "crud", "page"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ModelFormModal",
+      "type": "function",
+      "name": "ModelFormModal",
+      "filePath": "pages/models/components/ModelFormModal.tsx",
+      "summary": "Modal form for adding/editing model config with ID, owner, description, pricing mode/values.",
+      "tags": ["models", "form", "modal"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useModelColumns",
+      "type": "function",
+      "name": "useModelColumns",
+      "filePath": "pages/models/hooks/useModelColumns.tsx",
+      "summary": "Hook returning DataTable column definitions for model list with selection, details, pricing, and actions.",
+      "tags": ["models", "hooks", "data-table"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:mergeConfiguredModelAvailability",
+      "type": "function",
+      "name": "mergeConfiguredModelAvailability",
+      "filePath": "pages/models/modelsUtils.ts",
+      "summary": "Merges fetched model configs with configured availability and path availability items.",
+      "tags": ["models", "availability"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:saveModelConfig",
+      "type": "function",
+      "name": "saveModelConfig",
+      "filePath": "pages/models/modelsUtils.ts",
+      "summary": "Saves a model config via API (create or update), invalidates availability cache.",
+      "tags": ["models", "api", "crud"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ModelVendorIcon",
+      "type": "function",
+      "name": "ModelVendorIcon",
+      "filePath": "pages/models/components/ModelVendorIcon.tsx",
+      "summary": "Renders vendor logo icon based on model ID prefix matching.",
+      "tags": ["models", "icons", "vendor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ModelCapabilityBadges",
+      "type": "function",
+      "name": "ModelCapabilityBadges",
+      "filePath": "pages/models/components/ModelCapabilityBadges.tsx",
+      "summary": "Renders capability badges (text/vision/image-output) for a model.",
+      "tags": ["models", "capabilities"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ModelsStatsCards",
+      "type": "function",
+      "name": "ModelsStatsCards",
+      "filePath": "pages/models/components/ModelsStatsCards.tsx",
+      "summary": "Displays model count, enabled count with pricing, and total cost stat cards.",
+      "tags": ["models", "stats"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ModelsPageTabs",
+      "type": "function",
+      "name": "ModelsPageTabs",
+      "filePath": "pages/models/components/ModelsPageTabs.tsx",
+      "summary": "Tab component to switch between active and library model views.",
+      "tags": ["models", "tabs"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:OwnerFormModal",
+      "type": "function",
+      "name": "OwnerFormModal",
+      "filePath": "pages/models/components/OwnerFormModal.tsx",
+      "summary": "Modal form for creating/editing owner presets with value, label, description, and enabled toggle.",
+      "tags": ["models", "owner", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:ModelItem",
+      "type": "class",
+      "name": "ModelItem",
+      "filePath": "pages/models/types.ts",
+      "summary": "Interface for a model configuration item with id, owner, description, enabled state, source, pricing, and modalities.",
+      "tags": ["models", "types"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:ModelFormState",
+      "type": "class",
+      "name": "ModelFormState",
+      "filePath": "pages/models/types.ts",
+      "summary": "Interface for model configuration form state including pricing fields and mode.",
+      "tags": ["models", "types", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:OwnerFormState",
+      "type": "class",
+      "name": "OwnerFormState",
+      "filePath": "pages/models/types.ts",
+      "summary": "Interface for owner preset form state with value, label, description, and enabled.",
+      "tags": ["models", "types", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:ParsedLogLine",
+      "type": "class",
+      "name": "ParsedLogLine",
+      "filePath": "pages/logs/logsHelpers.ts",
+      "summary": "Type representing a parsed log line with timestamp, level, source, requestId, statusCode, latency, IP, method, path, and message.",
+      "tags": ["logs", "types"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:pages/logs/LogsPage.tsx",
+      "target": "file:pages/logs/logsHelpers.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports parseLogLine, downloadBlob, ErrorLogItem, isManagementTraffic"
+    },
+    {
+      "source": "file:pages/logs/LogsPage.tsx",
+      "target": "file:pages/logs/components/LiveLogsTab.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports LiveLogsTab"
+    },
+    {
+      "source": "file:pages/logs/LogsPage.tsx",
+      "target": "file:pages/logs/components/ErrorLogsTab.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports ErrorLogsTab"
+    },
+    {
+      "source": "file:pages/logs/LogsPage.tsx",
+      "target": "file:pages/logs/index.ts",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "exported by"
+    },
+    {
+      "source": "file:pages/logs/LogsPage.tsx",
+      "target": "file:pages/logs/route.tsx",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "route uses LogsPage"
+    },
+    {
+      "source": "file:pages/logs/LiveLogsTab.tsx",
+      "target": "file:pages/logs/logsHelpers.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports getLevelStyles, getStatusStyles"
+    },
+    {
+      "source": "file:pages/logs/ErrorLogsTab.tsx",
+      "target": "file:pages/logs/logsHelpers.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports ErrorLogItem type"
+    },
+    {
+      "source": "file:pages/logs/LogsPage.tsx",
+      "target": "function:LogsPage",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/logs/components/LiveLogsTab.tsx",
+      "target": "function:LiveLogsTab",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/logs/components/ErrorLogsTab.tsx",
+      "target": "function:ErrorLogsTab",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/logs/logsHelpers.ts",
+      "target": "function:parseLogLine",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/logs/logsHelpers.ts",
+      "target": "function:downloadBlob",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/logs/logsHelpers.ts",
+      "target": "class:ParsedLogLine",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/logs/__tests__/LogsPage.test.tsx",
+      "target": "file:pages/logs/LogsPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests LogsPage"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "file:pages/models/modelsUtils.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports multiple utilities"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "file:pages/models/types.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports type definitions"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "file:pages/models/components/ModelFormModal.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports ModelFormModal"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "file:pages/models/components/ModelsPageTabs.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports ModelsPageTabs"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "file:pages/models/components/ModelsStatsCards.tsx",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports ModelsStatsCards"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "file:pages/models/components/OwnerFormModal.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports OwnerFormModal"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "file:pages/models/hooks/useModelColumns.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports useModelColumns"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "file:pages/models/index.ts",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "exported by"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "file:pages/models/route.tsx",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "route uses ModelsPage"
+    },
+    {
+      "source": "file:pages/models/modelsUtils.ts",
+      "target": "file:pages/models/types.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports type definitions"
+    },
+    {
+      "source": "file:pages/models/components/ModelFormModal.tsx",
+      "target": "file:pages/models/modelsUtils.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports formatPrice, normalizeOwnerValue"
+    },
+    {
+      "source": "file:pages/models/components/ModelFormModal.tsx",
+      "target": "file:pages/models/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports types"
+    },
+    {
+      "source": "file:pages/models/hooks/useModelColumns.tsx",
+      "target": "file:pages/models/components/ModelCapabilityBadges.tsx",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports ModelCapabilityBadges"
+    },
+    {
+      "source": "file:pages/models/hooks/useModelColumns.tsx",
+      "target": "file:pages/models/components/ModelVendorIcon.tsx",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports ModelVendorIcon"
+    },
+    {
+      "source": "file:pages/models/hooks/useModelColumns.tsx",
+      "target": "file:pages/models/modelsUtils.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports formatPrice, hasModelPricingData"
+    },
+    {
+      "source": "file:pages/models/hooks/useModelColumns.tsx",
+      "target": "file:pages/models/types.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports ModelItem"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "function:ModelsPage",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/modelsUtils.ts",
+      "target": "function:mergeConfiguredModelAvailability",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/modelsUtils.ts",
+      "target": "function:saveModelConfig",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/components/ModelFormModal.tsx",
+      "target": "function:ModelFormModal",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/hooks/useModelColumns.tsx",
+      "target": "function:useModelColumns",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/components/ModelVendorIcon.tsx",
+      "target": "function:ModelVendorIcon",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/components/ModelCapabilityBadges.tsx",
+      "target": "function:ModelCapabilityBadges",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/components/ModelsStatsCards.tsx",
+      "target": "function:ModelsStatsCards",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/components/ModelsPageTabs.tsx",
+      "target": "function:ModelsPageTabs",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/components/OwnerFormModal.tsx",
+      "target": "function:OwnerFormModal",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/types.ts",
+      "target": "class:ModelItem",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/types.ts",
+      "target": "class:ModelFormState",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/types.ts",
+      "target": "class:OwnerFormState",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "contains"
+    },
+    {
+      "source": "file:pages/models/__tests__/ModelsPage.test.tsx",
+      "target": "file:pages/models/ModelsPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests ModelsPage"
+    },
+    {
+      "source": "file:pages/models/__tests__/modelAvailability.test.ts",
+      "target": "package:@features/model-availability",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "tests model availability"
+    },
+    {
+      "source": "file:pages/monitor/__tests__/ErrorDetailModal.test.tsx",
+      "target": "package:@features/log-content-viewer",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "tests ErrorDetailModal"
+    },
+    {
+      "source": "file:pages/monitor/__tests__/LogContentModal.test.tsx",
+      "target": "package:@features/log-content-viewer",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "tests LogContentModal"
+    },
+    {
+      "source": "file:pages/monitor/__tests__/MonitorPage.test.tsx",
+      "target": "file:pages/monitor/MonitorDashboardSections.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "tests MonitorDistributionSections"
+    },
+    {
+      "source": "file:pages/monitor/__tests__/MonitorPagePieces.test.tsx",
+      "target": "package:@features/monitor-widgets",
+      "type": "depends_on",
+      "weight": 0.4,
+      "label": "tests MonitorCard"
+    },
+    {
+      "source": "file:pages/logs/LogsPage.tsx",
+      "target": "package:@code-proxy/api-client",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports logsApi"
+    },
+    {
+      "source": "file:pages/logs/LogsPage.tsx",
+      "target": "package:@code-proxy/ui",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports ConfirmModal, Tabs, useToast"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "package:@code-proxy/api-client",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "package:@code-proxy/ui",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports Button, Card, DataTable, ToggleSwitch, etc."
+    },
+    {
+      "source": "file:pages/models/ModelsPage.tsx",
+      "target": "package:@features/model-availability",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports configured model availability functions"
+    },
+    {
+      "source": "file:pages/models/modelsUtils.ts",
+      "target": "package:@code-proxy/api-client",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:pages/models/modelsUtils.ts",
+      "target": "package:@features/model-availability",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports model availability helpers"
+    }
+  ]
+}

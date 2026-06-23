@@ -1,0 +1,641 @@
+{
+  "nodes": [
+    {
+      "id": "file:packages/ui/src/primitives/Card.tsx",
+      "type": "file",
+      "name": "Card.tsx",
+      "filePath": "packages/ui/src/primitives/Card.tsx",
+      "summary": "Reusable Card component with title, description, actions, loading overlay, and configurable padding. Uses Tailwind classes for styling and react-i18next for loading text.",
+      "tags": ["ui", "primitive", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:Card",
+      "type": "class",
+      "name": "Card",
+      "filePath": "packages/ui/src/primitives/Card.tsx",
+      "summary": "Section-based card component with optional header (title/description/actions), configurable padding, and a loading overlay with spinner animation.",
+      "tags": ["ui", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/Checkbox.tsx",
+      "type": "file",
+      "name": "Checkbox.tsx",
+      "filePath": "packages/ui/src/primitives/Checkbox.tsx",
+      "summary": "Checkbox component with indeterminate state support, forwarded ref, and aria-checked accessibility. Wraps native input with Tailwind styling.",
+      "tags": ["ui", "primitive", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:Checkbox",
+      "type": "class",
+      "name": "Checkbox",
+      "filePath": "packages/ui/src/primitives/Checkbox.tsx",
+      "summary": "Forwarded-ref checkbox component supporting checked, indeterminate, and disabled states with aria-compliant accessibility.",
+      "tags": ["ui", "component", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/DateTimePicker.tsx",
+      "type": "file",
+      "name": "DateTimePicker.tsx",
+      "filePath": "packages/ui/src/primitives/DateTimePicker.tsx",
+      "summary": "Full date-time picker with calendar grid, month navigation, hour/minute inputs, today/clear buttons. Renders via portal with flip-aware positioning. Depends on TextInput and selectStyles.",
+      "tags": ["ui", "primitive", "form", "datepicker"],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:DateTimePicker",
+      "type": "class",
+      "name": "DateTimePicker",
+      "filePath": "packages/ui/src/primitives/DateTimePicker.tsx",
+      "summary": "Complex date-time selection component with calendar grid, month navigation, inline hour/minute inputs, and portal-based popover with auto-flip positioning.",
+      "tags": ["ui", "component", "form"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/Input.tsx",
+      "type": "file",
+      "name": "Input.tsx",
+      "filePath": "packages/ui/src/primitives/Input.tsx",
+      "summary": "TextInput component with solid/ghost variants, configurable size, and start/end adornments. Uses controlStyles for sizing and surface styling.",
+      "tags": ["ui", "primitive", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:TextInput",
+      "type": "class",
+      "name": "TextInput",
+      "filePath": "packages/ui/src/primitives/Input.tsx",
+      "summary": "Forwarded-ref text input with variant (solid/ghost), size, and adornment support. Uses controlStyles for consistent sizing.",
+      "tags": ["ui", "component", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/MultiSelect.tsx",
+      "type": "file",
+      "name": "MultiSelect.tsx",
+      "filePath": "packages/ui/src/primitives/MultiSelect.tsx",
+      "summary": "Multi-select component with searchable options, Select All toggle, tag chips with remove buttons, and portal-based dropdown with flip positioning.",
+      "tags": ["ui", "primitive", "form", "select"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:MultiSelect",
+      "type": "class",
+      "name": "MultiSelect",
+      "filePath": "packages/ui/src/primitives/MultiSelect.tsx",
+      "summary": "Multi-select dropdown with search, checkbox options, Select All, tag display with removal, and portal-rendered animated dropdown.",
+      "tags": ["ui", "component", "form"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/ScrollArea.tsx",
+      "type": "file",
+      "name": "ScrollArea.tsx",
+      "filePath": "packages/ui/src/primitives/ScrollArea.tsx",
+      "summary": "Custom scroll area with drag-to-scroll thumb, ResizeObserver-based measurement, and hover/always visibility modes. Uses pointer capture for smooth dragging.",
+      "tags": ["ui", "primitive", "scroll"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:ScrollArea",
+      "type": "class",
+      "name": "ScrollArea",
+      "filePath": "packages/ui/src/primitives/ScrollArea.tsx",
+      "summary": "Custom scrollable container with custom scrollbar thumb that supports drag scrolling via pointer events and visibility toggling.",
+      "tags": ["ui", "component"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/SearchableCheckboxMultiSelect.tsx",
+      "type": "file",
+      "name": "SearchableCheckboxMultiSelect.tsx",
+      "filePath": "packages/ui/src/primitives/SearchableCheckboxMultiSelect.tsx",
+      "summary": "Searchable multi-select with checkboxes, select/deselect filtered toggle, clear button, mobile-aware viewport positioning, and selection summary badges.",
+      "tags": ["ui", "primitive", "form", "select", "searchable"],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:SearchableCheckboxMultiSelect",
+      "type": "class",
+      "name": "SearchableCheckboxMultiSelect",
+      "filePath": "packages/ui/src/primitives/SearchableCheckboxMultiSelect.tsx",
+      "summary": "Feature-rich searchable multi-select component with per-option checkboxes, filtered select/deselect, clear action, and responsive mobile breakpoint positioning.",
+      "tags": ["ui", "component", "form"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/SearchableSelect.tsx",
+      "type": "file",
+      "name": "SearchableSelect.tsx",
+      "filePath": "packages/ui/src/primitives/SearchableSelect.tsx",
+      "summary": "Searchable single-select with allow-create mode, configurable create label, hidden form input, and portal-based animated dropdown.",
+      "tags": ["ui", "primitive", "form", "select", "searchable"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:SearchableSelect",
+      "type": "class",
+      "name": "SearchableSelect",
+      "filePath": "packages/ui/src/primitives/SearchableSelect.tsx",
+      "summary": "Searchable single-select component supporting option creation, custom create labels, and portal-rendered animated dropdown.",
+      "tags": ["ui", "component", "form"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/Select.tsx",
+      "type": "file",
+      "name": "Select.tsx",
+      "filePath": "packages/ui/src/primitives/Select.tsx",
+      "summary": "Basic select component with default and chip variants, hidden form input, disabled state, and portal-rendered animated dropdown with flip positioning.",
+      "tags": ["ui", "primitive", "form", "select"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:Select",
+      "type": "class",
+      "name": "Select",
+      "filePath": "packages/ui/src/primitives/Select.tsx",
+      "summary": "Single-select dropdown component with default and chip visual variants, portal-based dropdown with auto-flip positioning.",
+      "tags": ["ui", "component", "form"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/Tabs.tsx",
+      "type": "file",
+      "name": "Tabs.tsx",
+      "filePath": "packages/ui/src/primitives/Tabs.tsx",
+      "summary": "Tabs component with animated sliding indicator, context-based API (Tabs/TabsList/TabsTrigger/TabsContent), and configurable size.",
+      "tags": ["ui", "primitive", "navigation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:Tabs",
+      "type": "class",
+      "name": "Tabs",
+      "filePath": "packages/ui/src/primitives/Tabs.tsx",
+      "summary": "Tabs root context provider that manages the current value and notifies children.",
+      "tags": ["ui", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:TabsList",
+      "type": "class",
+      "name": "TabsList",
+      "filePath": "packages/ui/src/primitives/Tabs.tsx",
+      "summary": "Tab list container with animated sliding highlight indicator that tracks the active tab via ResizeObserver.",
+      "tags": ["ui", "component"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:TabsTrigger",
+      "type": "class",
+      "name": "TabsTrigger",
+      "filePath": "packages/ui/src/primitives/Tabs.tsx",
+      "summary": "Clickable tab trigger button with active/inactive styling and aria-selected accessibility.",
+      "tags": ["ui", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:TabsContent",
+      "type": "class",
+      "name": "TabsContent",
+      "filePath": "packages/ui/src/primitives/Tabs.tsx",
+      "summary": "Conditionally renders content when the tab value matches the active value.",
+      "tags": ["ui", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/primitives/ToggleSwitch.tsx",
+      "type": "file",
+      "name": "ToggleSwitch.tsx",
+      "filePath": "packages/ui/src/primitives/ToggleSwitch.tsx",
+      "summary": "Toggle switch component with optional label/description, disabled state, and role=switch accessibility.",
+      "tags": ["ui", "primitive", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:ToggleSwitch",
+      "type": "class",
+      "name": "ToggleSwitch",
+      "filePath": "packages/ui/src/primitives/ToggleSwitch.tsx",
+      "summary": "A switch/toggle component with label, description, and disabled state using role=switch pattern.",
+      "tags": ["ui", "component", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/theme/constants.ts",
+      "type": "file",
+      "name": "constants.ts",
+      "filePath": "packages/ui/src/theme/constants.ts",
+      "summary": "Theme and language constants including storage keys, language order, supported languages, and language label keys.",
+      "tags": ["ui", "theme", "constants"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/theme/LanguageSelector.tsx",
+      "type": "file",
+      "name": "LanguageSelector.tsx",
+      "filePath": "packages/ui/src/theme/LanguageSelector.tsx",
+      "summary": "Language selector dropdown with portal rendering, smart positioning, and integration with @code-proxy/i18n for resource loading.",
+      "tags": ["ui", "theme", "i18n"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:LanguageSelector",
+      "type": "class",
+      "name": "LanguageSelector",
+      "filePath": "packages/ui/src/theme/LanguageSelector.tsx",
+      "summary": "Dropdown language selector that loads i18n resources and persists the selection via localStorage.",
+      "tags": ["ui", "component", "i18n"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/ui/src/theme/ThemeProvider.tsx",
+      "type": "file",
+      "name": "ThemeProvider.tsx",
+      "filePath": "packages/ui/src/theme/ThemeProvider.tsx",
+      "summary": "Theme provider with light/dark mode, localStorage persistence, system preference detection, View Transition API support, and ThemeToggleButton.",
+      "tags": ["ui", "theme", "provider"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:ThemeProvider",
+      "type": "class",
+      "name": "ThemeProvider",
+      "filePath": "packages/ui/src/theme/ThemeProvider.tsx",
+      "summary": "Context provider for theme management with system preference detection, persistence, and View Transition API integration.",
+      "tags": ["ui", "component", "theme"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:ThemeToggleButton",
+      "type": "class",
+      "name": "ThemeToggleButton",
+      "filePath": "packages/ui/src/theme/ThemeProvider.tsx",
+      "summary": "Button that toggles between light and dark themes, displaying a Sun or Moon icon accordingly.",
+      "tags": ["ui", "component", "button"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/utils/clipboard.ts",
+      "type": "file",
+      "name": "clipboard.ts",
+      "filePath": "packages/ui/src/utils/clipboard.ts",
+      "summary": "Clipboard utility function that copies text using navigator.clipboard with a textarea fallback.",
+      "tags": ["ui", "utils", "clipboard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/utils/controlStyles.ts",
+      "type": "file",
+      "name": "controlStyles.ts",
+      "filePath": "packages/ui/src/utils/controlStyles.ts",
+      "summary": "Control size constants (sm/default/lg) for height, text size, padding, and the controlSurface CSS class used across form components.",
+      "tags": ["ui", "utils", "styles"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/ui/src/utils/selectStyles.ts",
+      "type": "file",
+      "name": "selectStyles.ts",
+      "filePath": "packages/ui/src/utils/selectStyles.ts",
+      "summary": "Shared CSS class builders and motion configurations for select/dropdown components. Includes trigger, panel, option, and animation utilities.",
+      "tags": ["ui", "utils", "styles", "select"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/.gitkeep",
+      "type": "file",
+      "name": ".gitkeep",
+      "filePath": "pages/.gitkeep",
+      "summary": "Empty placeholder file to keep the pages directory in version control.",
+      "tags": ["gitkeep", "placeholder"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/__tests__/ApiKeyLookupPage.test.tsx",
+      "type": "file",
+      "name": "ApiKeyLookupPage.test.tsx",
+      "filePath": "pages/api-key-lookup/__tests__/ApiKeyLookupPage.test.tsx",
+      "summary": "Test suite for ApiKeyLookupPage verifying restoration of last looked-up API key from sessionStorage and auto-query on page refresh.",
+      "tags": ["test", "vitest", "page"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/api.ts",
+      "type": "file",
+      "name": "api.ts",
+      "filePath": "pages/api-key-lookup/api.ts",
+      "summary": "API functions for public usage log lookup: fetchPublicLogs, fetchPublicChartData, and fetchAvailableModels (via /v1/models endpoint).",
+      "tags": ["api", "fetch", "public"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:fetchPublicLogs",
+      "type": "function",
+      "name": "fetchPublicLogs",
+      "filePath": "pages/api-key-lookup/api.ts",
+      "summary": "Fetches paginated public usage logs via POST to the management API, with filters for days, model, and status.",
+      "tags": ["api", "fetch"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:fetchPublicChartData",
+      "type": "function",
+      "name": "fetchPublicChartData",
+      "filePath": "pages/api-key-lookup/api.ts",
+      "summary": "Fetches public chart data (daily series, model distribution) via POST to the management API.",
+      "tags": ["api", "fetch"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:fetchAvailableModels",
+      "type": "function",
+      "name": "fetchAvailableModels",
+      "filePath": "pages/api-key-lookup/api.ts",
+      "summary": "Fetches available model IDs from the /v1/models endpoint using Bearer token auth.",
+      "tags": ["api", "fetch", "models"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "type": "file",
+      "name": "ApiKeyLookupPage.tsx",
+      "filePath": "pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "summary": "Public API key lookup page with tabs (usage stats, request logs, available models, quick import). Includes key input, chart display, paginated logs, and content modal.",
+      "tags": ["page", "api-key", "lookup"],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:ApiKeyLookupPage",
+      "type": "class",
+      "name": "ApiKeyLookupPage",
+      "filePath": "pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "summary": "Main public page for looking up API key usage, logs, models, and quick import with caching, sessionStorage persistence, and multi-tab layout.",
+      "tags": ["page", "component"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/api-key-lookup/components/LookupEmptyState.tsx",
+      "type": "file",
+      "name": "LookupEmptyState.tsx",
+      "filePath": "pages/api-key-lookup/components/LookupEmptyState.tsx",
+      "summary": "Empty state placeholder shown when no API key has been queried yet, with a search icon and descriptive text.",
+      "tags": ["ui", "component", "empty-state"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:LookupEmptyState",
+      "type": "class",
+      "name": "LookupEmptyState",
+      "filePath": "pages/api-key-lookup/components/LookupEmptyState.tsx",
+      "summary": "Simple empty state component with search icon and i18n-driven title/description.",
+      "tags": ["ui", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/components/LookupResultsToolbar.tsx",
+      "type": "file",
+      "name": "LookupResultsToolbar.tsx",
+      "filePath": "pages/api-key-lookup/components/LookupResultsToolbar.tsx",
+      "summary": "Toolbar with tabs (usage/logs/models/quickImport), time range selector for usage/logs tabs, and a refresh button.",
+      "tags": ["ui", "component", "toolbar"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:LookupResultsToolbar",
+      "type": "class",
+      "name": "LookupResultsToolbar",
+      "filePath": "pages/api-key-lookup/components/LookupResultsToolbar.tsx",
+      "summary": "Toolbar component providing tab navigation, time range selection, and refresh functionality for the API key lookup page.",
+      "tags": ["ui", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/components/__tests__/ModelsTabContent.test.tsx",
+      "type": "file",
+      "name": "ModelsTabContent.test.tsx",
+      "filePath": "pages/api-key-lookup/components/__tests__/ModelsTabContent.test.tsx",
+      "summary": "Test file for ModelsTabContent component.",
+      "tags": ["test", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/components/__tests__/QuickImportTabContent.test.tsx",
+      "type": "file",
+      "name": "QuickImportTabContent.test.tsx",
+      "filePath": "pages/api-key-lookup/components/__tests__/QuickImportTabContent.test.tsx",
+      "summary": "Test file for QuickImportTabContent component.",
+      "tags": ["test", "vitest"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:packages/ui/src/primitives/DateTimePicker.tsx",
+      "target": "file:packages/ui/src/primitives/Input.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "uses TextInput"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/DateTimePicker.tsx",
+      "target": "file:packages/ui/src/utils/selectStyles.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "uses selectStyles"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/Input.tsx",
+      "target": "file:packages/ui/src/utils/controlStyles.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "uses controlStyles"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/MultiSelect.tsx",
+      "target": "file:packages/ui/src/utils/selectStyles.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "uses selectStyles"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/MultiSelect.tsx",
+      "target": "file:packages/ui/src/utils/controlStyles.ts",
+      "type": "imports",
+      "weight": 0.4,
+      "label": "uses ControlSize type"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/SearchableCheckboxMultiSelect.tsx",
+      "target": "file:packages/ui/src/utils/selectStyles.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "uses selectStyles"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/SearchableCheckboxMultiSelect.tsx",
+      "target": "file:packages/ui/src/utils/controlStyles.ts",
+      "type": "imports",
+      "weight": 0.4,
+      "label": "uses ControlSize type"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/SearchableSelect.tsx",
+      "target": "file:packages/ui/src/utils/selectStyles.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "uses selectStyles"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/SearchableSelect.tsx",
+      "target": "file:packages/ui/src/utils/controlStyles.ts",
+      "type": "imports",
+      "weight": 0.4,
+      "label": "uses ControlSize type"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/Select.tsx",
+      "target": "file:packages/ui/src/utils/selectStyles.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "uses selectStyles"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/Select.tsx",
+      "target": "file:packages/ui/src/utils/controlStyles.ts",
+      "type": "imports",
+      "weight": 0.4,
+      "label": "uses ControlSize type"
+    },
+    {
+      "source": "file:packages/ui/src/primitives/Tabs.tsx",
+      "target": "file:packages/ui/src/utils/controlStyles.ts",
+      "type": "imports",
+      "weight": 0.4,
+      "label": "uses ControlSize type"
+    },
+    {
+      "source": "file:packages/ui/src/utils/selectStyles.ts",
+      "target": "file:packages/ui/src/utils/controlStyles.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "uses controlStyles"
+    },
+    {
+      "source": "file:packages/ui/src/theme/LanguageSelector.tsx",
+      "target": "file:packages/ui/src/theme/constants.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "references LANGUAGE_ORDER (not directly imported but functionally related)"
+    },
+    {
+      "source": "file:packages/ui/src/theme/ThemeProvider.tsx",
+      "target": "file:packages/ui/src/theme/constants.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "references THEME_STORAGE_KEY (same value defined locally)"
+    },
+    {
+      "source": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "target": "file:packages/ui/src/theme/LanguageSelector.tsx",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports LanguageSelector"
+    },
+    {
+      "source": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "target": "file:packages/ui/src/theme/ThemeProvider.tsx",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports useTheme, ThemeToggleButton"
+    },
+    {
+      "source": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "target": "file:packages/ui/src/primitives/Tabs.tsx",
+      "type": "depends_on",
+      "weight": 0.4,
+      "label": "imports from @code-proxy/ui (re-exports Tabs)"
+    },
+    {
+      "source": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "target": "file:packages/ui/src/feedback/AnimatedNumber.tsx",
+      "type": "depends_on",
+      "weight": 0.2,
+      "label": "imports Reveal from @code-proxy/ui"
+    },
+    {
+      "source": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "target": "file:pages/api-key-lookup/api.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports fetchAvailableModels, fetchPublicChartData, fetchPublicLogs"
+    },
+    {
+      "source": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "target": "file:pages/api-key-lookup/components/LookupEmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports LookupEmptyState"
+    },
+    {
+      "source": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "target": "file:pages/api-key-lookup/components/LookupResultsToolbar.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports LookupResultsToolbar"
+    },
+    {
+      "source": "file:pages/api-key-lookup/components/LookupResultsToolbar.tsx",
+      "target": "file:packages/ui/src/primitives/Tabs.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports Tabs, TabsList, TabsTrigger"
+    },
+    {
+      "source": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "target": "file:packages/api-client/src/client/constants.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "imports MANAGEMENT_API_PREFIX, detectApiBaseFromLocation"
+    },
+    {
+      "source": "file:pages/api-key-lookup/api.ts",
+      "target": "file:packages/api-client/src/client/constants.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports MANAGEMENT_API_PREFIX, detectApiBaseFromLocation"
+    },
+    {
+      "source": "file:pages/api-key-lookup/__tests__/ApiKeyLookupPage.test.tsx",
+      "target": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports ApiKeyLookupPage for testing"
+    },
+    {
+      "source": "file:pages/api-key-lookup/__tests__/ApiKeyLookupPage.test.tsx",
+      "target": "file:packages/ui/src/theme/ThemeProvider.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports ThemeProvider for test wrapper"
+    },
+    {
+      "source": "file:pages/api-key-lookup/__tests__/ApiKeyLookupPage.test.tsx",
+      "target": "file:packages/ui/src/feedback/ToastProvider.tsx",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "imports ToastProvider for test wrapper"
+    },
+    {
+      "source": "file:pages/api-key-lookup/__tests__/ApiKeyLookupPage.test.tsx",
+      "target": "file:pages/api-key-lookup/api.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "mocks ../api module"
+    }
+  ]
+}

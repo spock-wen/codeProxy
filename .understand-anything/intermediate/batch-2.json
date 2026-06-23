@@ -1,0 +1,201 @@
+{
+  "nodes": [
+    {
+      "id": "file:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Project documentation for Code Proxy Admin Dashboard. Describes the web-based management panel for CliRelay (CLI Proxy API). Covers 13 management screens including Dashboard, Monitor Center, Request Logs, AI Providers, Auth Files, OAuth, API Keys, Models, Quota, Config, System, and Live Logs. Defines tech stack (React 19, Vite 7, TypeScript 5.9, Tailwind CSS 4.1, Bun 1.2), project structure, API endpoints, and setup instructions.",
+      "tags": ["documentation", "readme", "project-overview"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:index.html",
+      "type": "file",
+      "name": "index.html",
+      "filePath": "index.html",
+      "summary": "Main HTML entry point for the admin panel application. Includes dark mode detection via localStorage/system preference, an animated loading screen with glowing effects and spinning ring, and loads the main TypeScript entry point (/src/main.tsx) as a module. Uses Inter font from Google Fonts. Title: 'Code Proxy 管理后台'.",
+      "tags": ["html", "entry-point", "loading-screen", "dark-mode"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:manage.html",
+      "type": "file",
+      "name": "manage.html",
+      "filePath": "manage.html",
+      "summary": "Management HTML entry point for the admin dashboard. Mirrors index.html with the same dark mode detection, loading screen with glowing effects, and spinning ring animation. Loads the management TypeScript entry point (/src/manage-entry.tsx) as a module. Title: 'Code Proxy Admin Dashboard'.",
+      "tags": ["html", "entry-point", "management", "loading-screen", "dark-mode"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:oxlintrc.json",
+      "type": "config",
+      "name": "oxlintrc.json",
+      "filePath": "oxlintrc.json",
+      "summary": "Oxlint linter configuration for the project. Enables TypeScript, React, and JSX-a11y plugins. Sets correctness, suspicious, and performance categories to 'warn', style to 'off'. Enforces specific rules: react/jsx-key and react/no-unknown-property as errors, jsx-a11y/alt-text and jsx-a11y/label-has-associated-control as warnings.",
+      "tags": ["config", "linting", "oxlint", "code-quality"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "Root package configuration for the code-proxy-admin monorepo. Defines workspaces (apps/*, pages, features/*, packages/*), scripts (dev, build, lint, test, e2e), and dependencies. Key deps: React 19.2, react-router-dom 7.13, zustand 5, echarts 6, framer-motion, i18next, axios, tailwindcss 4.1. Dev deps: TypeScript 5.9, Vite 7.3, Playwright, Vitest, oxlint, Sass. Uses Bun 1.2 as package manager.",
+      "tags": ["config", "package", "monorepo", "workspaces", "dependencies"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tsconfig.base.json",
+      "type": "config",
+      "name": "tsconfig.base.json",
+      "filePath": "tsconfig.base.json",
+      "summary": "Base TypeScript configuration shared across the monorepo. Targets ES2022 with ESNext modules and Bundler module resolution. Enables strict mode, react-jsx transform, and noEmit. Defines path aliases: @/* (apps/admin-panel/src), @app/*, @pages/*, @features/*, @code-proxy/ui, @code-proxy/api-client, @code-proxy/domain, @code-proxy/assets, @code-proxy/i18n.",
+      "tags": ["config", "typescript", "compiler-options", "path-aliases", "monorepo"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "tsconfig.json",
+      "summary": "Root TypeScript configuration that extends tsconfig.base.json. Adds noEmit override and includes all source directories: apps, pages, features, packages, tooling, and scripts. Serves as the primary tsconfig for IDE integration and build tooling.",
+      "tags": ["config", "typescript", "root-config"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:scripts",
+      "type": "config",
+      "name": "package.json scripts",
+      "filePath": "package.json",
+      "summary": "Build and development scripts: dev (bun workspaces filter), build, preview, lint (oxlint), format (oxfmt), check (lint+boundary+build+diff), boundary:imports, bundle:diff, test, test:ci, test:watch, e2e (playwright).",
+      "tags": ["config", "scripts", "build", "test", "lint"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:workspaces",
+      "type": "config",
+      "name": "package.json workspaces",
+      "filePath": "package.json",
+      "summary": "Monorepo workspace structure: apps/* (application shells), pages (route-level screens), features/* (cross-page UI workflows), packages/* (shared libraries: api-client, assets, domain, i18n, test-utils, ui).",
+      "tags": ["config", "monorepo", "workspaces", "project-structure"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:path-aliases",
+      "type": "config",
+      "name": "tsconfig path aliases",
+      "filePath": "tsconfig.base.json",
+      "summary": "TypeScript path aliases enabling clean imports: @/ (app source), @app/, @pages/, @features/, @code-proxy/ui, @code-proxy/api-client, @code-proxy/domain, @code-proxy/assets, @code-proxy/i18n.",
+      "tags": ["config", "typescript", "import-aliases"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:tsconfig.json",
+      "target": "file:tsconfig.base.json",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "extends"
+    },
+    {
+      "source": "file:index.html",
+      "target": "apps/admin-panel/src/main.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "loads module"
+    },
+    {
+      "source": "file:manage.html",
+      "target": "apps/admin-panel/src/manage-entry.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "loads module"
+    },
+    {
+      "source": "file:package.json",
+      "target": "file:oxlintrc.json",
+      "type": "configures",
+      "weight": 0.8,
+      "label": "references via lint script"
+    },
+    {
+      "source": "file:package.json",
+      "target": "file:tsconfig.base.json",
+      "type": "configures",
+      "weight": 0.5,
+      "label": "references via build"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:package.json",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "documents"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:tsconfig.base.json",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "documents"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:index.html",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "documents"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:manage.html",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "documents"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:oxlintrc.json",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "documents"
+    },
+    {
+      "source": "config:path-aliases",
+      "target": "file:tsconfig.base.json",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in"
+    },
+    {
+      "source": "config:scripts",
+      "target": "file:package.json",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in"
+    },
+    {
+      "source": "config:workspaces",
+      "target": "file:package.json",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defined in"
+    },
+    {
+      "source": "config:scripts",
+      "target": "config:workspaces",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "uses workspace filter"
+    },
+    {
+      "source": "file:index.html",
+      "target": "file:manage.html",
+      "type": "depends_on",
+      "weight": 0.4,
+      "label": "similar structure"
+    }
+  ]
+}
