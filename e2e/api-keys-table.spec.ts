@@ -156,9 +156,13 @@ test("API Keys: limited model summary truncates inside the rounded pill", async 
       cellRight: cellRect.right,
       tooltipRight: tooltipRect.right,
       pillLeft: pillRect.left,
+      pillTop: pillRect.top,
       pillRight: pillRect.right,
+      pillBottom: pillRect.bottom,
       countLeft: countRect.left,
+      countTop: countRect.top,
       countRight: countRect.right,
+      countBottom: countRect.bottom,
       textLeft: textRect.left,
       textRight: textRect.right,
       textClientWidth: text.clientWidth,
@@ -174,6 +178,20 @@ test("API Keys: limited model summary truncates inside the rounded pill", async 
   expect(summaryState.pillRight).toBeLessThanOrEqual(summaryState.cellRight + 1);
   expect(summaryState.countLeft).toBeGreaterThanOrEqual(summaryState.pillLeft - 1);
   expect(summaryState.countRight).toBeLessThanOrEqual(summaryState.pillRight + 1);
+  expect(
+    Math.abs(
+      summaryState.countLeft -
+        summaryState.pillLeft -
+        (summaryState.countTop - summaryState.pillTop),
+    ),
+  ).toBeLessThanOrEqual(1.5);
+  expect(
+    Math.abs(
+      summaryState.countLeft -
+        summaryState.pillLeft -
+        (summaryState.pillBottom - summaryState.countBottom),
+    ),
+  ).toBeLessThanOrEqual(1.5);
   expect(summaryState.textLeft).toBeGreaterThanOrEqual(summaryState.pillLeft - 1);
   expect(summaryState.textRight).toBeLessThanOrEqual(summaryState.pillRight + 1);
   expect(summaryState.textScrollWidth).toBeGreaterThan(summaryState.textClientWidth);

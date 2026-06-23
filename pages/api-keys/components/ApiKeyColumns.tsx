@@ -72,7 +72,7 @@ function ApiKeyPermissionSummary({
   return (
     <HoverTooltip content={tooltipContent} className="!flex min-w-0 max-w-full">
       <span
-        className={`flex min-w-0 max-w-full items-center gap-1 rounded-full border px-1 py-0.5 text-xs ${permissionSummaryToneClasses[tone]}`}
+        className={`flex min-w-0 max-w-full items-center gap-1 rounded-full border py-0.5 pl-0.5 pr-1.5 text-xs ${permissionSummaryToneClasses[tone]}`}
       >
         <span
           className={`inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full px-1.5 font-semibold tabular-nums ${permissionCountToneClasses[tone]}`}
