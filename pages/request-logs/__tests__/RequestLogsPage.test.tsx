@@ -153,7 +153,7 @@ describe("RequestLogsPage", () => {
     mocks.clearUsageLogs.mockReset();
   });
 
-  test("renders first token latency in the response metrics tooltip", async () => {
+  test("renders first token latency in the visible response metrics column", async () => {
     await i18n.changeLanguage("en");
     const user = userEvent.setup();
 
@@ -209,10 +209,11 @@ describe("RequestLogsPage", () => {
     expect(within(table).getByRole("columnheader", { name: "Response Metrics" })).toBeInTheDocument();
     expect(within(table).getByText("Streaming")).toBeInTheDocument();
     expect(within(table).getByText("1.20s")).toBeInTheDocument();
-    expect(within(table).queryByText("183ms")).not.toBeInTheDocument();
+    expect(within(table).getByText("First Token Latency")).toBeInTheDocument();
+    expect(within(table).getByText("183ms")).toBeInTheDocument();
 
     await user.hover(within(table).getByLabelText("Duration: 1.20s"));
-    expect(await screen.findByRole("tooltip")).toHaveTextContent("First Token: 183ms");
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("First Token Latency: 183ms");
   });
 
   test("labels non-streaming logs without rendering a first token placeholder", async () => {
@@ -236,7 +237,7 @@ describe("RequestLogsPage", () => {
     );
 
     expect(await screen.findByText("Non-streaming")).toBeInTheDocument();
-    expect(screen.queryByLabelText("First Token: --")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("First Token Latency: --")).not.toBeInTheDocument();
   });
 
   test("does not crash when backend returns null filter arrays", async () => {
@@ -615,7 +616,7 @@ describe("RequestLogsPage", () => {
     await user.hover(within(table).getByLabelText("耗时: 354ms"));
     const tooltip = await screen.findByRole("tooltip");
     expect(tooltip).toHaveTextContent("耗时: 354ms");
-    expect(tooltip).not.toHaveTextContent("首 Token");
+    expect(tooltip).not.toHaveTextContent("首 Token 耗时");
     expect(tooltip).not.toHaveTextContent("每秒 Token");
     expect(tooltip).not.toHaveTextContent("--");
     await user.unhover(within(table).getByLabelText("耗时: 354ms"));

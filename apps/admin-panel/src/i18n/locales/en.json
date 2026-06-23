@@ -2404,7 +2404,7 @@
     "col_mode": "Mode",
     "col_duration": "Duration",
     "col_response_metrics": "Response Metrics",
-    "col_first_token": "First Token",
+    "col_first_token": "First Token Latency",
     "mode_streaming": "Streaming",
     "mode_non_streaming": "Non-streaming",
     "first_token_not_applicable": "Not applicable for non-streaming",

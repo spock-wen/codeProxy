@@ -247,8 +247,10 @@ test("Request Logs: response metrics column resize clamps at its minimum width",
   await page.waitForTimeout(80);
 
   const during = await readResponseMetricsColumnState(page);
-  expect(during.width).toBeGreaterThanOrEqual(183);
-  expect(during.width).toBeLessThanOrEqual(185);
+  expect(during.width).toBeGreaterThanOrEqual(239);
+  expect(during.width).toBeLessThanOrEqual(241);
+  expect(during.text).toMatch(/First Token Latency|首 Token 耗时/);
+  expect(during.text).toMatch(/90ms/);
   expect(during.text).toMatch(/Streaming|流式/);
   expect(during.text).not.toContain("--");
   expect(during.chipsStayInsideCell).toBe(true);
@@ -256,7 +258,7 @@ test("Request Logs: response metrics column resize clamps at its minimum width",
   await page.mouse.up();
 
   const after = await readResponseMetricsColumnState(page);
-  expect(after.storedLatencyWidth).toBe(184);
+  expect(after.storedLatencyWidth).toBe(240);
 });
 
 test("Request Logs: column reorder follows the pointer and auto-scrolls horizontally", async ({

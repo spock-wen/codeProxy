@@ -31,6 +31,16 @@ type CreateApiKeyColumnsOptions = {
   onDelete: (index: number) => void;
 };
 
+function ApiKeyBadge({ value }: { value: string }) {
+  return (
+    <OverflowTooltip as="div" content={value} className="block min-w-0 max-w-full">
+      <code className="inline-flex min-w-0 max-w-full items-center rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-neutral-800 dark:text-white/70">
+        <span className="block min-w-0 truncate">{value}</span>
+      </code>
+    </OverflowTooltip>
+  );
+}
+
 export const createApiKeyColumns = ({
   t,
   onToggleDisable,
@@ -85,11 +95,7 @@ export const createApiKeyColumns = ({
     label: t("api_keys_page.col_key"),
     width: "w-[320px] min-w-[320px]",
     cellClassName: "whitespace-nowrap",
-    render: (row) => (
-      <code className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-neutral-800 dark:text-white/70">
-        {maskApiKey(row.key)}
-      </code>
-    ),
+    render: (row) => <ApiKeyBadge value={maskApiKey(row.key)} />,
   },
   {
     key: "dailyLimit",

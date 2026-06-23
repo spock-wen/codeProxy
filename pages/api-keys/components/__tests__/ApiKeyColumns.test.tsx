@@ -101,6 +101,40 @@ describe("ApiKeyColumns", () => {
     expect(keyColumn?.width).toBe("w-[320px] min-w-[320px]");
   });
 
+  test("truncates API key text inside an intact rounded badge", () => {
+    const row: ApiKeyEntry = {
+      key: "sk-abcdefghijklmnopqrstuvwxyz0123456789",
+      name: "Test key",
+      "created-at": "2026-04-28T00:00:00Z",
+    };
+    const columns = createApiKeyColumns({
+      t,
+      onCopy: vi.fn(),
+      onDelete: vi.fn(),
+      onEdit: vi.fn(),
+      onImportToCcSwitch: vi.fn(),
+      onToggleDisable: vi.fn(),
+      onViewUsage: vi.fn(),
+    });
+    const keyColumn = columns.find((column) => column.key === "key");
+    const maskedKey = `sk-ab${"•".repeat(20)}789`;
+
+    render(<div>{keyColumn?.render(row, 0)}</div>);
+
+    const text = screen.getByText(maskedKey);
+    const badge = text.closest("code");
+    const tooltipTrigger = badge?.parentElement;
+
+    expect(badge).not.toBeNull();
+    expect(tooltipTrigger).not.toBeNull();
+    if (!badge || !tooltipTrigger) return;
+
+    expect(text).toHaveClass("truncate");
+    expect(badge).toHaveClass("inline-flex", "max-w-full", "rounded-md");
+    expect(tooltipTrigger).toHaveAttribute("data-tooltip-managed", "true");
+    expect(tooltipTrigger).toHaveClass("block", "max-w-full");
+  });
+
   test("shows API key spending limits as a dedicated cost column", async () => {
     const row: ApiKeyEntry = {
       key: "sk-test",
