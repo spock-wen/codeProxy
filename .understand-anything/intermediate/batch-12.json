@@ -1,0 +1,577 @@
+{
+  "nodes": [
+    {
+      "id": "file:features/provider-latency/components/ProviderStatusBar.tsx",
+      "type": "file",
+      "name": "ProviderStatusBar.tsx",
+      "filePath": "features/provider-latency/components/ProviderStatusBar.tsx",
+      "summary": "React component rendering a visual provider latency status bar with colored blocks and success rate text",
+      "tags": ["ui", "component", "provider", "latency"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/provider-latency/hooks/useProviderLatency.ts",
+      "type": "file",
+      "name": "useProviderLatency.ts",
+      "filePath": "features/provider-latency/hooks/useProviderLatency.ts",
+      "summary": "Hook for checking provider latency via API calls, manages abort controllers and entry state map",
+      "tags": ["hook", "provider", "latency", "api"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/provider-latency/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "features/provider-latency/index.ts",
+      "summary": "Barrel file re-exporting useProviderLatency, formatLatency, and ProviderStatusBar from the provider-latency feature",
+      "tags": ["barrel", "re-export"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/proxy-pool/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "features/proxy-pool/index.ts",
+      "summary": "Barrel file re-exporting ProxyPoolSelect and useProxyPoolChecks from the proxy-pool feature",
+      "tags": ["barrel", "re-export"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/proxy-pool/proxy-utils.ts",
+      "type": "file",
+      "name": "proxy-utils.ts",
+      "filePath": "features/proxy-pool/proxy-utils.ts",
+      "summary": "Utility functions for proxy pool: protocol parsing, display URL, endpoint extraction, latency tone classification, sessionStorage caching, slug generation, and draft validation",
+      "tags": ["proxy", "utils", "validation", "cache"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/proxy-pool/ProxyPoolSelect.tsx",
+      "type": "file",
+      "name": "ProxyPoolSelect.tsx",
+      "filePath": "features/proxy-pool/ProxyPoolSelect.tsx",
+      "summary": "React Select component for choosing proxy pool entries with latency tones, protocol display, and check state indicators",
+      "tags": ["ui", "component", "proxy", "select"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/proxy-pool/useProxyPoolChecks.ts",
+      "type": "file",
+      "name": "useProxyPoolChecks.ts",
+      "filePath": "features/proxy-pool/useProxyPoolChecks.ts",
+      "summary": "Hook for auto-checking proxy latency/health via API, reads/writes cached check state to sessionStorage",
+      "tags": ["hook", "proxy", "api", "cache"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/__tests__/quota-fetch.test.ts",
+      "type": "file",
+      "name": "quota-fetch.test.ts",
+      "filePath": "features/quota-preview/__tests__/quota-fetch.test.ts",
+      "summary": "Tests for quota-fetch module: resolveQuotaProvider and fetchQuota for codex, antigravity, and other providers",
+      "tags": ["test", "quota", "fetch"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/__tests__/quota-helpers.test.ts",
+      "type": "file",
+      "name": "quota-helpers.test.ts",
+      "filePath": "features/quota-preview/__tests__/quota-helpers.test.ts",
+      "summary": "Tests for quota helpers: formatRelativeResetLabel, buildCodexItems, and other quota builder functions",
+      "tags": ["test", "quota", "helpers"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "features/quota-preview/index.ts",
+      "summary": "Barrel file re-exporting quota-related types and functions from quota-helpers and quota-fetch",
+      "tags": ["barrel", "quota"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/quota-preview/quota-antigravity.ts",
+      "type": "file",
+      "name": "quota-antigravity.ts",
+      "filePath": "features/quota-preview/quota-antigravity.ts",
+      "summary": "Antigravity-specific quota parsing: payload normalization, model ID filtering, quota item building and grouping",
+      "tags": ["quota", "antigravity", "parsing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/quota-claude.ts",
+      "type": "file",
+      "name": "quota-claude.ts",
+      "filePath": "features/quota-preview/quota-claude.ts",
+      "summary": "Claude/Anthropic-specific quota parsing: usage windows (5h, 7d), extra usage credits, payload parsing",
+      "tags": ["quota", "claude", "anthropic", "parsing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/quota-codex.ts",
+      "type": "file",
+      "name": "quota-codex.ts",
+      "filePath": "features/quota-preview/quota-codex.ts",
+      "summary": "Codex-specific quota parsing: ChatGPT account ID resolution, usage payload parsing, quota item building with rate limits",
+      "tags": ["quota", "codex", "chatgpt", "parsing"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/quota-preview/quota-fetch.ts",
+      "type": "file",
+      "name": "quota-fetch.ts",
+      "filePath": "features/quota-preview/quota-fetch.ts",
+      "summary": "Core quota fetch module: resolves quota provider from auth files, fetches quota data via API for all supported providers",
+      "tags": ["quota", "fetch", "api", "core"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/quota-preview/quota-gemini-cli.ts",
+      "type": "file",
+      "name": "quota-gemini-cli.ts",
+      "filePath": "features/quota-preview/quota-gemini-cli.ts",
+      "summary": "Gemini CLI-specific quota parsing: bucket normalization, model ID group definitions, quota item building",
+      "tags": ["quota", "gemini", "parsing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/quota-helpers.ts",
+      "type": "file",
+      "name": "quota-helpers.ts",
+      "filePath": "features/quota-preview/quota-helpers.ts",
+      "summary": "Central aggregation module re-exporting all quota sub-modules and defining URL constants, auth provider resolution, and auth file helpers",
+      "tags": ["quota", "barrel", "constants", "helpers"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/quota-kimi.ts",
+      "type": "file",
+      "name": "quota-kimi.ts",
+      "filePath": "features/quota-preview/quota-kimi.ts",
+      "summary": "Kimi-specific quota parsing: usage payload parsing, quota item building from limits and windows",
+      "tags": ["quota", "kimi", "parsing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/quota-kiro.ts",
+      "type": "file",
+      "name": "quota-kiro.ts",
+      "filePath": "features/quota-preview/quota-kiro.ts",
+      "summary": "Kiro/AWS CodeWhisperer-specific quota parsing: usage breakdown, free trial info, subscription info",
+      "tags": ["quota", "kiro", "aws", "parsing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/quota-normalizers.ts",
+      "type": "file",
+      "name": "quota-normalizers.ts",
+      "filePath": "features/quota-preview/quota-normalizers.ts",
+      "summary": "Shared normalizer utilities for auth index, strings, numbers, quota fractions, JWT/id-token decoding, reset time parsing, and percent clamping",
+      "tags": ["utils", "normalizer", "quota"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/quota-preview/quota-types.ts",
+      "type": "file",
+      "name": "quota-types.ts",
+      "filePath": "features/quota-preview/quota-types.ts",
+      "summary": "Type definitions for QuotaStatus, QuotaItem, and QuotaState used across the quota preview feature",
+      "tags": ["types", "quota"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/request-log-viewer/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "features/request-log-viewer/index.ts",
+      "summary": "Barrel file re-exporting all exports from requestLogsShared",
+      "tags": ["barrel", "re-export"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/request-log-viewer/requestLogsShared.tsx",
+      "type": "file",
+      "name": "requestLogsShared.tsx",
+      "filePath": "features/request-log-viewer/requestLogsShared.tsx",
+      "summary": "Shared types, constants, formatters, and React components for request log viewing: pagination, time ranges, key filtering, column definitions, metric chips",
+      "tags": ["logs", "request-logs", "shared", "components"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/routing-config-editor/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "features/routing-config-editor/index.ts",
+      "summary": "Barrel file re-exporting RoutingConfigEditor and RoutingModelOption",
+      "tags": ["barrel", "re-export"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/routing-config-editor/RoutingConfigEditor.tsx",
+      "type": "file",
+      "name": "RoutingConfigEditor.tsx",
+      "filePath": "features/routing-config-editor/RoutingConfigEditor.tsx",
+      "summary": "Large React component for editing routing channel group configurations: CRUD for groups, channels, tags, routes with modal dialogs and validation",
+      "tags": ["ui", "component", "routing", "config-editor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/visual-config-editor/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "features/visual-config-editor/index.ts",
+      "summary": "Barrel file re-exporting types, makeClientId, DEFAULT_VISUAL_VALUES, and useVisualConfig from the visual-config-editor feature",
+      "tags": ["barrel", "re-export"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProviderStatusBar",
+      "type": "function",
+      "name": "ProviderStatusBar",
+      "filePath": "features/provider-latency/components/ProviderStatusBar.tsx",
+      "summary": "React component that renders a visual status bar with colored blocks and success rate percentage for provider latency",
+      "tags": ["component", "ui", "provider", "latency"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:formatLatency",
+      "type": "function",
+      "name": "formatLatency",
+      "filePath": "features/provider-latency/hooks/useProviderLatency.ts",
+      "summary": "Formats millisecond latency to human-readable string with appropriate unit (ms, s, m, h)",
+      "tags": ["util", "format", "latency"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useProviderLatency",
+      "type": "function",
+      "name": "useProviderLatency",
+      "filePath": "features/provider-latency/hooks/useProviderLatency.ts",
+      "summary": "React hook that manages provider latency checks using API calls with abort controllers for cancellation",
+      "tags": ["hook", "latency", "api"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ProxyPoolSelect",
+      "type": "function",
+      "name": "ProxyPoolSelect",
+      "filePath": "features/proxy-pool/ProxyPoolSelect.tsx",
+      "summary": "React component wrapping Select for choosing proxy pool entries with latency and protocol display",
+      "tags": ["component", "proxy", "select"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useProxyPoolChecks",
+      "type": "function",
+      "name": "useProxyPoolChecks",
+      "filePath": "features/proxy-pool/useProxyPoolChecks.ts",
+      "summary": "React hook for auto-checking proxy pool entries' health via API calls with sessionStorage caching",
+      "tags": ["hook", "proxy", "health-check"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:proxyUtils",
+      "type": "function",
+      "name": "proxyUtils",
+      "filePath": "features/proxy-pool/proxy-utils.ts",
+      "summary": "Collection of utility functions: proxyProtocol, proxyDisplayURL, proxyEndpoint, proxyLatencyTone, readCachedProxyCheckState, writeCachedProxyCheckState, slugifyProxyID, validateProxyDraft",
+      "tags": ["utils", "proxy"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:fetchQuota",
+      "type": "function",
+      "name": "fetchQuota",
+      "filePath": "features/quota-preview/quota-fetch.ts",
+      "summary": "Main function to fetch quota data for a given provider type and auth file, dispatches to provider-specific handling",
+      "tags": ["quota", "api", "fetch"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:resolveQuotaProvider",
+      "type": "function",
+      "name": "resolveQuotaProvider",
+      "filePath": "features/quota-preview/quota-fetch.ts",
+      "summary": "Determines the quota provider type from an AuthFileItem based on provider, type, and account_type fields",
+      "tags": ["quota", "resolver"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:QuotaItem",
+      "type": "class",
+      "name": "QuotaItem",
+      "filePath": "features/quota-preview/quota-types.ts",
+      "summary": "Type representing a single quota item with label, percent, resetAtMs, windowSeconds, and optional meta",
+      "tags": ["type", "quota"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:QuotaState",
+      "type": "class",
+      "name": "QuotaState",
+      "filePath": "features/quota-preview/quota-types.ts",
+      "summary": "Type representing the full quota state including status, items array, planType, error, and updatedAt",
+      "tags": ["type", "quota", "state"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:RoutingConfigEditor",
+      "type": "function",
+      "name": "RoutingConfigEditor",
+      "filePath": "features/routing-config-editor/RoutingConfigEditor.tsx",
+      "summary": "Large React component for editing routing channel group configurations with CRUD operations, validation, and modal dialogs",
+      "tags": ["component", "routing", "config"],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:RequestLogsRow",
+      "type": "class",
+      "name": "RequestLogsRow",
+      "filePath": "features/request-log-viewer/requestLogsShared.tsx",
+      "summary": "Type representing a formatted request log row with timestamp, key info, latency, token counts, and cost",
+      "tags": ["type", "logs", "request"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:features/provider-latency/index.ts",
+      "target": "file:features/provider-latency/hooks/useProviderLatency.ts",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/provider-latency/index.ts",
+      "target": "file:features/provider-latency/components/ProviderStatusBar.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/provider-latency/hooks/useProviderLatency.ts",
+      "target": "packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:features/provider-latency/components/ProviderStatusBar.tsx",
+      "target": "packages/domain/src/providers/providerUsage.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports StatusBarData"
+    },
+    {
+      "source": "file:features/proxy-pool/index.ts",
+      "target": "file:features/proxy-pool/ProxyPoolSelect.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/proxy-pool/index.ts",
+      "target": "file:features/proxy-pool/useProxyPoolChecks.ts",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/proxy-pool/ProxyPoolSelect.tsx",
+      "target": "file:features/proxy-pool/proxy-utils.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports proxy utilities"
+    },
+    {
+      "source": "file:features/proxy-pool/useProxyPoolChecks.ts",
+      "target": "file:features/proxy-pool/proxy-utils.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports check state cache utilities"
+    },
+    {
+      "source": "file:features/quota-preview/index.ts",
+      "target": "file:features/quota-preview/quota-helpers.ts",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/quota-preview/index.ts",
+      "target": "file:features/quota-preview/quota-fetch.ts",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/quota-preview/quota-helpers.ts",
+      "target": "file:features/quota-preview/quota-antigravity.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "re-exports from"
+    },
+    {
+      "source": "file:features/quota-preview/quota-helpers.ts",
+      "target": "file:features/quota-preview/quota-codex.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "re-exports from"
+    },
+    {
+      "source": "file:features/quota-preview/quota-helpers.ts",
+      "target": "file:features/quota-preview/quota-claude.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "re-exports from"
+    },
+    {
+      "source": "file:features/quota-preview/quota-helpers.ts",
+      "target": "file:features/quota-preview/quota-gemini-cli.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "re-exports from"
+    },
+    {
+      "source": "file:features/quota-preview/quota-helpers.ts",
+      "target": "file:features/quota-preview/quota-kimi.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "re-exports from"
+    },
+    {
+      "source": "file:features/quota-preview/quota-helpers.ts",
+      "target": "file:features/quota-preview/quota-kiro.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "re-exports from"
+    },
+    {
+      "source": "file:features/quota-preview/quota-helpers.ts",
+      "target": "file:features/quota-preview/quota-normalizers.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "re-exports from"
+    },
+    {
+      "source": "file:features/quota-preview/quota-helpers.ts",
+      "target": "file:features/quota-preview/quota-types.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "re-exports types"
+    },
+    {
+      "source": "file:features/quota-preview/quota-fetch.ts",
+      "target": "file:features/quota-preview/quota-helpers.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports quota helpers, parsers, builders"
+    },
+    {
+      "source": "file:features/quota-preview/quota-antigravity.ts",
+      "target": "file:features/quota-preview/quota-normalizers.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizer utilities"
+    },
+    {
+      "source": "file:features/quota-preview/quota-claude.ts",
+      "target": "file:features/quota-preview/quota-normalizers.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizer utilities"
+    },
+    {
+      "source": "file:features/quota-preview/quota-codex.ts",
+      "target": "file:features/quota-preview/quota-normalizers.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizer utilities"
+    },
+    {
+      "source": "file:features/quota-preview/quota-gemini-cli.ts",
+      "target": "file:features/quota-preview/quota-normalizers.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizer utilities"
+    },
+    {
+      "source": "file:features/quota-preview/quota-kimi.ts",
+      "target": "file:features/quota-preview/quota-normalizers.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizer utilities"
+    },
+    {
+      "source": "file:features/quota-preview/quota-kiro.ts",
+      "target": "file:features/quota-preview/quota-normalizers.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizer utilities"
+    },
+    {
+      "source": "file:features/quota-preview/__tests__/quota-fetch.test.ts",
+      "target": "file:features/quota-preview/quota-fetch.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests"
+    },
+    {
+      "source": "file:features/quota-preview/__tests__/quota-helpers.test.ts",
+      "target": "file:features/quota-preview/quota-helpers.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests"
+    },
+    {
+      "source": "file:features/request-log-viewer/index.ts",
+      "target": "file:features/request-log-viewer/requestLogsShared.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/request-log-viewer/requestLogsShared.tsx",
+      "target": "features/monitor-widgets/monitor-utils.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports parseUsageTimestampMs"
+    },
+    {
+      "source": "file:features/routing-config-editor/index.ts",
+      "target": "file:features/routing-config-editor/RoutingConfigEditor.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/routing-config-editor/RoutingConfigEditor.tsx",
+      "target": "file:features/visual-config-editor/index.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports visual config types and makeClientId"
+    },
+    {
+      "source": "file:features/routing-config-editor/RoutingConfigEditor.tsx",
+      "target": "features/model-availability/modelAvailability.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports model pricing utilities"
+    },
+    {
+      "source": "file:features/visual-config-editor/index.ts",
+      "target": "features/visual-config-editor/types.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "re-exports types"
+    },
+    {
+      "source": "file:features/visual-config-editor/index.ts",
+      "target": "features/visual-config-editor/useVisualConfig.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "re-exports"
+    }
+  ]
+}

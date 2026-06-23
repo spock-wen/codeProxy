@@ -1,0 +1,537 @@
+{
+  "nodes": [
+    {
+      "id": "file:features/visual-config-editor/types.ts",
+      "type": "file",
+      "name": "visual-config-editor/types.ts",
+      "filePath": "features/visual-config-editor/types.ts",
+      "summary": "Type definitions for visual configuration editor including VisualConfigValues, PayloadRule, RoutingChannelGroupEntry, PayloadFilterRule, and streaming/routing types. Also exports makeClientId and DEFAULT_VISUAL_VALUES constants.",
+      "tags": ["visual-config", "types", "editor", "routing", "payload"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/visual-config-editor/useVisualConfig.ts",
+      "type": "file",
+      "name": "visual-config-editor/useVisualConfig.ts",
+      "filePath": "features/visual-config-editor/useVisualConfig.ts",
+      "summary": "React hook for managing visual configuration state. Parses YAML into structured VisualConfigValues, provides serialization back to YAML, and handles payload rules, routing channel groups, and path routes.",
+      "tags": ["visual-config", "hook", "yaml", "parsing", "serialization", "react"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/api-client/package.json",
+      "type": "config",
+      "name": "api-client/package.json",
+      "filePath": "packages/api-client/package.json",
+      "summary": "Package manifest for @code-proxy/api-client. Private ESM package with a single dependency on axios.",
+      "tags": ["package", "config", "api-client"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/client/client.ts",
+      "type": "file",
+      "name": "api-client/src/client/client.ts",
+      "filePath": "packages/api-client/src/client/client.ts",
+      "summary": "Core ApiClient class providing HTTP methods (get, post, put, patch, delete) and specialized methods (postForm, putRawText, getText, getBlob, downloadToFile). Handles auth suspension, version headers, error parsing, and file downloads via browser File API.",
+      "tags": ["api-client", "http", "fetch", "auth", "download"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/api-client/src/client/constants.ts",
+      "type": "file",
+      "name": "api-client/src/client/constants.ts",
+      "filePath": "packages/api-client/src/client/constants.ts",
+      "summary": "Exports API client constants: MANAGEMENT_API_PREFIX, DEFAULT_API_PORT, REQUEST_TIMEOUT_MS, VERSION_HEADER_KEYS, BUILD_DATE_HEADER_KEYS. Also provides normalizeApiBase, computeManagementApiBase, and detectApiBaseFromLocation utilities.",
+      "tags": ["api-client", "constants", "url-normalization"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/dto/types.ts",
+      "type": "file",
+      "name": "api-client/src/dto/types.ts",
+      "filePath": "packages/api-client/src/dto/types.ts",
+      "summary": "DTO type definitions for the management API: AuthSnapshot, AuthFileItem, AuthFilesResponse, UsageDetail, UsageData, ChartDataResponse, ProviderModel, OpenAIProvider, ProviderSimpleConfig, BedrockProviderConfig, OAuth types, LogsQuery/Response, and ApiCallRequest/Result.",
+      "tags": ["types", "dto", "api", "auth", "provider", "usage"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/client/__tests__/client.test.ts",
+      "type": "file",
+      "name": "api-client/src/client/__tests__/client.test.ts",
+      "filePath": "packages/api-client/src/client/__tests__/client.test.ts",
+      "summary": "Tests for URL normalization (handling /manage/ and /v0/management/ paths) and ApiClient auth failure handling (IP ban suspension, setConfig recovery, HTML response rejection).",
+      "tags": ["test", "api-client", "auth", "url-normalization"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/ampcode.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/ampcode.ts",
+      "filePath": "packages/api-client/src/endpoints/ampcode.ts",
+      "summary": "AMP code API wrapper providing CRUD operations for upstream URL, upstream API key, model mappings, and force model mappings toggle.",
+      "tags": ["endpoint", "ampcode", "api", "proxy"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/api-call.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/api-call.ts",
+      "filePath": "packages/api-client/src/endpoints/api-call.ts",
+      "summary": "Generic API call proxy endpoint. Provides getApiCallErrorMessage for extracting error messages from API call responses and apiCallApi.request for making raw HTTP requests through the management API.",
+      "tags": ["endpoint", "api-proxy", "error-handling"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/api-key-permission-profiles.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/api-key-permission-profiles.ts",
+      "filePath": "packages/api-client/src/endpoints/api-key-permission-profiles.ts",
+      "summary": "API key permission profiles module. Defines ApiKeyPermissionProfile interface, normalization/serialization utilities, profile matching logic, and CRUD operations via apiKeyPermissionProfilesApi.",
+      "tags": ["endpoint", "permissions", "api-keys", "profiles"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/api-keys.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/api-keys.ts",
+      "filePath": "packages/api-client/src/endpoints/api-keys.ts",
+      "summary": "API keys and API key entries CRUD endpoints. Provides ApiKeyEntry interface with permission fields, apiKeysApi for key management, and apiKeyEntriesApi for detailed entry management.",
+      "tags": ["endpoint", "api-keys", "crud"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/auth-files.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/auth-files.ts",
+      "filePath": "packages/api-client/src/endpoints/auth-files.ts",
+      "summary": "Auth files API endpoint. Provides CRUD for auth files, status management, OAuth excluded models, OAuth model aliases, and model definitions for auth files.",
+      "tags": ["endpoint", "auth-files", "oauth", "crud"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/ccswitch-import-configs.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/ccswitch-import-configs.ts",
+      "filePath": "packages/api-client/src/endpoints/ccswitch-import-configs.ts",
+      "summary": "CC-Switch import configurations endpoint with normalization and serialization of config lists, model mappings, and client type validation.",
+      "tags": ["endpoint", "ccswitch", "import", "configuration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/channel-groups.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/channel-groups.ts",
+      "filePath": "packages/api-client/src/endpoints/channel-groups.ts",
+      "summary": "Channel groups API endpoint. Lists channel groups with normalized ChannelGroupItem and ChannelGroupChannelDetail types.",
+      "tags": ["endpoint", "channel-groups", "routing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/config-file.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/config-file.ts",
+      "filePath": "packages/api-client/src/endpoints/config-file.ts",
+      "summary": "Config YAML file endpoint providing fetch and save operations for the server's YAML configuration.",
+      "tags": ["endpoint", "config", "yaml"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/config.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/config.ts",
+      "filePath": "packages/api-client/src/endpoints/config.ts",
+      "summary": "Server configuration endpoint with getters and setters for debug mode, proxy URL, request retry, routing strategy, auto-update settings, usage statistics, WS auth, force model prefix, and logging settings.",
+      "tags": ["endpoint", "config", "settings"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/__tests__/api-key-permission-profiles.test.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/__tests__/api-key-permission-profiles.test.ts",
+      "filePath": "packages/api-client/src/endpoints/__tests__/api-key-permission-profiles.test.ts",
+      "summary": "Tests for apiKeyPermissionProfilesApi list/replace operations and resolveEntryPermissionProfileId matching logic.",
+      "tags": ["test", "endpoint", "permissions"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/__tests__/ccswitch-import-configs.test.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/__tests__/ccswitch-import-configs.test.ts",
+      "filePath": "packages/api-client/src/endpoints/__tests__/ccswitch-import-configs.test.ts",
+      "summary": "Tests for ccSwitchImportConfigsApi replace operation verifying snake_case serialization of model mappings.",
+      "tags": ["test", "endpoint", "ccswitch"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/__tests__/image-generation.test.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/__tests__/image-generation.test.ts",
+      "filePath": "packages/api-client/src/endpoints/__tests__/image-generation.test.ts",
+      "summary": "Tests for imageGenerationApi: startTestTask with text generation and multipart image edits, and getTestTask polling with short timeout.",
+      "tags": ["test", "endpoint", "image-generation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/__tests__/oauth-proxy-id.test.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/__tests__/oauth-proxy-id.test.ts",
+      "filePath": "packages/api-client/src/endpoints/__tests__/oauth-proxy-id.test.ts",
+      "summary": "Tests for OAuth proxy id serialization in startAuth, submitCallback, iflowCookieAuth, and Vertex credential import endpoints.",
+      "tags": ["test", "endpoint", "oauth", "proxy"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/__tests__/provider-proxy-id.test.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/__tests__/provider-proxy-id.test.ts",
+      "filePath": "packages/api-client/src/endpoints/__tests__/provider-proxy-id.test.ts",
+      "summary": "Tests for provider proxy id serialization across simple provider configs, Gemini configs, and OpenAI API key entries.",
+      "tags": ["test", "endpoint", "providers", "proxy"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/__tests__/providers-bedrock.test.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/__tests__/providers-bedrock.test.ts",
+      "filePath": "packages/api-client/src/endpoints/__tests__/providers-bedrock.test.ts",
+      "summary": "Tests for Bedrock provider config: normalization of API key and SigV4 configs, serialization for save, and delete by index.",
+      "tags": ["test", "endpoint", "bedrock", "providers"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/__tests__/providers-opencode-go.test.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/__tests__/providers-opencode-go.test.ts",
+      "filePath": "packages/api-client/src/endpoints/__tests__/providers-opencode-go.test.ts",
+      "summary": "Tests for OpenCode Go provider: config normalization without exposing base URL, OAuth row filtering, serialization for save, usage query, and OAuth/runtime-only row filtering across all provider types.",
+      "tags": ["test", "endpoint", "opencode-go", "providers", "oauth-filtering"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/__tests__/proxies.test.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/__tests__/proxies.test.ts",
+      "filePath": "packages/api-client/src/endpoints/__tests__/proxies.test.ts",
+      "summary": "Tests for proxiesApi: list proxy pool entries, save with normalized payload, and check proxy health with short timeout.",
+      "tags": ["test", "endpoint", "proxy-pool"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/api-client/src/endpoints/__tests__/usage-auth-file-trend.test.ts",
+      "type": "file",
+      "name": "api-client/src/endpoints/__tests__/usage-auth-file-trend.test.ts",
+      "filePath": "packages/api-client/src/endpoints/__tests__/usage-auth-file-trend.test.ts",
+      "summary": "Tests for usage trend API: auth file trend fetching, entity stats with scoped auth indexes/sources, and fine-grained quota snapshot recording.",
+      "tags": ["test", "endpoint", "usage", "quota", "trend"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useVisualConfig",
+      "type": "function",
+      "name": "useVisualConfig",
+      "filePath": "features/visual-config-editor/useVisualConfig.ts",
+      "summary": "Main React hook that manages visual config state, provides YAML parsing/serialization, and returns form state with change tracking against baseline values.",
+      "tags": ["hook", "react", "visual-config"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ApiClient",
+      "type": "class",
+      "name": "ApiClient",
+      "filePath": "packages/api-client/src/client/client.ts",
+      "summary": "Core HTTP client class with methods for GET, POST, PUT, PATCH, DELETE, file upload/download, and auth suspension handling.",
+      "tags": ["class", "http-client", "api"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:apiClient",
+      "type": "function",
+      "name": "apiClient",
+      "filePath": "packages/api-client/src/client/client.ts",
+      "summary": "Singleton instance of the ApiClient class, exported for use across all endpoint modules.",
+      "tags": ["singleton", "http-client"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:normalizeApiBase",
+      "type": "function",
+      "name": "normalizeApiBase",
+      "filePath": "packages/api-client/src/client/constants.ts",
+      "summary": "Normalizes API base URL by stripping /manage and /v0/management path segments.",
+      "tags": ["util", "url-normalization"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:computeManagementApiBase",
+      "type": "function",
+      "name": "computeManagementApiBase",
+      "filePath": "packages/api-client/src/client/constants.ts",
+      "summary": "Computes the full management API base URL by appending /v0/management to the normalized API base.",
+      "tags": ["util", "url-normalization"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:makeClientId",
+      "type": "function",
+      "name": "makeClientId",
+      "filePath": "features/visual-config-editor/types.ts",
+      "summary": "Generates unique client-side IDs using crypto.randomUUID or fallback timestamp+random.",
+      "tags": ["util", "id-generation"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:features/visual-config-editor/useVisualConfig.ts",
+      "target": "file:features/visual-config-editor/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports types"
+    },
+    {
+      "source": "file:packages/api-client/src/client/client.ts",
+      "target": "file:packages/api-client/src/client/constants.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports constants"
+    },
+    {
+      "source": "file:packages/api-client/src/client/__tests__/client.test.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports client"
+    },
+    {
+      "source": "file:packages/api-client/src/client/__tests__/client.test.ts",
+      "target": "file:packages/api-client/src/client/constants.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports constants"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/ampcode.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/api-call.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/api-call.ts",
+      "target": "file:packages/api-client/src/dto/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports types"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/api-key-permission-profiles.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/api-key-permission-profiles.ts",
+      "target": "file:packages/api-client/src/endpoints/api-keys.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports ApiKeyEntry type"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/api-keys.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/auth-files.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/auth-files.ts",
+      "target": "file:packages/api-client/src/dto/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports types"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/ccswitch-import-configs.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/channel-groups.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/channel-groups.ts",
+      "target": "file:packages/api-client/src/dto/types.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports TagDisplayFields"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/config-file.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/config.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/api-key-permission-profiles.test.ts",
+      "target": "file:packages/api-client/src/endpoints/api-key-permission-profiles.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports endpoint"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/ccswitch-import-configs.test.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/ccswitch-import-configs.test.ts",
+      "target": "file:packages/api-client/src/endpoints/ccswitch-import-configs.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports endpoint"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/image-generation.test.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/oauth-proxy-id.test.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/oauth-proxy-id.test.ts",
+      "target": "file:packages/api-client/src/endpoints/oauth.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "imports oauth endpoint"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/oauth-proxy-id.test.ts",
+      "target": "file:packages/api-client/src/endpoints/vertex.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "imports vertex endpoint"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/provider-proxy-id.test.ts",
+      "target": "file:packages/api-client/src/endpoints/helpers.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports helpers"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/providers-bedrock.test.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/providers-opencode-go.test.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/proxies.test.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/usage-auth-file-trend.test.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports apiClient"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/auth-files.ts",
+      "target": "file:packages/api-client/src/endpoints/helpers.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports normalizeOauthExcludedModels"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/api-call.ts",
+      "target": "file:packages/api-client/src/endpoints/helpers.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports isRecord"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/ccswitch-import-configs.ts",
+      "target": "file:packages/api-client/src/endpoints/../client/client.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports domain ccswitch module"
+    },
+    {
+      "source": "function:useVisualConfig",
+      "target": "file:features/visual-config-editor/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports types"
+    },
+    {
+      "source": "function:ApiClient",
+      "target": "file:packages/api-client/src/client/constants.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports constants"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/providers-opencode-go.test.ts",
+      "target": "file:packages/api-client/src/endpoints/providers.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "tests providersApi"
+    },
+    {
+      "source": "file:packages/api-client/src/endpoints/__tests__/usage-auth-file-trend.test.ts",
+      "target": "file:packages/api-client/src/endpoints/usage.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "tests usageApi"
+    }
+  ]
+}

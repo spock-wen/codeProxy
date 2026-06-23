@@ -1,0 +1,639 @@
+{
+  "nodes": [
+    {
+      "id": "file:apps/admin-panel/src/utils/encryption.ts",
+      "type": "file",
+      "name": "encryption.ts",
+      "filePath": "apps/admin-panel/src/utils/encryption.ts",
+      "summary": "Client-side XOR-based encryption utility with base64 encoding/decoding for securely storing sensitive values in localStorage",
+      "tags": ["utility", "encryption", "security", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:encryptData",
+      "type": "function",
+      "name": "encryptData",
+      "filePath": "apps/admin-panel/src/utils/encryption.ts",
+      "summary": "Encrypts a string value using XOR cipher with origin+userAgent derived key, prefixed with enc::v1:: marker",
+      "tags": ["encryption"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:decryptData",
+      "type": "function",
+      "name": "decryptData",
+      "filePath": "apps/admin-panel/src/utils/encryption.ts",
+      "summary": "Decrypts data previously encrypted with encryptData, returns plaintext if prefix missing or decryption fails",
+      "tags": ["encryption"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:isEncrypted",
+      "type": "function",
+      "name": "isEncrypted",
+      "filePath": "apps/admin-panel/src/utils/encryption.ts",
+      "summary": "Checks if a string value carries the enc::v1:: encryption prefix",
+      "tags": ["encryption"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/utils/format.ts",
+      "type": "file",
+      "name": "format.ts",
+      "filePath": "apps/admin-panel/src/utils/format.ts",
+      "summary": "String and number formatting utilities for API keys, file sizes, dates, timestamps, and text truncation",
+      "tags": ["utility", "formatting", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:maskApiKey",
+      "type": "function",
+      "name": "maskApiKey",
+      "filePath": "apps/admin-panel/src/utils/format.ts",
+      "summary": "Masks an API key showing only first/last 2 characters with asterisks in between",
+      "tags": ["formatting", "security"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:formatFileSize",
+      "type": "function",
+      "name": "formatFileSize",
+      "filePath": "apps/admin-panel/src/utils/format.ts",
+      "summary": "Converts byte count to human-readable string with units (B/KB/MB/GB)",
+      "tags": ["formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:formatDateTime",
+      "type": "function",
+      "name": "formatDateTime",
+      "filePath": "apps/admin-panel/src/utils/format.ts",
+      "summary": "Formats a Date or ISO string to localized date-time string with locale detection",
+      "tags": ["formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:formatUnixTimestamp",
+      "type": "function",
+      "name": "formatUnixTimestamp",
+      "filePath": "apps/admin-panel/src/utils/format.ts",
+      "summary": "Formats Unix timestamps in seconds, milliseconds, microseconds or nanoseconds to localized date string",
+      "tags": ["formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:truncateText",
+      "type": "function",
+      "name": "truncateText",
+      "filePath": "apps/admin-panel/src/utils/format.ts",
+      "summary": "Truncates text to maxLength appending ellipsis if exceeded",
+      "tags": ["formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/utils/headers.ts",
+      "type": "file",
+      "name": "headers.ts",
+      "filePath": "apps/admin-panel/src/utils/headers.ts",
+      "summary": "HTTP header utility functions for building header objects from arrays or records and converting back to entries",
+      "tags": ["utility", "networking", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:buildHeaderObject",
+      "type": "function",
+      "name": "buildHeaderObject",
+      "filePath": "apps/admin-panel/src/utils/headers.ts",
+      "summary": "Normalizes HeaderEntry[] or Record into a clean Record<string, string> filtering empty keys/values",
+      "tags": ["networking"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:headersToEntries",
+      "type": "function",
+      "name": "headersToEntries",
+      "filePath": "apps/admin-panel/src/utils/headers.ts",
+      "summary": "Converts a header record to HeaderEntry[] array filtering empty values",
+      "tags": ["networking"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/utils/helpers.ts",
+      "type": "file",
+      "name": "helpers.ts",
+      "filePath": "apps/admin-panel/src/utils/helpers.ts",
+      "summary": "General-purpose helper functions including array normalization, debounce, throttle, HTML escaping, deep clone, ID generation, and sleep",
+      "tags": ["utility", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:debounce",
+      "type": "function",
+      "name": "debounce",
+      "filePath": "apps/admin-panel/src/utils/helpers.ts",
+      "summary": "Creates a debounced function that delays invocation until delay ms after last call",
+      "tags": ["utility"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:throttle",
+      "type": "function",
+      "name": "throttle",
+      "filePath": "apps/admin-panel/src/utils/helpers.ts",
+      "summary": "Creates a throttled function that invokes at most once per limit ms",
+      "tags": ["utility"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:deepClone",
+      "type": "function",
+      "name": "deepClone",
+      "filePath": "apps/admin-panel/src/utils/helpers.ts",
+      "summary": "Deep clones objects, arrays, and Dates by recursive copy",
+      "tags": ["utility"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/utils/language.ts",
+      "type": "file",
+      "name": "language.ts",
+      "filePath": "apps/admin-panel/src/utils/language.ts",
+      "summary": "Language detection utilities that resolve initial locale from localStorage or browser preferences",
+      "tags": ["i18n", "utility", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:getInitialLanguage",
+      "type": "function",
+      "name": "getInitialLanguage",
+      "filePath": "apps/admin-panel/src/utils/language.ts",
+      "summary": "Returns the stored language preference falling back to browser language, defaulting to zh-CN",
+      "tags": ["i18n"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/utils/models.ts",
+      "type": "file",
+      "name": "models.ts",
+      "filePath": "apps/admin-panel/src/utils/models.ts",
+      "summary": "Model utility functions and predefined model group definitions for GPT, Claude, Gemini, Kimi, Qwen, GLM, Grok, DeepSeek, and MiniMax model families",
+      "tags": ["models", "utility", "admin-panel"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:normalizeModelList",
+      "type": "function",
+      "name": "normalizeModelList",
+      "filePath": "apps/admin-panel/src/utils/models.ts",
+      "summary": "Normalizes model list API responses into ModelInfo[] with optional deduplication",
+      "tags": ["models"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:classifyModels",
+      "type": "function",
+      "name": "classifyModels",
+      "filePath": "apps/admin-panel/src/utils/models.ts",
+      "summary": "Classifies a list of models into predefined vendor groups by pattern matching name and alias",
+      "tags": ["models"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:apps/admin-panel/src/utils/validation.ts",
+      "type": "file",
+      "name": "validation.ts",
+      "filePath": "apps/admin-panel/src/utils/validation.ts",
+      "summary": "Input validation utilities for URLs, API keys, JSON strings, and email addresses",
+      "tags": ["validation", "utility", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:isValidUrl",
+      "type": "function",
+      "name": "isValidUrl",
+      "filePath": "apps/admin-panel/src/utils/validation.ts",
+      "summary": "Validates URL format using the URL constructor",
+      "tags": ["validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:isValidApiBase",
+      "type": "function",
+      "name": "isValidApiBase",
+      "filePath": "apps/admin-panel/src/utils/validation.ts",
+      "summary": "Validates API base URL requires http/https protocol prefix",
+      "tags": ["validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/vite-env.d.ts",
+      "type": "file",
+      "name": "vite-env.d.ts",
+      "filePath": "apps/admin-panel/src/vite-env.d.ts",
+      "summary": "Vite client type declarations including SCSS module imports, app version constant, and ViewTransition API",
+      "tags": ["types", "vite", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/vite.config.ts",
+      "type": "file",
+      "name": "vite.config.ts",
+      "filePath": "apps/admin-panel/vite.config.ts",
+      "summary": "Vite build configuration with React, TailwindCSS, path aliases, dev server proxy, vitest integration, and panel metadata plugin",
+      "tags": ["build", "configuration", "admin-panel"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:docs/internal-review/bundle-baseline.md",
+      "type": "document",
+      "name": "Bundle Baseline",
+      "filePath": "docs/internal-review/bundle-baseline.md",
+      "summary": "Tracks bundle sizes, gzip budgets, and page-level chunk size governance results for codeProxy admin panel",
+      "tags": ["docs", "bundle", "performance", "tracking"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/superpowers/specs/2026-04-27-proxy-pool-management-design.md",
+      "type": "document",
+      "name": "Proxy Pool Management Design",
+      "filePath": "docs/superpowers/specs/2026-04-27-proxy-pool-management-design.md",
+      "summary": "Design spec for centralized proxy pool management with HTTP/HTTPS/SOCKS5 support, proxy-id binding, availability checking, and fallback behavior",
+      "tags": ["docs", "design", "proxy", "infrastructure"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/superpowers/specs/2026-05-06-api-key-permissions-design.md",
+      "type": "document",
+      "name": "API Key Permissions Design",
+      "filePath": "docs/superpowers/specs/2026-05-06-api-key-permissions-design.md",
+      "summary": "Design spec for reusable API key permission profiles including channel restrictions, quotas, rate limits, and system prompts",
+      "tags": ["docs", "design", "api-keys", "permissions"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:e2e/auth-files-oauth-excluded.spec.ts",
+      "type": "file",
+      "name": "auth-files-oauth-excluded.spec.ts",
+      "filePath": "e2e/auth-files-oauth-excluded.spec.ts",
+      "summary": "Playwright e2e tests for OAuth excluded models tab loading state and OAuth callback submission flow on Auth Files page",
+      "tags": ["e2e", "playwright", "auth-files", "oauth"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:e2e/config-editor-and-sidebar.spec.ts",
+      "type": "file",
+      "name": "config-editor-and-sidebar.spec.ts",
+      "filePath": "e2e/config-editor-and-sidebar.spec.ts",
+      "summary": "Playwright e2e tests for YAML config editor horizontal scroll behavior, sidebar collapse/expand, API keys table vertical scrolling, and config save persistence",
+      "tags": ["e2e", "playwright", "config", "sidebar", "api-keys"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:e2e/login-lifecycle.spec.ts",
+      "type": "file",
+      "name": "login-lifecycle.spec.ts",
+      "filePath": "e2e/login-lifecycle.spec.ts",
+      "summary": "Playwright e2e test verifying successful login persists auth snapshot to localStorage and restores monitor route on reload",
+      "tags": ["e2e", "playwright", "login", "auth"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:e2e/openai-providers.spec.ts",
+      "type": "file",
+      "name": "openai-providers.spec.ts",
+      "filePath": "e2e/openai-providers.spec.ts",
+      "summary": "Playwright e2e test verifying adding an OpenAI-compatible provider and typing a provider name does not crash the page",
+      "tags": ["e2e", "playwright", "providers", "openai"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:e2e/request-logs-detail.spec.ts",
+      "type": "file",
+      "name": "request-logs-detail.spec.ts",
+      "filePath": "e2e/request-logs-detail.spec.ts",
+      "summary": "Playwright e2e test for opening request log detail modal, switching between input/output tabs, and viewing raw JSON data",
+      "tags": ["e2e", "playwright", "logs", "request-logs"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/api-key-restrictions/index.ts",
+      "type": "file",
+      "name": "api-key-restrictions/index.ts",
+      "filePath": "features/api-key-restrictions/index.ts",
+      "summary": "Barrel export for api-key-restrictions feature, re-exports RestrictionMultiSelect and useApiKeyPermissionOptions",
+      "tags": ["barrel", "api-keys", "permissions", "feature"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/api-key-restrictions/RestrictionMultiSelect.tsx",
+      "type": "file",
+      "name": "RestrictionMultiSelect.tsx",
+      "filePath": "features/api-key-restrictions/RestrictionMultiSelect.tsx",
+      "summary": "Searchable multi-select dropdown component for API key permission restrictions, with portal-based dropdown positioning and item filtering",
+      "tags": ["ui", "component", "api-keys", "permissions", "feature"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:RestrictionMultiSelect",
+      "type": "function",
+      "name": "RestrictionMultiSelect",
+      "filePath": "features/api-key-restrictions/RestrictionMultiSelect.tsx",
+      "summary": "React component rendering a searchable multi-select with checkboxes for selecting API key permission options",
+      "tags": ["component"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/api-key-restrictions/useApiKeyPermissionOptions.tsx",
+      "type": "file",
+      "name": "useApiKeyPermissionOptions.tsx",
+      "filePath": "features/api-key-restrictions/useApiKeyPermissionOptions.tsx",
+      "summary": "React hook that fetches available models, channels, and channel groups for API key permission configuration from backend APIs",
+      "tags": ["hook", "api-keys", "permissions", "feature"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useApiKeyPermissionOptions",
+      "type": "function",
+      "name": "useApiKeyPermissionOptions",
+      "filePath": "features/api-key-restrictions/useApiKeyPermissionOptions.tsx",
+      "summary": "React hook providing model options, channel options, channel group options, and refresh function for building permission restriction UIs",
+      "tags": ["hook"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "type": "file",
+      "name": "CcSwitchImportConfigModal.tsx",
+      "filePath": "features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "summary": "Large modal component for configuring CC Switch import settings including client type selection, base URL, API keys, route paths, model mappings, and channel group assignment",
+      "tags": ["ui", "component", "ccswitch", "import", "feature"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:CcSwitchImportConfigModal",
+      "type": "function",
+      "name": "CcSwitchImportConfigModal",
+      "filePath": "features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "summary": "React component with multi-tab modal for creating/editing CC Switch import configurations for Claude, Codex, and Gemini providers",
+      "tags": ["component"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/ccswitch-import/index.ts",
+      "type": "file",
+      "name": "ccswitch-import/index.ts",
+      "filePath": "features/ccswitch-import/index.ts",
+      "summary": "Barrel export for ccswitch-import feature, re-exports CcSwitchImportConfigModal and CcSwitchChannelGroupOption type",
+      "tags": ["barrel", "ccswitch", "import", "feature"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/log-content-viewer/components/ErrorDetailModal.tsx",
+      "type": "file",
+      "name": "ErrorDetailModal.tsx",
+      "filePath": "features/log-content-viewer/components/ErrorDetailModal.tsx",
+      "summary": "Modal dialog displaying error log content with JSON formatting, error message extraction, and copy-to-clipboard functionality",
+      "tags": ["ui", "component", "logs", "errors", "feature"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ErrorDetailModal",
+      "type": "function",
+      "name": "ErrorDetailModal",
+      "filePath": "features/log-content-viewer/components/ErrorDetailModal.tsx",
+      "summary": "React portal-based modal that fetches and displays error log content with formatted JSON view",
+      "tags": ["component"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "type": "file",
+      "name": "LogContentModal.tsx",
+      "filePath": "features/log-content-viewer/components/LogContentModal.tsx",
+      "summary": "Large modal component for viewing API request/response log content with input/output/details tabs, rendered markdown, raw JSON views, image previews, and animated transitions",
+      "tags": ["ui", "component", "logs", "detail-view", "feature"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:LogContentModal",
+      "type": "function",
+      "name": "LogContentModal",
+      "filePath": "features/log-content-viewer/components/LogContentModal.tsx",
+      "summary": "React component rendering a comprehensive log content viewer modal with tabbed interface for input/output/details, Markdown rendering, raw data, and image preview overlay",
+      "tags": ["component"],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:features/api-key-restrictions/index.ts",
+      "target": "file:features/api-key-restrictions/RestrictionMultiSelect.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/api-key-restrictions/index.ts",
+      "target": "file:features/api-key-restrictions/useApiKeyPermissionOptions.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/ccswitch-import/index.ts",
+      "target": "file:features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "target": "file:features/model-availability/modelAvailability.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports filterByConfiguredModelAvailability, loadConfiguredModelAvailability"
+    },
+    {
+      "source": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "target": "file:features/log-content-viewer/log-content/parsers.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "imports buildInputRenderedView, buildOutputRenderedView"
+    },
+    {
+      "source": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "target": "file:features/log-content-viewer/log-content/rendering.tsx",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "imports ContentModal, MessageBlock, MessageList, PlainPre"
+    },
+    {
+      "source": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "target": "file:features/log-content-viewer/log-content/scheduler.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports scheduleIdle"
+    },
+    {
+      "source": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "target": "file:features/log-content-viewer/log-content/types.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports types"
+    },
+    {
+      "source": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "target": "file:features/log-content-viewer/log-content/useLogContentData.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "imports useLogContentData"
+    },
+    {
+      "source": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "target": "file:features/log-content-viewer/components/ErrorDetailModal.tsx",
+      "type": "depends_on",
+      "weight": 0.2,
+      "label": "sibling feature component (shared log context)"
+    },
+    {
+      "source": "file:features/api-key-restrictions/RestrictionMultiSelect.tsx",
+      "target": "package:@code-proxy/ui",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "imports MultiSelectOption type"
+    },
+    {
+      "source": "file:features/api-key-restrictions/useApiKeyPermissionOptions.tsx",
+      "target": "package:@code-proxy/api-client",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports apiClient, authFilesApi, providersApi"
+    },
+    {
+      "source": "file:features/api-key-restrictions/useApiKeyPermissionOptions.tsx",
+      "target": "package:@code-proxy/assets",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "imports VendorIcon"
+    },
+    {
+      "source": "file:features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "target": "package:@code-proxy/api-client",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports modelsApi"
+    },
+    {
+      "source": "file:features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "target": "package:@code-proxy/domain/ccswitch/ccswitchImport",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports CC_SWITCH_CLIENTS, getCcSwitchClientConfig"
+    },
+    {
+      "source": "file:features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "target": "package:@code-proxy/domain/ccswitch/ccswitchImportSettings",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports CC_SWITCH_CLAUDE_AUTH_FIELDS, DEFAULT_CC_SWITCH_IMPORT_SETTINGS"
+    },
+    {
+      "source": "file:features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "target": "package:@code-proxy/domain/ccswitch/ccswitchImportConfigList",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports ensureCcSwitchRoutePath, CcSwitchImportConfigListItem"
+    },
+    {
+      "source": "file:features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "target": "package:@code-proxy/ui",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "imports Button, TextInput, Modal, SearchableSelect, Select, Tabs"
+    },
+    {
+      "source": "file:features/ccswitch-import/components/CcSwitchImportConfigModal.tsx",
+      "target": "package:@code-proxy/assets",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "imports SVG icons for claude, codex, gemini"
+    },
+    {
+      "source": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "target": "package:@code-proxy/api-client",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports usageApi, UsageLogEgressResponse"
+    },
+    {
+      "source": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "target": "package:@code-proxy/ui",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "imports Tabs, ImagePreviewOverlay"
+    },
+    {
+      "source": "file:features/log-content-viewer/components/ErrorDetailModal.tsx",
+      "target": "package:@code-proxy/api-client",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports usageApi"
+    },
+    {
+      "source": "file:apps/admin-panel/vite.config.ts",
+      "target": "file:tooling/vite-plugins/panelMetadata.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports panelMetadataPlugin"
+    },
+    {
+      "source": "file:apps/admin-panel/src/utils/language.ts",
+      "target": "file:apps/admin-panel/src/utils/constants.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports STORAGE_KEY_LANGUAGE, SUPPORTED_LANGUAGES"
+    },
+    {
+      "source": "file:apps/admin-panel/src/utils/language.ts",
+      "target": "file:apps/admin-panel/src/types",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "imports Language type"
+    },
+    {
+      "source": "file:e2e/auth-files-oauth-excluded.spec.ts",
+      "target": "package:@playwright/test",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "imports expect, test"
+    },
+    {
+      "source": "file:e2e/config-editor-and-sidebar.spec.ts",
+      "target": "package:@playwright/test",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "imports expect, test, Page"
+    },
+    {
+      "source": "file:e2e/login-lifecycle.spec.ts",
+      "target": "package:@playwright/test",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "imports expect, test"
+    },
+    {
+      "source": "file:e2e/openai-providers.spec.ts",
+      "target": "package:@playwright/test",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "imports expect, test, Page"
+    },
+    {
+      "source": "file:e2e/request-logs-detail.spec.ts",
+      "target": "package:@playwright/test",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "imports expect, test"
+    }
+  ]
+}

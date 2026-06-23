@@ -1,0 +1,541 @@
+{
+  "nodes": [
+    {
+      "id": "file:pages/providers/KeyValueInputList.tsx",
+      "type": "file",
+      "name": "KeyValueInputList.tsx",
+      "filePath": "pages/providers/KeyValueInputList.tsx",
+      "summary": "Reusable form component for editing key-value pair entries (headers). Provides conversion utilities between Record<string,string> and KeyValueEntry[] for use in provider configuration forms.",
+      "tags": ["providers", "ui-components", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/ModelInputList.tsx",
+      "type": "file",
+      "name": "ModelInputList.tsx",
+      "filePath": "pages/providers/ModelInputList.tsx",
+      "summary": "Reusable form component for editing model entries (name, alias, priority, test model). Used in provider key and OpenAI provider configuration forms.",
+      "tags": ["providers", "ui-components", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/provider-access.ts",
+      "type": "file",
+      "name": "provider-access.ts",
+      "filePath": "pages/providers/provider-access.ts",
+      "summary": "Analyzes which API key entries can reach a given channel by checking allowed-channels and allowed-channel-groups against channel group definitions.",
+      "tags": ["providers", "access-control", "utils"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/provider-cache.ts",
+      "type": "file",
+      "name": "provider-cache.ts",
+      "filePath": "pages/providers/provider-cache.ts",
+      "summary": "Simple localStorage-based cache utility with 7-day TTL for the providers page, providing getCachedData and setCachedData functions.",
+      "tags": ["providers", "cache", "utils"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/provider-import-export.ts",
+      "type": "file",
+      "name": "provider-import-export.ts",
+      "filePath": "pages/providers/provider-import-export.ts",
+      "summary": "Handles import/export of provider configurations for all provider kinds (Gemini, Claude, Codex, OpenCodeGo, Vertex, Bedrock, OpenAI). Includes normalization with deduplication, diff calculation (added/removed/changed), and serialization for export JSON.",
+      "tags": ["providers", "import-export", "utils"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/providers/ProviderCard.tsx",
+      "type": "file",
+      "name": "ProviderCard.tsx",
+      "filePath": "pages/providers/ProviderCard.tsx",
+      "summary": "Card UI component for displaying a provider configuration with selection checkbox, enabled/disabled toggle, dropdown action menu (enable/disable, edit, delete), and customizable header/body/footer sections.",
+      "tags": ["providers", "ui-components"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/ProviderKeyListCard.tsx",
+      "type": "file",
+      "name": "ProviderKeyListCard.tsx",
+      "filePath": "pages/providers/ProviderKeyListCard.tsx",
+      "summary": "Card that renders a list of provider key configurations using ProviderCard subcomponents. Displays latency, connection info, model chips, excluded models, metric chips, and status bar for each provider entry.",
+      "tags": ["providers", "ui-components"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/providers-helpers.ts",
+      "type": "file",
+      "name": "providers-helpers.ts",
+      "filePath": "pages/providers/providers-helpers.ts",
+      "summary": "Core utility functions for provider configuration management including: disable-all-models rule checking, API key masking, OpenAI base URL normalization, model discovery from API responses, ProviderKeyDraft and OpenAIDraft builders, and statistics aggregation by source.",
+      "tags": ["providers", "utils"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:summarizeProviderAccess",
+      "type": "function",
+      "name": "summarizeProviderAccess",
+      "filePath": "pages/providers/provider-access.ts",
+      "summary": "Determines how many API key entries can reach a specific channel, computing reachableKeys, totalKeys, and exactOverrideKeys counts.",
+      "tags": ["providers", "access-control"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:createProviderExportText",
+      "type": "function",
+      "name": "createProviderExportText",
+      "filePath": "pages/providers/provider-import-export.ts",
+      "summary": "Serializes provider items into a JSON export string with provider kind, version, and normalized/serialized items.",
+      "tags": ["providers", "import-export"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:prepareProviderImport",
+      "type": "function",
+      "name": "prepareProviderImport",
+      "filePath": "pages/providers/provider-import-export.ts",
+      "summary": "Parses and validates provider import JSON, normalizes items, computes diff (added/removed/changed) against current items, detects provider kind mismatches.",
+      "tags": ["providers", "import-export"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:maskApiKey",
+      "type": "function",
+      "name": "maskApiKey",
+      "filePath": "pages/providers/providers-helpers.ts",
+      "summary": "Masks an API key string showing only first/last few characters for display purposes.",
+      "tags": ["providers", "utils", "security"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:normalizeOpenAIBaseUrl",
+      "type": "function",
+      "name": "normalizeOpenAIBaseUrl",
+      "filePath": "pages/providers/providers-helpers.ts",
+      "summary": "Normalizes OpenAI base URLs by removing management API path suffixes and ensuring proper protocol prefix.",
+      "tags": ["providers", "utils"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:buildProviderKeyDraft",
+      "type": "function",
+      "name": "buildProviderKeyDraft",
+      "filePath": "pages/providers/providers-helpers.ts",
+      "summary": "Builds a ProviderKeyDraft form state object from a ProviderSimpleConfig or BedrockProviderConfig, converting model and header data to editable entry formats.",
+      "tags": ["providers", "utils"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:buildOpenAIDraft",
+      "type": "function",
+      "name": "buildOpenAIDraft",
+      "filePath": "pages/providers/providers-helpers.ts",
+      "summary": "Builds an OpenAIDraft form state object from an OpenAIProvider config, converting apiKeyEntries, headers, and models to editable entry formats.",
+      "tags": ["providers", "utils"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/ProvidersPage.tsx",
+      "type": "file",
+      "name": "ProvidersPage.tsx",
+      "filePath": "pages/providers/ProvidersPage.tsx",
+      "summary": "Thin wrapper page component that delegates rendering to ProvidersPageContent from the components subdirectory.",
+      "tags": ["providers", "page"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/index.ts",
+      "type": "file",
+      "name": "index.ts (providers)",
+      "filePath": "pages/providers/index.ts",
+      "summary": "Barrel export file re-exporting ProvidersPage and providersRoute from the providers page module.",
+      "tags": ["providers", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/route.tsx",
+      "type": "file",
+      "name": "route.tsx (providers)",
+      "filePath": "pages/providers/route.tsx",
+      "summary": "Route definition for /ai-providers path with lazy loading, auth requirement, dashboard layout, and nav label.",
+      "tags": ["providers", "routing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/proxies/ProxiesPage.tsx",
+      "type": "file",
+      "name": "ProxiesPage.tsx",
+      "filePath": "pages/proxies/ProxiesPage.tsx",
+      "summary": "Full CRUD page for managing proxy pool entries. Features a DataTable with protocol/endpoint, health check results with latency tones, add/edit modal with form fields, delete confirmation, and cached check results.",
+      "tags": ["proxies", "page", "crud"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/proxies/index.ts",
+      "type": "file",
+      "name": "index.ts (proxies)",
+      "filePath": "pages/proxies/index.ts",
+      "summary": "Barrel export file re-exporting ProxiesPage and proxiesRoute.",
+      "tags": ["proxies", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/proxies/route.tsx",
+      "type": "file",
+      "name": "route.tsx (proxies)",
+      "filePath": "pages/proxies/route.tsx",
+      "summary": "Route definition for /proxies path with redirect from legacy /manage/proxies path.",
+      "tags": ["proxies", "routing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/proxies/__tests__/ProxiesPage.test.tsx",
+      "type": "file",
+      "name": "ProxiesPage.test.tsx",
+      "filePath": "pages/proxies/__tests__/ProxiesPage.test.tsx",
+      "summary": "Comprehensive test suite for ProxiesPage covering: entry loading and display, health check results caching, add/delete CRUD operations, latency tone rendering, error handling, and refresh behavior.",
+      "tags": ["proxies", "test"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/registry.ts",
+      "type": "file",
+      "name": "registry.ts",
+      "filePath": "pages/registry.ts",
+      "summary": "Central page route registry that imports all page route definitions (login, dashboard, monitor, request-logs, providers, auth-files, api-keys, api-key-permissions, models, channel-groups, config, logs, system, proxies, identity-fingerprint, image-generation, ccswitch-import-settings, api-key-lookup) and exports them as a single array.",
+      "tags": ["routing", "registry"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/request-logs/RequestLogsPage.tsx",
+      "type": "file",
+      "name": "RequestLogsPage.tsx",
+      "filePath": "pages/request-logs/RequestLogsPage.tsx",
+      "summary": "Full-featured request logs page with server-side pagination, multi-value filter bar (API keys, models, channels, status), stats display, time range selector, content/error detail modals, and database cleanup dialog.",
+      "tags": ["request-logs", "page", "logs"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/request-logs/index.ts",
+      "type": "file",
+      "name": "index.ts (request-logs)",
+      "filePath": "pages/request-logs/index.ts",
+      "summary": "Barrel export file re-exporting RequestLogsPage and requestLogsRoute.",
+      "tags": ["request-logs", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/request-logs/RequestLogsFilters.tsx",
+      "type": "file",
+      "name": "RequestLogsFilters.tsx",
+      "filePath": "pages/request-logs/RequestLogsFilters.tsx",
+      "summary": "Multi-select filter bar for request logs with SearchableCheckboxMultiSelect components for API keys, models, channels, and status, plus a reset filters button.",
+      "tags": ["request-logs", "ui-components", "filters"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/request-logs/route.tsx",
+      "type": "file",
+      "name": "route.tsx (request-logs)",
+      "filePath": "pages/request-logs/route.tsx",
+      "summary": "Route definition for /monitor/request-logs path with lazy loading, auth requirement, and dashboard layout.",
+      "tags": ["request-logs", "routing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/request-logs/__tests__/RequestLogsPage.test.tsx",
+      "type": "file",
+      "name": "RequestLogsPage.test.tsx",
+      "filePath": "pages/request-logs/__tests__/RequestLogsPage.test.tsx",
+      "summary": "Test suite for RequestLogsPage covering: rendering, multi-select filter behavior, clear logs dialog, pagination, stats display, and API integrations.",
+      "tags": ["request-logs", "test"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/system/SystemPage.tsx",
+      "type": "file",
+      "name": "SystemPage.tsx",
+      "filePath": "pages/system/SystemPage.tsx",
+      "summary": "System information page displaying API base URL, management endpoint, server version, build date, UI version, API key lookup URL, Docker update details with update flow (check/apply/progress), and available model list with vendor-colored icons and stats.",
+      "tags": ["system", "page"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/system/index.ts",
+      "type": "file",
+      "name": "index.ts (system)",
+      "filePath": "pages/system/index.ts",
+      "summary": "Barrel export file re-exporting SystemPage and systemRoute.",
+      "tags": ["system", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/system/route.tsx",
+      "type": "file",
+      "name": "route.tsx (system)",
+      "filePath": "pages/system/route.tsx",
+      "summary": "Route definition for /system path with lazy loading, auth requirement, and dashboard layout.",
+      "tags": ["system", "routing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/system/__tests__/SystemPage.test.tsx",
+      "type": "file",
+      "name": "SystemPage.test.tsx",
+      "filePath": "pages/system/__tests__/SystemPage.test.tsx",
+      "summary": "Extensive test suite for SystemPage covering: update check/apply flow, version display, model discovery, release notes rendering with markdown, Docker update progress console, updater availability, and various edge cases.",
+      "tags": ["system", "test"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json (pages)",
+      "filePath": "pages/tsconfig.json",
+      "summary": "TypeScript configuration for the pages workspace with path aliases mapping @code-proxy/* packages, @app/*, @pages/*, @features/*, and @/* to their source directories.",
+      "tags": ["config", "typescript", "pages"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:pages/providers/KeyValueInputList.tsx",
+      "target": "file:pages/providers/providers-helpers.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "exports KeyValueEntry type used by providers-helpers"
+    },
+    {
+      "source": "file:pages/providers/ModelInputList.tsx",
+      "target": "file:pages/providers/providers-helpers.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "exports ModelEntryDraft type used by providers-helpers"
+    },
+    {
+      "source": "file:pages/providers/providers-helpers.ts",
+      "target": "file:pages/providers/KeyValueInputList.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports KeyValueEntry type and recordToKeyValueEntries"
+    },
+    {
+      "source": "file:pages/providers/providers-helpers.ts",
+      "target": "file:pages/providers/ModelInputList.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports ModelEntryDraft type"
+    },
+    {
+      "source": "file:pages/providers/provider-import-export.ts",
+      "target": "file:pages/providers/providers-helpers.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports normalizeOpenAIBaseUrl"
+    },
+    {
+      "source": "file:pages/providers/ProviderKeyListCard.tsx",
+      "target": "file:pages/providers/ProviderCard.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders ProviderCard for each provider entry"
+    },
+    {
+      "source": "file:pages/providers/ProviderKeyListCard.tsx",
+      "target": "file:pages/providers/providers-helpers.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports hasDisableAllModelsRule, maskApiKey, stripDisableAllModelsRule"
+    },
+    {
+      "source": "file:pages/providers/ProvidersPage.tsx",
+      "target": "file:pages/providers/index.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "exported via barrel index"
+    },
+    {
+      "source": "file:pages/providers/route.tsx",
+      "target": "file:pages/providers/ProvidersPage.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "lazy-loads ProvidersPage"
+    },
+    {
+      "source": "file:pages/providers/index.ts",
+      "target": "file:pages/providers/ProvidersPage.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports ProvidersPage"
+    },
+    {
+      "source": "file:pages/providers/index.ts",
+      "target": "file:pages/providers/route.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports providersRoute"
+    },
+    {
+      "source": "file:pages/providers/ProviderKeyListCard.tsx",
+      "target": "file:pages/providers/provider-access.ts",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "works with ProviderAccessSummary indirectly via components"
+    },
+    {
+      "source": "file:pages/providers/provider-cache.ts",
+      "target": "file:pages/providers/ProviderKeyListCard.tsx",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "caching may be used with provider data"
+    },
+    {
+      "source": "file:pages/proxies/ProxiesPage.tsx",
+      "target": "file:pages/proxies/route.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "lazy-loaded by route"
+    },
+    {
+      "source": "file:pages/proxies/index.ts",
+      "target": "file:pages/proxies/ProxiesPage.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports ProxiesPage"
+    },
+    {
+      "source": "file:pages/proxies/index.ts",
+      "target": "file:pages/proxies/route.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports proxiesRoute"
+    },
+    {
+      "source": "file:pages/proxies/__tests__/ProxiesPage.test.tsx",
+      "target": "file:pages/proxies/ProxiesPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests ProxiesPage component"
+    },
+    {
+      "source": "file:pages/registry.ts",
+      "target": "file:pages/providers/route.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports providersRoute into page registry"
+    },
+    {
+      "source": "file:pages/registry.ts",
+      "target": "file:pages/proxies/route.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports proxiesRoute into page registry"
+    },
+    {
+      "source": "file:pages/registry.ts",
+      "target": "file:pages/request-logs/route.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports requestLogsRoute into page registry"
+    },
+    {
+      "source": "file:pages/registry.ts",
+      "target": "file:pages/system/route.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports systemRoute into page registry"
+    },
+    {
+      "source": "file:pages/request-logs/RequestLogsPage.tsx",
+      "target": "file:pages/request-logs/RequestLogsFilters.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "renders RequestLogsFilters inside page"
+    },
+    {
+      "source": "file:pages/request-logs/RequestLogsPage.tsx",
+      "target": "file:pages/request-logs/route.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "lazy-loaded by route"
+    },
+    {
+      "source": "file:pages/request-logs/index.ts",
+      "target": "file:pages/request-logs/RequestLogsPage.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports RequestLogsPage"
+    },
+    {
+      "source": "file:pages/request-logs/index.ts",
+      "target": "file:pages/request-logs/route.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports requestLogsRoute"
+    },
+    {
+      "source": "file:pages/request-logs/__tests__/RequestLogsPage.test.tsx",
+      "target": "file:pages/request-logs/RequestLogsPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests RequestLogsPage component"
+    },
+    {
+      "source": "file:pages/system/SystemPage.tsx",
+      "target": "file:pages/system/route.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "lazy-loaded by route"
+    },
+    {
+      "source": "file:pages/system/index.ts",
+      "target": "file:pages/system/SystemPage.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports SystemPage"
+    },
+    {
+      "source": "file:pages/system/index.ts",
+      "target": "file:pages/system/route.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exports systemRoute"
+    },
+    {
+      "source": "file:pages/system/__tests__/SystemPage.test.tsx",
+      "target": "file:pages/system/SystemPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests SystemPage component"
+    },
+    {
+      "source": "file:pages/tsconfig.json",
+      "target": "file:pages/providers/providers-helpers.ts",
+      "type": "configures",
+      "weight": 0.5,
+      "label": "tsconfig paths enable @code-proxy imports used by providers-helpers"
+    },
+    {
+      "source": "file:pages/tsconfig.json",
+      "target": "file:pages/proxies/ProxiesPage.tsx",
+      "type": "configures",
+      "weight": 0.5,
+      "label": "tsconfig paths enable @code-proxy and @features imports"
+    },
+    {
+      "source": "file:pages/tsconfig.json",
+      "target": "file:pages/request-logs/RequestLogsPage.tsx",
+      "type": "configures",
+      "weight": 0.5,
+      "label": "tsconfig paths enable @code-proxy and @features imports"
+    },
+    {
+      "source": "file:pages/tsconfig.json",
+      "target": "file:pages/system/SystemPage.tsx",
+      "type": "configures",
+      "weight": 0.5,
+      "label": "tsconfig paths enable @code-proxy and @app imports"
+    }
+  ]
+}

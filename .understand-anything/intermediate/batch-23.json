@@ -1,0 +1,740 @@
+{
+  "nodes": [
+    {
+      "id": "file:pages/monitor/__tests__/requestLogsShared.test.ts",
+      "type": "file",
+      "name": "requestLogsShared.test.ts",
+      "filePath": "pages/monitor/__tests__/requestLogsShared.test.ts",
+      "summary": "Tests for request log shared utilities: system call detection, key deduplication, and column ordering",
+      "tags": ["test", "monitor", "request-logs"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/monitor/hooks/useMonitorDashboardState.ts",
+      "type": "file",
+      "name": "useMonitorDashboardState.ts",
+      "filePath": "pages/monitor/hooks/useMonitorDashboardState.ts",
+      "summary": "React hook managing monitor dashboard UI state: compact mode, time range, API filter, metric type, and hour windows",
+      "tags": ["hook", "monitor", "dashboard-state"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:useMonitorDashboardState",
+      "type": "function",
+      "name": "useMonitorDashboardState",
+      "filePath": "pages/monitor/hooks/useMonitorDashboardState.ts",
+      "summary": "Returns reactive monitor dashboard state including compact mode, time range, API filters, hour windows, and metric selections",
+      "tags": ["hook", "monitor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/monitor/index.ts",
+      "type": "file",
+      "name": "monitor/index.ts",
+      "filePath": "pages/monitor/index.ts",
+      "summary": "Barrel export file re-exporting MonitorPage and monitorRoute",
+      "tags": ["barrel", "monitor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/monitor/monitor-chart-options.ts",
+      "type": "file",
+      "name": "monitor-chart-options.ts",
+      "filePath": "pages/monitor/monitor-chart-options.ts",
+      "summary": "Re-exports all chart option factory functions from the monitor-widgets feature (daily trend, hourly model/token, model distribution)",
+      "tags": ["chart", "re-export", "monitor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/monitor/MonitorDashboardSections.tsx",
+      "type": "file",
+      "name": "MonitorDashboardSections.tsx",
+      "filePath": "pages/monitor/MonitorDashboardSections.tsx",
+      "summary": "Three dashboard section components: MonitorKpiSection (KPI cards), MonitorDistributionSections (model/apikey distribution charts & daily trend), and MonitorHourlySections (hourly model/token charts)",
+      "tags": ["component", "monitor", "dashboard", "charts"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:MonitorKpiSection",
+      "type": "function",
+      "name": "MonitorKpiSection",
+      "filePath": "pages/monitor/MonitorDashboardSections.tsx",
+      "summary": "Renders KPI cards (total requests, success rate, total tokens, output tokens) with animated numbers and empty state",
+      "tags": ["component", "monitor", "kpi"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:MonitorDistributionSections",
+      "type": "function",
+      "name": "MonitorDistributionSections",
+      "filePath": "pages/monitor/MonitorDashboardSections.tsx",
+      "summary": "Renders model distribution pie chart, daily usage trend chart, and API key distribution chart with interactive legends",
+      "tags": ["component", "monitor", "charts"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:MonitorHourlySections",
+      "type": "function",
+      "name": "MonitorHourlySections",
+      "filePath": "pages/monitor/MonitorDashboardSections.tsx",
+      "summary": "Renders hourly model breakdown and hourly token breakdown charts with hour window selectors and legend toggles",
+      "tags": ["component", "monitor", "charts"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/monitor/MonitorPage.tsx",
+      "type": "file",
+      "name": "MonitorPage.tsx",
+      "filePath": "pages/monitor/MonitorPage.tsx",
+      "summary": "Main monitor page component orchestrating toolbar, KPI section, distribution sections, and hourly sections with data fetching from usageApi and interactive legend/state management",
+      "tags": ["page", "monitor", "dashboard"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:MonitorPage",
+      "type": "function",
+      "name": "MonitorPage",
+      "filePath": "pages/monitor/MonitorPage.tsx",
+      "summary": "Main monitor dashboard page: fetches chart data, computes KPI metrics, manages legend visibility, and renders all chart sections with toolbar filtering",
+      "tags": ["page", "monitor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/monitor/MonitorToolbarSection.tsx",
+      "type": "file",
+      "name": "MonitorToolbarSection.tsx",
+      "filePath": "pages/monitor/MonitorToolbarSection.tsx",
+      "summary": "Monitor toolbar with time range selector, API filter search input, apply filter button, and refresh button with loading spinner",
+      "tags": ["component", "monitor", "toolbar"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:MonitorToolbarSection",
+      "type": "function",
+      "name": "MonitorToolbarSection",
+      "filePath": "pages/monitor/MonitorToolbarSection.tsx",
+      "summary": "Renders monitor toolbar with time range selector, API key filter field, apply button, and refresh button",
+      "tags": ["component", "monitor", "toolbar"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/monitor/route.tsx",
+      "type": "file",
+      "name": "monitor/route.tsx",
+      "filePath": "pages/monitor/route.tsx",
+      "summary": "Defines the /monitor route with lazy-loaded MonitorPage, auth guard, dashboard layout, and redirect from /usage",
+      "tags": ["route", "monitor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/oauth/index.ts",
+      "type": "file",
+      "name": "oauth/index.ts",
+      "filePath": "pages/oauth/index.ts",
+      "summary": "Barrel export file re-exporting OAuthLoginDialog, OAuthPage, and oauthRoute",
+      "tags": ["barrel", "oauth"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/oauth/OAuthLoginDialog.tsx",
+      "type": "file",
+      "name": "OAuthLoginDialog.tsx",
+      "filePath": "pages/oauth/OAuthLoginDialog.tsx",
+      "summary": "OAuth login modal dialog supporting multiple providers (codex, anthropic, antigravity, gemini-cli, kimi, qwen), iFlow cookie auth, and Vertex AI configuration with proxy pool integration and polling for auth status",
+      "tags": ["component", "oauth", "dialog", "authentication"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:OAuthLoginDialog",
+      "type": "function",
+      "name": "OAuthLoginDialog",
+      "filePath": "pages/oauth/OAuthLoginDialog.tsx",
+      "summary": "Modal dialog for OAuth provider authorization with provider tabs, polling-based auth status tracking, iFlow cookie auth, Vertex AI setup, and proxy pool binding",
+      "tags": ["component", "oauth", "dialog"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/oauth/OAuthPage.tsx",
+      "type": "file",
+      "name": "OAuthPage.tsx",
+      "filePath": "pages/oauth/OAuthPage.tsx",
+      "summary": "Standalone OAuth page for provider authorization with polling-based auth status for multiple providers, iFlow cookie auth, and Vertex AI setup",
+      "tags": ["page", "oauth", "authentication"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:OAuthPage",
+      "type": "function",
+      "name": "OAuthPage",
+      "filePath": "pages/oauth/OAuthPage.tsx",
+      "summary": "Standalone page for initiating OAuth flows, tracking auth status via polling, managing iFlow cookie authentication, and Vertex AI browser upload",
+      "tags": ["page", "oauth"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/oauth/route.tsx",
+      "type": "file",
+      "name": "oauth/route.tsx",
+      "filePath": "pages/oauth/route.tsx",
+      "summary": "Defines the /oauth route with lazy-loaded OAuthPage, auth guard, and dashboard layout",
+      "tags": ["route", "oauth"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "pages/package.json",
+      "summary": "Package manifest for @code-proxy/pages with react, react-dom, and react-router-dom dependencies",
+      "tags": ["config", "package"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/__tests__/provider-access.test.ts",
+      "type": "file",
+      "name": "provider-access.test.ts",
+      "filePath": "pages/providers/__tests__/provider-access.test.ts",
+      "summary": "Tests for summarizeProviderAccess: validates reachable keys, total keys, and exact-override key detection with channel groups",
+      "tags": ["test", "providers", "access"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/__tests__/provider-import-export.test.ts",
+      "type": "file",
+      "name": "provider-import-export.test.ts",
+      "filePath": "pages/providers/__tests__/provider-import-export.test.ts",
+      "summary": "Tests for provider import/export helpers: validates stable export payloads, OpenCode Go field preservation, normalized imports with diff counts and duplicate removal",
+      "tags": ["test", "providers", "import-export"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/__tests__/providers-helpers.test.ts",
+      "type": "file",
+      "name": "providers-helpers.test.ts",
+      "filePath": "pages/providers/__tests__/providers-helpers.test.ts",
+      "summary": "Tests for providers-helpers: API key masking, provider key draft building, OpenAI draft building with key entries, model discovery normalization, and usage source ID normalization",
+      "tags": ["test", "providers", "helpers"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/__tests__/ProvidersPage.bedrock.test.tsx",
+      "type": "file",
+      "name": "ProvidersPage.bedrock.test.tsx",
+      "filePath": "pages/providers/__tests__/ProvidersPage.bedrock.test.tsx",
+      "summary": "Integration test for Bedrock provider tab: renders with mocked API, creates a SigV4 credential and validates the saved payload",
+      "tags": ["test", "providers", "bedrock", "integration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/__tests__/ProvidersPage.import-export.test.tsx",
+      "type": "file",
+      "name": "ProvidersPage.import-export.test.tsx",
+      "filePath": "pages/providers/__tests__/ProvidersPage.import-export.test.tsx",
+      "summary": "Integration tests for provider import/export UI: exports provider config as JSON, keeps import enabled during tab switching/refreshing, and shows loading states",
+      "tags": ["test", "providers", "import-export", "integration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/__tests__/ProvidersPage.openai.test.tsx",
+      "type": "file",
+      "name": "ProvidersPage.openai.test.tsx",
+      "filePath": "pages/providers/__tests__/ProvidersPage.openai.test.tsx",
+      "summary": "Integration tests for OpenAI provider tab: renders provider card with masked key, saves proxy pool binding, and validates UI interactions",
+      "tags": ["test", "providers", "openai", "integration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/__tests__/ProvidersPage.opencode-go.test.tsx",
+      "type": "file",
+      "name": "ProvidersPage.opencode-go.test.tsx",
+      "filePath": "pages/providers/__tests__/ProvidersPage.opencode-go.test.tsx",
+      "summary": "Integration tests for OpenCode Go provider tab: saves key without Base URL, handles failed saves gracefully, manages model exclusions from fetched models",
+      "tags": ["test", "providers", "opencode-go", "integration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/components/AmpcodePanel.tsx",
+      "type": "file",
+      "name": "AmpcodePanel.tsx",
+      "filePath": "pages/providers/components/AmpcodePanel.tsx",
+      "summary": "AMP code configuration panel with upstream URL/key fields, force-mapping toggle, and dynamic model mapping entries with add/delete/clear controls",
+      "tags": ["component", "providers", "ampcode"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:AmpcodePanel",
+      "type": "function",
+      "name": "AmpcodePanel",
+      "filePath": "pages/providers/components/AmpcodePanel.tsx",
+      "summary": "Card component for managing AMP (alternate model provider) configuration with upstream URL/key, force mapping toggle, and editable from/to model mappings",
+      "tags": ["component", "providers", "ampcode"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/components/ExcludedModelsEditor.tsx",
+      "type": "file",
+      "name": "ExcludedModelsEditor.tsx",
+      "filePath": "pages/providers/components/ExcludedModelsEditor.tsx",
+      "summary": "Textarea-based editor for excluded models list with add/remove disable-all and clear buttons, plus count hint",
+      "tags": ["component", "providers", "excluded-models"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ExcludedModelsEditor",
+      "type": "function",
+      "name": "ExcludedModelsEditor",
+      "filePath": "pages/providers/components/ExcludedModelsEditor.tsx",
+      "summary": "Card with a textarea for managing excluded models (one per line), disable-all toggle buttons, and a model count hint",
+      "tags": ["component", "providers"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/OpenAIKeyEntriesEditor.tsx",
+      "type": "file",
+      "name": "OpenAIKeyEntriesEditor.tsx",
+      "filePath": "pages/providers/components/OpenAIKeyEntriesEditor.tsx",
+      "summary": "Editor for OpenAI provider API key entries with add/delete, enable/disable toggles, proxy pool binding, proxy URL, copy masked key, and per-entry custom headers",
+      "tags": ["component", "providers", "openai"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:OpenAIKeyEntriesEditor",
+      "type": "function",
+      "name": "OpenAIKeyEntriesEditor",
+      "filePath": "pages/providers/components/OpenAIKeyEntriesEditor.tsx",
+      "summary": "Manages array of OpenAI API key entries with per-entry enable toggle, API key input with masked copy, proxy pool selector, proxy URL, and KeyValueInputList headers",
+      "tags": ["component", "providers"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/components/OpenAIKeyEntrySummary.tsx",
+      "type": "file",
+      "name": "OpenAIKeyEntrySummary.tsx",
+      "filePath": "pages/providers/components/OpenAIKeyEntrySummary.tsx",
+      "summary": "Compact summary of OpenAI API key entries showing masked API keys, proxy URLs, enabled/disabled status, success/failure stats, with optional enable toggle and overflow count",
+      "tags": ["component", "providers", "openai"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:OpenAIKeyEntrySummary",
+      "type": "function",
+      "name": "OpenAIKeyEntrySummary",
+      "filePath": "pages/providers/components/OpenAIKeyEntrySummary.tsx",
+      "summary": "Renders a summary list of OpenAI key entries with masked keys, proxy info, success/failure badges, enabled toggle, and remaining count",
+      "tags": ["component", "providers"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/OpenAIModelDiscoveryPanel.tsx",
+      "type": "file",
+      "name": "OpenAIModelDiscoveryPanel.tsx",
+      "filePath": "pages/providers/components/OpenAIModelDiscoveryPanel.tsx",
+      "summary": "Model discovery panel for OpenAI providers with fetch button, search/filter input, virtualized model checklist, select-all/deselect-all, and merge selected action",
+      "tags": ["component", "providers", "openai", "model-discovery"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:OpenAIModelDiscoveryPanel",
+      "type": "function",
+      "name": "OpenAIModelDiscoveryPanel",
+      "filePath": "pages/providers/components/OpenAIModelDiscoveryPanel.tsx",
+      "summary": "Panel that fetches available models from an OpenAI-compatible endpoint with searchable virtualized list, multi-select checkboxes, and merge-to-editor action",
+      "tags": ["component", "providers"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:pages/monitor/__tests__/requestLogsShared.test.ts",
+      "target": "file:features/request-log-viewer/index.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports from @features/request-log-viewer"
+    },
+    {
+      "source": "file:pages/monitor/hooks/useMonitorDashboardState.ts",
+      "target": "file:features/monitor-widgets/monitor-constants.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports types from monitor-constants"
+    },
+    {
+      "source": "file:pages/monitor/index.ts",
+      "target": "file:pages/monitor/MonitorPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports MonitorPage"
+    },
+    {
+      "source": "file:pages/monitor/index.ts",
+      "target": "file:pages/monitor/route.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports monitorRoute"
+    },
+    {
+      "source": "file:pages/monitor/monitor-chart-options.ts",
+      "target": "file:features/monitor-widgets/chart-options/index.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports chart-options barrel"
+    },
+    {
+      "source": "file:pages/monitor/MonitorDashboardSections.tsx",
+      "target": "file:features/monitor-widgets/monitor-constants.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports HourWindow type"
+    },
+    {
+      "source": "file:pages/monitor/MonitorDashboardSections.tsx",
+      "target": "file:features/monitor-widgets/monitor-utils.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports formatNumber, formatRate"
+    },
+    {
+      "source": "file:pages/monitor/MonitorDashboardSections.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports UI components (AnimatedNumber, Reveal, EChart, ChartLegend, Tabs)"
+    },
+    {
+      "source": "file:pages/monitor/MonitorDashboardSections.tsx",
+      "target": "file:features/monitor-widgets/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports HourWindowSelector, KpiCard, MonitorCard"
+    },
+    {
+      "source": "file:pages/monitor/MonitorPage.tsx",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports usageApi"
+    },
+    {
+      "source": "file:pages/monitor/MonitorPage.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports useTheme"
+    },
+    {
+      "source": "file:pages/monitor/MonitorPage.tsx",
+      "target": "file:features/monitor-widgets/monitor-constants.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports CHART_COLOR_CLASSES, HOURLY_MODEL_COLORS"
+    },
+    {
+      "source": "file:pages/monitor/MonitorPage.tsx",
+      "target": "file:features/monitor-widgets/monitor-format.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports formatCompact, formatMonthDay"
+    },
+    {
+      "source": "file:pages/monitor/MonitorPage.tsx",
+      "target": "file:pages/monitor/monitor-chart-options.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports chart option factories"
+    },
+    {
+      "source": "file:pages/monitor/MonitorPage.tsx",
+      "target": "file:pages/monitor/MonitorDashboardSections.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports section components"
+    },
+    {
+      "source": "file:pages/monitor/MonitorPage.tsx",
+      "target": "file:pages/monitor/hooks/useMonitorDashboardState.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports useMonitorDashboardState hook"
+    },
+    {
+      "source": "file:pages/monitor/MonitorPage.tsx",
+      "target": "file:pages/monitor/MonitorToolbarSection.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports MonitorToolbarSection"
+    },
+    {
+      "source": "file:pages/monitor/MonitorToolbarSection.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports TextInput"
+    },
+    {
+      "source": "file:pages/monitor/MonitorToolbarSection.tsx",
+      "target": "file:features/monitor-widgets/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports TimeRangeSelector"
+    },
+    {
+      "source": "file:pages/monitor/MonitorToolbarSection.tsx",
+      "target": "file:features/monitor-widgets/monitor-constants.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports TimeRange type"
+    },
+    {
+      "source": "file:pages/monitor/route.tsx",
+      "target": "file:pages/monitor/MonitorPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "lazy-loads MonitorPage"
+    },
+    {
+      "source": "file:pages/oauth/index.ts",
+      "target": "file:pages/oauth/OAuthLoginDialog.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports OAuthLoginDialog"
+    },
+    {
+      "source": "file:pages/oauth/index.ts",
+      "target": "file:pages/oauth/OAuthPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports OAuthPage"
+    },
+    {
+      "source": "file:pages/oauth/index.ts",
+      "target": "file:pages/oauth/route.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "re-exports oauthRoute"
+    },
+    {
+      "source": "file:pages/oauth/OAuthLoginDialog.tsx",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports oauthApi, vertexApi"
+    },
+    {
+      "source": "file:pages/oauth/OAuthLoginDialog.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports UI components (Button, Card, TextInput, Modal, Tabs, useToast)"
+    },
+    {
+      "source": "file:pages/oauth/OAuthLoginDialog.tsx",
+      "target": "file:features/proxy-pool/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports ProxyPoolSelect, useProxyPoolChecks"
+    },
+    {
+      "source": "file:pages/oauth/OAuthPage.tsx",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports oauthApi, vertexApi"
+    },
+    {
+      "source": "file:pages/oauth/OAuthPage.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports UI components (Card, Button, TextInput, useToast)"
+    },
+    {
+      "source": "file:pages/oauth/route.tsx",
+      "target": "file:pages/oauth/OAuthPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "lazy-loads OAuthPage"
+    },
+    {
+      "source": "file:pages/providers/__tests__/provider-access.test.ts",
+      "target": "file:pages/providers/provider-access.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests summarizeProviderAccess"
+    },
+    {
+      "source": "file:pages/providers/__tests__/provider-import-export.test.ts",
+      "target": "file:pages/providers/provider-import-export.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests createProviderExportText, prepareProviderImport"
+    },
+    {
+      "source": "file:pages/providers/__tests__/providers-helpers.test.ts",
+      "target": "file:pages/providers/providers-helpers.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests helpers (buildOpenAIDraft, buildProviderKeyDraft, maskApiKey, normalizeDiscoveredModels)"
+    },
+    {
+      "source": "file:pages/providers/__tests__/providers-helpers.test.ts",
+      "target": "file:packages/domain/src/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports buildCandidateUsageSourceIds, normalizeUsageSourceId"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.bedrock.test.tsx",
+      "target": "file:pages/providers/ProvidersPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests ProvidersPage component"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.bedrock.test.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports ThemeProvider, ToastProvider"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.import-export.test.tsx",
+      "target": "file:pages/providers/ProvidersPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests ProvidersPage component"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.import-export.test.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports ThemeProvider, ToastProvider"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.openai.test.tsx",
+      "target": "file:pages/providers/ProvidersPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests ProvidersPage component"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.openai.test.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports ThemeProvider, ToastProvider"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.opencode-go.test.tsx",
+      "target": "file:pages/providers/ProvidersPage.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "tests ProvidersPage component"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.opencode-go.test.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports ThemeProvider, ToastProvider"
+    },
+    {
+      "source": "file:pages/providers/components/AmpcodePanel.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports UI components (Button, Card, TextInput, ToggleSwitch)"
+    },
+    {
+      "source": "file:pages/providers/components/ExcludedModelsEditor.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports Button"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIKeyEntriesEditor.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports UI components (Button, TextInput, ToggleSwitch)"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIKeyEntriesEditor.tsx",
+      "target": "file:pages/providers/KeyValueInputList.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports KeyValueInputList"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIKeyEntriesEditor.tsx",
+      "target": "file:features/proxy-pool/index.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports ProxyPoolSelect"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIKeyEntrySummary.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports ToggleSwitch"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIModelDiscoveryPanel.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports Button, TextInput"
+    },
+    {
+      "source": "file:pages/monitor/route.tsx",
+      "target": "file:pages/monitor/MonitorPage.tsx",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "route depends on page"
+    },
+    {
+      "source": "file:pages/oauth/route.tsx",
+      "target": "file:pages/oauth/OAuthPage.tsx",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "route depends on page"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.bedrock.test.tsx",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "mocks API client"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.import-export.test.tsx",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "mocks API client"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.openai.test.tsx",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "mocks API client"
+    },
+    {
+      "source": "file:pages/providers/__tests__/ProvidersPage.opencode-go.test.tsx",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "mocks API client"
+    },
+    {
+      "source": "file:pages/providers/components/AmpcodePanel.tsx",
+      "target": "file:pages/providers/providers-helpers.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "imports AmpMappingEntry type"
+    }
+  ]
+}

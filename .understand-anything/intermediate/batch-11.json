@@ -1,0 +1,678 @@
+{
+  "nodes": [
+    {
+      "id": "file:features/log-content-viewer/index.ts",
+      "type": "file",
+      "name": "log-content-viewer/index.ts",
+      "filePath": "features/log-content-viewer/index.ts",
+      "summary": "Barrel export file for log-content-viewer feature, re-exporting ErrorDetailModal and LogContentModal components.",
+      "tags": ["barrel", "log-content-viewer"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/log-content-viewer/log-content/parsers.ts",
+      "type": "file",
+      "name": "log-content-parsers.ts",
+      "filePath": "features/log-content-viewer/log-content/parsers.ts",
+      "summary": "Parsers for log request/response content. Contains functions to extract messages from OpenAI/Codex JSON payloads, SSE streams, and non-stream outputs. Provides buildInputRenderedView and buildOutputRenderedView entry points.",
+      "tags": ["parser", "log-content", "SSE", "JSON"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/log-content-viewer/log-content/rendering-markdown.tsx",
+      "type": "file",
+      "name": "rendering-markdown.tsx",
+      "filePath": "features/log-content-viewer/log-content/rendering-markdown.tsx",
+      "summary": "RichMarkdown component that renders Markdown content with syntax-highlighted code blocks using Prism and react-markdown.",
+      "tags": ["markdown", "rendering", "code-block"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/log-content-viewer/log-content/rendering.tsx",
+      "type": "file",
+      "name": "rendering.tsx",
+      "filePath": "features/log-content-viewer/log-content/rendering.tsx",
+      "summary": "Core rendering UI for log content modals. Includes MessageBlock (collapsible role-styled message), PlainPre (virtualized large text), MessageList (virtualized message list), and ContentModal (animated modal container).",
+      "tags": ["rendering", "virtual-list", "modal", "log-content"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/log-content-viewer/log-content/scheduler.ts",
+      "type": "file",
+      "name": "scheduler.ts",
+      "filePath": "features/log-content-viewer/log-content/scheduler.ts",
+      "summary": "Provides scheduleIdle utility that uses requestIdleCallback with a setTimeout fallback for scheduling deferred work.",
+      "tags": ["utility", "scheduling", "idle-callback"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/log-content-viewer/log-content/types-internal.ts",
+      "type": "file",
+      "name": "types-internal.ts",
+      "filePath": "features/log-content-viewer/log-content/types-internal.ts",
+      "summary": "Internal type definition ParsedOutput, a discriminated union of { text: string } and { messages: Msg[] }.",
+      "tags": ["types", "internal"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/log-content-viewer/log-content/types.ts",
+      "type": "file",
+      "name": "log-content-types.ts",
+      "filePath": "features/log-content-viewer/log-content/types.ts",
+      "summary": "Public type definitions for the log-content module. Defines LogContentModalProps, Msg, RenderedView, AsyncParsedState, and AsyncPrettyState.",
+      "tags": ["types", "log-content"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/log-content-viewer/log-content/useLogContentData.ts",
+      "type": "file",
+      "name": "useLogContentData.ts",
+      "filePath": "features/log-content-viewer/log-content/useLogContentData.ts",
+      "summary": "React hook useLogContentData that fetches log content parts (input, output, details) with abort controllers, loading/error states, and prefetch support.",
+      "tags": ["hook", "data-fetching", "log-content"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/model-availability/configuredAvailabilityCache.ts",
+      "type": "file",
+      "name": "configuredAvailabilityCache.ts",
+      "filePath": "features/model-availability/configuredAvailabilityCache.ts",
+      "summary": "Simple module-level cache version counter for configured model availability. Provides getConfiguredAvailabilityCacheVersion and invalidateConfiguredModelAvailability.",
+      "tags": ["cache", "model-availability"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/model-availability/index.ts",
+      "type": "file",
+      "name": "model-availability-index.ts",
+      "filePath": "features/model-availability/index.ts",
+      "summary": "Barrel export for model-availability feature, re-exporting from configuredAvailabilityCache and modelAvailability modules.",
+      "tags": ["barrel", "model-availability"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/model-availability/modelAvailability.ts",
+      "type": "file",
+      "name": "modelAvailability.ts",
+      "filePath": "features/model-availability/modelAvailability.ts",
+      "summary": "Core model availability logic. Normalizes model configs, pricing, modalities, and path availability. Loads configured availability from API or falls back to multi-API aggregation. Computes per-auth-file and per-provider model sets with TTL caching.",
+      "tags": ["model-availability", "normalization", "pricing", "caching"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/monitor-widgets/chart-options/daily-trend.ts",
+      "type": "file",
+      "name": "daily-trend.ts",
+      "filePath": "features/monitor-widgets/chart-options/daily-trend.ts",
+      "summary": "Creates ECharts options for daily usage trend charts with bar series for input/output tokens and requests, including conditional rendering and legend support.",
+      "tags": ["chart", "echarts", "daily-trend"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/monitor-widgets/chart-options/hourly-model.ts",
+      "type": "file",
+      "name": "hourly-model.ts",
+      "filePath": "features/monitor-widgets/chart-options/hourly-model.ts",
+      "summary": "Creates ECharts options for hourly model distribution bar charts with stacked series per model and an optional total line.",
+      "tags": ["chart", "echarts", "hourly", "model"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/monitor-widgets/chart-options/hourly-token.ts",
+      "type": "file",
+      "name": "hourly-token.ts",
+      "filePath": "features/monitor-widgets/chart-options/hourly-token.ts",
+      "summary": "Creates ECharts options for hourly token usage bar charts with stacked series per key and an optional total line.",
+      "tags": ["chart", "echarts", "hourly", "token"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/monitor-widgets/chart-options/index.ts",
+      "type": "file",
+      "name": "chart-options-index.ts",
+      "filePath": "features/monitor-widgets/chart-options/index.ts",
+      "summary": "Barrel export for chart-options, re-exporting types and all chart option creators.",
+      "tags": ["barrel", "chart-options"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/monitor-widgets/chart-options/model-distribution.ts",
+      "type": "file",
+      "name": "model-distribution.ts",
+      "filePath": "features/monitor-widgets/chart-options/model-distribution.ts",
+      "summary": "Creates ECharts options for a donut/pie chart showing model distribution percentages.",
+      "tags": ["chart", "echarts", "pie", "model-distribution"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/monitor-widgets/chart-options/types.ts",
+      "type": "file",
+      "name": "chart-options-types.ts",
+      "filePath": "features/monitor-widgets/chart-options/types.ts",
+      "summary": "Type definitions for chart options: ModelDistributionDatum, DailySeriesPoint, HourlyStackPoint, and HourlySeries.",
+      "tags": ["types", "chart-options"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/monitor-widgets/index.ts",
+      "type": "file",
+      "name": "monitor-widgets-index.ts",
+      "filePath": "features/monitor-widgets/index.ts",
+      "summary": "Barrel export for monitor-widgets, re-exporting UI components and constants.",
+      "tags": ["barrel", "monitor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/monitor-widgets/monitor-constants.ts",
+      "type": "file",
+      "name": "monitor-constants.ts",
+      "filePath": "features/monitor-widgets/monitor-constants.ts",
+      "summary": "Constants for the monitor dashboard: TimeRange and HourWindow types, TIME_RANGES, HOUR_WINDOWS, CHART_COLORS, HOURLY_MODEL_COLORS, and CHART_COLOR_CLASSES.",
+      "tags": ["constants", "monitor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/monitor-widgets/monitor-format.ts",
+      "type": "file",
+      "name": "monitor-format.ts",
+      "filePath": "features/monitor-widgets/monitor-format.ts",
+      "summary": "Formatting utilities for monitor data: formatCompact (compact number with k/m/b suffix), formatLocalDateKey, and formatMonthDay.",
+      "tags": ["formatting", "monitor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:features/monitor-widgets/monitor-utils.ts",
+      "type": "file",
+      "name": "monitor-utils.ts",
+      "filePath": "features/monitor-widgets/monitor-utils.ts",
+      "summary": "Utility functions for monitor dashboard. Includes parseUsageTimestampMs (multi-format timestamp parser), computeKpiMetrics, formatNumber, and formatRate.",
+      "tags": ["utilities", "monitor", "parsing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/monitor-widgets/MonitorPagePieces.tsx",
+      "type": "file",
+      "name": "MonitorPagePieces.tsx",
+      "filePath": "features/monitor-widgets/MonitorPagePieces.tsx",
+      "summary": "UI component pieces for the monitor dashboard: KpiCard (metric display card), TimeRangeSelector (day range tabs), HourWindowSelector (hour window tabs), and MonitorCard (section wrapper with loading overlay).",
+      "tags": ["components", "monitor", "ui"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:features/oauth-login/components/OAuthLoginDialog.tsx",
+      "type": "file",
+      "name": "OAuthLoginDialog.tsx",
+      "filePath": "features/oauth-login/components/OAuthLoginDialog.tsx",
+      "summary": "Modal dialog for OAuth provider login flow. Supports multiple providers (codex, anthropic, antigravity, gemini-cli, kimi, qwen), iFlow cookie auth, and Vertex AI file upload. Manages polling, callback URLs, proxy pool selection, and authorization state.",
+      "tags": ["oauth", "authentication", "login", "modal"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/oauth-login/components/OAuthPage.tsx",
+      "type": "file",
+      "name": "OAuthPage.tsx",
+      "filePath": "features/oauth-login/components/OAuthPage.tsx",
+      "summary": "Full-page OAuth provider login component. Similar logic to OAuthLoginDialog but rendered as a standalone page instead of a modal. Supports same providers, iFlow, and Vertex auth methods.",
+      "tags": ["oauth", "authentication", "login", "page"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:features/oauth-login/index.ts",
+      "type": "file",
+      "name": "oauth-login-index.ts",
+      "filePath": "features/oauth-login/index.ts",
+      "summary": "Barrel export for oauth-login feature, re-exporting OAuthLoginDialog and OAuthPage components.",
+      "tags": ["barrel", "oauth"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:buildInputRenderedView",
+      "type": "function",
+      "name": "buildInputRenderedView",
+      "filePath": "features/log-content-viewer/log-content/parsers.ts",
+      "summary": "Entry point for parsing raw input content into a RenderedView, falling back from structured messages to pretty-printed JSON to raw text.",
+      "tags": ["parser", "entry-point"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:buildOutputRenderedView",
+      "type": "function",
+      "name": "buildOutputRenderedView",
+      "filePath": "features/log-content-viewer/log-content/parsers.ts",
+      "summary": "Entry point for parsing raw output content, handling SSE streams and non-stream responses into RenderedView.",
+      "tags": ["parser", "entry-point"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scheduleIdle",
+      "type": "function",
+      "name": "scheduleIdle",
+      "filePath": "features/log-content-viewer/log-content/scheduler.ts",
+      "summary": "Schedules a callback using requestIdleCallback with a setTimeout fallback, returning a cancel function.",
+      "tags": ["utility", "scheduling"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:useLogContentData",
+      "type": "function",
+      "name": "useLogContentData",
+      "filePath": "features/log-content-viewer/log-content/useLogContentData.ts",
+      "summary": "React hook managing log content fetch state with abort controllers, loading/error tracking, and prefetch optimization.",
+      "tags": ["hook", "data-fetching"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:normalizeConfiguredModelAvailability",
+      "type": "function",
+      "name": "normalizeConfiguredModelAvailability",
+      "filePath": "features/model-availability/modelAvailability.ts",
+      "summary": "Normalizes raw API response into ConfiguredModelAvailability with sorted items, metadata items, and an ID set.",
+      "tags": ["normalizer", "model-availability"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:loadConfiguredModelAvailability",
+      "type": "function",
+      "name": "loadConfiguredModelAvailability",
+      "filePath": "features/model-availability/modelAvailability.ts",
+      "summary": "Loads configured model availability with TTL caching, group-scoped caching, and fallback to multi-API aggregation on error.",
+      "tags": ["loader", "model-availability", "caching"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:parseUsageTimestampMs",
+      "type": "function",
+      "name": "parseUsageTimestampMs",
+      "filePath": "features/monitor-widgets/monitor-utils.ts",
+      "summary": "Parses timestamps in various formats (numeric seconds/ms/us/ns, ISO, non-ISO) into milliseconds since epoch.",
+      "tags": ["parser", "timestamp", "utility"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:computeKpiMetrics",
+      "type": "function",
+      "name": "computeKpiMetrics",
+      "filePath": "features/monitor-widgets/monitor-utils.ts",
+      "summary": "Computes KPI metrics (request count, success/failure rates, token counts) from UsageData with optional API filter.",
+      "tags": ["kpi", "metrics", "monitor"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:tryPrettyPrintJson",
+      "type": "function",
+      "name": "tryPrettyPrintJson",
+      "filePath": "features/log-content-viewer/log-content/parsers.ts",
+      "summary": "Attempts to parse a string as JSON and pretty-print it, returning null on failure.",
+      "tags": ["utility", "JSON", "formatter"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:createDailyTrendOption",
+      "type": "function",
+      "name": "createDailyTrendOption",
+      "filePath": "features/monitor-widgets/chart-options/daily-trend.ts",
+      "summary": "Creates ECharts option configuration for the daily usage trend chart.",
+      "tags": ["chart", "echarts", "daily"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:createHourlyModelOption",
+      "type": "function",
+      "name": "createHourlyModelOption",
+      "filePath": "features/monitor-widgets/chart-options/hourly-model.ts",
+      "summary": "Creates ECharts option configuration for the hourly model distribution chart.",
+      "tags": ["chart", "echarts", "hourly", "model"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:createHourlyTokenOption",
+      "type": "function",
+      "name": "createHourlyTokenOption",
+      "filePath": "features/monitor-widgets/chart-options/hourly-token.ts",
+      "summary": "Creates ECharts option configuration for the hourly token usage chart.",
+      "tags": ["chart", "echarts", "hourly", "token"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:createModelDistributionOption",
+      "type": "function",
+      "name": "createModelDistributionOption",
+      "filePath": "features/monitor-widgets/chart-options/model-distribution.ts",
+      "summary": "Creates ECharts option configuration for the model distribution donut chart.",
+      "tags": ["chart", "echarts", "pie", "model"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:OAuthLoginDialog",
+      "type": "function",
+      "name": "OAuthLoginDialog",
+      "filePath": "features/oauth-login/components/OAuthLoginDialog.tsx",
+      "summary": "Modal React component for OAuth provider login with authorization flow, polling, callback submission, and proxy selection.",
+      "tags": ["component", "oauth", "modal", "authentication"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:OAuthPage",
+      "type": "function",
+      "name": "OAuthPage",
+      "filePath": "features/oauth-login/components/OAuthPage.tsx",
+      "summary": "Full-page React component for standalone OAuth provider login with the same authorization flow as the dialog variant.",
+      "tags": ["component", "oauth", "page", "authentication"],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:ContentModal",
+      "type": "class",
+      "name": "ContentModal",
+      "filePath": "features/log-content-viewer/log-content/rendering.tsx",
+      "summary": "Animated modal dialog component for displaying log content with spring animations, backdrop blur, tabs, and escape key handling.",
+      "tags": ["modal", "animation", "log-content"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:RichMarkdown",
+      "type": "class",
+      "name": "RichMarkdown",
+      "filePath": "features/log-content-viewer/log-content/rendering-markdown.tsx",
+      "summary": "React component rendering Markdown with GFM, syntax highlighting, and copyable code blocks.",
+      "tags": ["markdown", "rendering"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:features/log-content-viewer/index.ts",
+      "target": "file:features/log-content-viewer/components/ErrorDetailModal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports ErrorDetailModal"
+    },
+    {
+      "source": "file:features/log-content-viewer/index.ts",
+      "target": "file:features/log-content-viewer/components/LogContentModal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports LogContentModal"
+    },
+    {
+      "source": "file:features/log-content-viewer/log-content/parsers.ts",
+      "target": "file:features/log-content-viewer/log-content/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports Msg, RenderedView"
+    },
+    {
+      "source": "file:features/log-content-viewer/log-content/parsers.ts",
+      "target": "file:features/log-content-viewer/log-content/types-internal.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports ParsedOutput"
+    },
+    {
+      "source": "file:features/log-content-viewer/log-content/rendering.tsx",
+      "target": "file:features/log-content-viewer/log-content/rendering-markdown.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "lazy imports RichMarkdown"
+    },
+    {
+      "source": "file:features/log-content-viewer/log-content/rendering-markdown.tsx",
+      "target": "file:features/log-content-viewer/log-content/rendering.tsx",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "used by rendering.tsx (MessageBlock/MarkdownContent)"
+    },
+    {
+      "source": "file:features/log-content-viewer/log-content/useLogContentData.ts",
+      "target": "file:features/log-content-viewer/log-content/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports LogContentModalProps, LogContentPart"
+    },
+    {
+      "source": "file:features/log-content-viewer/log-content/useLogContentData.ts",
+      "target": "packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports usageApi from @code-proxy/api-client"
+    },
+    {
+      "source": "file:features/log-content-viewer/log-content/types-internal.ts",
+      "target": "file:features/log-content-viewer/log-content/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports Msg"
+    },
+    {
+      "source": "file:features/model-availability/index.ts",
+      "target": "file:features/model-availability/configuredAvailabilityCache.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports all"
+    },
+    {
+      "source": "file:features/model-availability/index.ts",
+      "target": "file:features/model-availability/modelAvailability.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports all"
+    },
+    {
+      "source": "file:features/model-availability/modelAvailability.ts",
+      "target": "file:features/model-availability/configuredAvailabilityCache.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports getConfiguredAvailabilityCacheVersion, invalidateConfiguredModelAvailability"
+    },
+    {
+      "source": "file:features/model-availability/modelAvailability.ts",
+      "target": "packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports authFilesApi, providersApi, apiClient from @code-proxy/api-client"
+    },
+    {
+      "source": "file:features/model-availability/modelAvailability.ts",
+      "target": "packages/domain/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports matchesModelPattern, normalizeProviderKey, etc. from @code-proxy/domain"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/index.ts",
+      "target": "file:features/monitor-widgets/chart-options/types.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports types"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/index.ts",
+      "target": "file:features/monitor-widgets/chart-options/daily-trend.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports createDailyTrendOption"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/index.ts",
+      "target": "file:features/monitor-widgets/chart-options/hourly-model.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports createHourlyModelOption"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/index.ts",
+      "target": "file:features/monitor-widgets/chart-options/hourly-token.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports createHourlyTokenOption"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/index.ts",
+      "target": "file:features/monitor-widgets/chart-options/model-distribution.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports createModelDistributionOption"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/daily-trend.ts",
+      "target": "file:features/monitor-widgets/monitor-utils.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports formatNumber"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/daily-trend.ts",
+      "target": "file:features/monitor-widgets/chart-options/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports DailySeriesPoint"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/hourly-model.ts",
+      "target": "file:features/monitor-widgets/monitor-utils.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports formatNumber"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/hourly-model.ts",
+      "target": "file:features/monitor-widgets/monitor-constants.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports HOURLY_MODEL_COLORS"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/hourly-model.ts",
+      "target": "file:features/monitor-widgets/chart-options/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports HourlySeries"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/hourly-token.ts",
+      "target": "file:features/monitor-widgets/monitor-utils.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports formatNumber"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/hourly-token.ts",
+      "target": "file:features/monitor-widgets/chart-options/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports HourlySeries"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/model-distribution.ts",
+      "target": "file:features/monitor-widgets/monitor-constants.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports CHART_COLORS"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/model-distribution.ts",
+      "target": "file:features/monitor-widgets/monitor-format.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports formatCompact"
+    },
+    {
+      "source": "file:features/monitor-widgets/chart-options/model-distribution.ts",
+      "target": "file:features/monitor-widgets/chart-options/types.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports ModelDistributionDatum"
+    },
+    {
+      "source": "file:features/monitor-widgets/index.ts",
+      "target": "file:features/monitor-widgets/MonitorPagePieces.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports HourWindowSelector, KpiCard, MonitorCard, TimeRangeSelector"
+    },
+    {
+      "source": "file:features/monitor-widgets/index.ts",
+      "target": "file:features/monitor-widgets/monitor-constants.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports CHART_COLOR_CLASSES, CHART_COLORS, HOURLY_MODEL_COLORS"
+    },
+    {
+      "source": "file:features/monitor-widgets/MonitorPagePieces.tsx",
+      "target": "file:features/monitor-widgets/monitor-constants.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports HOUR_WINDOWS, TIME_RANGES, HourWindow, TimeRange"
+    },
+    {
+      "source": "file:features/monitor-widgets/monitor-format.ts",
+      "target": "file:features/monitor-widgets/monitor-utils.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports formatNumber"
+    },
+    {
+      "source": "file:features/monitor-widgets/monitor-utils.ts",
+      "target": "packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports UsageData, UsageDetail from @code-proxy/api-client"
+    },
+    {
+      "source": "file:features/oauth-login/index.ts",
+      "target": "file:features/oauth-login/components/OAuthLoginDialog.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports OAuthLoginDialog"
+    },
+    {
+      "source": "file:features/oauth-login/index.ts",
+      "target": "file:features/oauth-login/components/OAuthPage.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "re-exports OAuthPage"
+    },
+    {
+      "source": "file:features/oauth-login/components/OAuthLoginDialog.tsx",
+      "target": "packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports oauthApi, vertexApi, OAuthProvider, etc."
+    },
+    {
+      "source": "file:features/oauth-login/components/OAuthLoginDialog.tsx",
+      "target": "features/proxy-pool/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports ProxyPoolSelect, useProxyPoolChecks"
+    },
+    {
+      "source": "file:features/oauth-login/components/OAuthPage.tsx",
+      "target": "packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports oauthApi, vertexApi, OAuthProvider, etc."
+    },
+    {
+      "source": "file:features/oauth-login/components/OAuthLoginDialog.tsx",
+      "target": "file:features/oauth-login/components/OAuthPage.tsx",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "shares similar OAuth provider login logic (same PROVIDERS, ProviderState, helpers)"
+    },
+    {
+      "source": "file:features/model-availability/modelAvailability.ts",
+      "target": "file:features/monitor-widgets/index.ts",
+      "type": "depends_on",
+      "weight": 0.1,
+      "label": "both are consumed by the monitoring/admin pages"
+    },
+    {
+      "source": "file:features/log-content-viewer/log-content/rendering.tsx",
+      "target": "file:features/log-content-viewer/log-content/types.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "indirectly uses Msg type through rendering-markdown"
+    }
+  ]
+}
