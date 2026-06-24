@@ -47,14 +47,28 @@ function normalizeFilterSelection(
   selected: string[],
   allowedOptions: SearchableCheckboxMultiSelectOption[],
 ): string[] | null {
-  const allowed = allowedOptions.map((o) => o.value);
-  if (allowed.length === 0) return [];
-  const allowedSet = new Set(allowed);
-  const normalized = selected.filter(
-    (item, index) => allowedSet.has(item) && selected.indexOf(item) === index,
-  );
-  if (normalized.length === allowed.length) return null;
-  return normalized;
+  if (allowedOptions.length === 0) return null;
+  if (selected.length === allowedOptions.length) return null;
+  return selected;
+}
+
+/**
+ * Derive a filtered selection that contains only values still present
+ * in the current options — prevents stale orphaned selections from
+ * silently producing empty result sets after CRUD changes.
+ */
+function useStaleSelection(
+  selected: string[] | null,
+  options: { value: string }[],
+): string[] | null {
+  return useMemo(() => {
+    if (selected === null) return null;
+    if (options.length === 0) return null;
+    const allowed = new Set(options.map((o) => o.value));
+    const filtered = selected.filter((v) => allowed.has(v));
+    if (filtered.length === allowed.size) return null;
+    return filtered.length > 0 ? filtered : null;
+  }, [selected, options]);
 }
 
 export function ApiKeysPage() {
@@ -263,6 +277,11 @@ export function ApiKeysPage() {
       .map((g) => ({ value: g, label: g, searchText: g }));
   }, [entries]);
 
+  // Strip orphaned selections after CRUD changes (fix #1)
+  const effectiveNames = useStaleSelection(selectedNames, nameOptions);
+  const effectiveKeys = useStaleSelection(selectedKeys, keyOptions);
+  const effectiveChannelGroups = useStaleSelection(selectedChannelGroups, channelGroupOptions);
+
   const hasActiveFilters =
     selectedNames !== null || selectedKeys !== null || selectedChannelGroups !== null;
 
@@ -278,16 +297,16 @@ export function ApiKeysPage() {
 
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
-      if (selectedNames && !selectedNames.includes(entry.name || "")) return false;
-      if (selectedKeys && !selectedKeys.includes(entry.key)) return false;
-      if (selectedChannelGroups?.length) {
+      if (effectiveNames && !effectiveNames.includes(entry.name || "")) return false;
+      if (effectiveKeys && !effectiveKeys.includes(entry.key)) return false;
+      if (effectiveChannelGroups) {
         const entryGroups = entry["allowed-channel-groups"] || [];
         if (entryGroups.length === 0) return false;
-        if (!selectedChannelGroups.some((g) => entryGroups.includes(g))) return false;
+        if (!effectiveChannelGroups.some((g) => entryGroups.includes(g))) return false;
       }
       return true;
     });
-  }, [entries, selectedNames, selectedKeys, selectedChannelGroups]);
+  }, [entries, effectiveNames, effectiveKeys, effectiveChannelGroups]);
 
   /* ─── index lookup by key (for filtered → original mapping) ─── */
 
@@ -307,6 +326,7 @@ export function ApiKeysPage() {
   /* ─── toggle disable ─── */
 
   const handleToggleDisable = async (index: number) => {
+    if (index < 0 || index >= entries.length) return;
     const entry = entries[index];
     const updated = { ...entry, disabled: !entry.disabled };
     const newEntries = [...entries];
@@ -374,6 +394,7 @@ export function ApiKeysPage() {
   /* ─── edit ─── */
 
   const handleOpenEdit = (index: number) => {
+    if (index < 0 || index >= entries.length) return;
     const entry = entries[index];
     const next = {
       name: entry.name || "",
@@ -482,6 +503,7 @@ export function ApiKeysPage() {
   };
 
   const handleOpenDelete = (index: number) => {
+    if (index < 0 || index >= entries.length) return;
     setDeleteLogsOnDelete(true);
     setDeleteIndex(index);
   };

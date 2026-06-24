@@ -6,6 +6,16 @@ import { cn } from "@code-proxy/ui";
 
 type MultiSelectFilterState = string[] | null;
 
+interface FilterConfig {
+  placeholderKey: string;
+  searchPlaceholderKey: string;
+  clearLabelKey: string;
+  options: SearchableCheckboxMultiSelectOption[];
+  value: MultiSelectFilterState;
+  onChange: (value: string[]) => void;
+  onClear: () => void;
+}
+
 interface ApiKeysFiltersProps {
   nameOptions: SearchableCheckboxMultiSelectOption[];
   selectedNames: MultiSelectFilterState;
@@ -44,90 +54,76 @@ export function ApiKeysFilters({
 }: ApiKeysFiltersProps) {
   const { t } = useTranslation();
 
+  const filters: FilterConfig[] = [
+    {
+      placeholderKey: "api_keys_page.filter_name_placeholder",
+      searchPlaceholderKey: "api_keys_page.search_names",
+      clearLabelKey: "api_keys_page.clear_name_filter",
+      options: nameOptions,
+      value: selectedNames,
+      onChange: onNamesChange,
+      onClear: onNamesClear,
+    },
+    {
+      placeholderKey: "api_keys_page.filter_key_placeholder",
+      searchPlaceholderKey: "request_logs.search_keys",
+      clearLabelKey: "request_logs.clear_key_filter",
+      options: keyOptions,
+      value: selectedKeys,
+      onChange: onKeysChange,
+      onClear: onKeysClear,
+    },
+    {
+      placeholderKey: "api_keys_page.filter_channel_group_placeholder",
+      searchPlaceholderKey: "api_keys_page.search_channel_groups",
+      clearLabelKey: "api_keys_page.clear_channel_group_filter",
+      options: channelGroupOptions,
+      value: selectedChannelGroups,
+      onChange: onChannelGroupsChange,
+      onClear: onChannelGroupsClear,
+    },
+  ];
+
   return (
     <div className="border-t border-slate-100 px-5 py-3 dark:border-neutral-800/60">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="w-full min-[640px]:w-auto min-[640px]:min-w-[200px] min-[640px]:max-w-[260px] flex-1 min-[640px]:flex-initial">
-          <SearchableCheckboxMultiSelect
-            value={selectedNames ?? []}
-            onChange={onNamesChange}
-            options={nameOptions}
-            placeholder={t("api_keys_page.filter_name_placeholder")}
-            searchPlaceholder={t("api_keys_page.search_names")}
-            selectFilteredLabel={t("request_logs.select_filtered")}
-            deselectFilteredLabel={t("request_logs.deselect_filtered")}
-            selectedCountLabel={(count: number) => t("request_logs.selected_count", { count })}
-            noResultsLabel={t("request_logs.no_filter_results")}
-            aria-label={t("api_keys_page.filter_name_placeholder")}
-            clearLabel={t("api_keys_page.clear_name_filter")}
-            onClear={onNamesClear}
-            showClearButton
-            size="sm"
-            emptyValueMeansAllSelected
-            emptyValueRepresentsAllSelected={selectedNames === null}
-            showFilteredToggleWithoutQuery={false}
-            applyMode="manual"
-            applyLabel={t("request_logs.apply_filters")}
-            cancelLabel={t("common.cancel")}
-            selectAllLabel={t("request_logs.select_all")}
-            deselectAllLabel={t("request_logs.deselect_all")}
-            emptySelectionLabel={t("request_logs.none_selected")}
-          />
-        </div>
-        <div className="w-full min-[640px]:w-auto min-[640px]:min-w-[220px] min-[640px]:max-w-[300px] flex-1 min-[640px]:flex-initial">
-          <SearchableCheckboxMultiSelect
-            value={selectedKeys ?? []}
-            onChange={onKeysChange}
-            options={keyOptions}
-            placeholder={t("api_keys_page.filter_key_placeholder")}
-            searchPlaceholder={t("request_logs.search_keys")}
-            selectFilteredLabel={t("request_logs.select_filtered")}
-            deselectFilteredLabel={t("request_logs.deselect_filtered")}
-            selectedCountLabel={(count: number) => t("request_logs.selected_count", { count })}
-            noResultsLabel={t("request_logs.no_filter_results")}
-            aria-label={t("api_keys_page.filter_key_placeholder")}
-            clearLabel={t("request_logs.clear_key_filter")}
-            onClear={onKeysClear}
-            showClearButton
-            size="sm"
-            emptyValueMeansAllSelected
-            emptyValueRepresentsAllSelected={selectedKeys === null}
-            showFilteredToggleWithoutQuery={false}
-            applyMode="manual"
-            applyLabel={t("request_logs.apply_filters")}
-            cancelLabel={t("common.cancel")}
-            selectAllLabel={t("request_logs.select_all")}
-            deselectAllLabel={t("request_logs.deselect_all")}
-            emptySelectionLabel={t("request_logs.none_selected")}
-          />
-        </div>
-        <div className="w-full min-[640px]:w-auto min-[640px]:min-w-[200px] min-[640px]:max-w-[280px] flex-1 min-[640px]:flex-initial">
-          <SearchableCheckboxMultiSelect
-            value={selectedChannelGroups ?? []}
-            onChange={onChannelGroupsChange}
-            options={channelGroupOptions}
-            placeholder={t("api_keys_page.filter_channel_group_placeholder")}
-            searchPlaceholder={t("api_keys_page.search_channel_groups")}
-            selectFilteredLabel={t("request_logs.select_filtered")}
-            deselectFilteredLabel={t("request_logs.deselect_filtered")}
-            selectedCountLabel={(count: number) => t("request_logs.selected_count", { count })}
-            noResultsLabel={t("request_logs.no_filter_results")}
-            aria-label={t("api_keys_page.filter_channel_group_placeholder")}
-            clearLabel={t("api_keys_page.clear_channel_group_filter")}
-            onClear={onChannelGroupsClear}
-            showClearButton
-            size="sm"
-            emptyValueMeansAllSelected
-            emptyValueRepresentsAllSelected={selectedChannelGroups === null}
-            showFilteredToggleWithoutQuery={false}
-            applyMode="manual"
-            applyLabel={t("request_logs.apply_filters")}
-            cancelLabel={t("common.cancel")}
-            selectAllLabel={t("request_logs.select_all")}
-            deselectAllLabel={t("request_logs.deselect_all")}
-            emptySelectionLabel={t("request_logs.none_selected")}
-          />
-        </div>
+        {filters.map((filter) => {
+          const placeholder = t(filter.placeholderKey);
+          return (
+            <div
+              key={filter.placeholderKey}
+              className="w-full min-[640px]:w-auto min-[640px]:min-w-[200px] min-[640px]:max-w-[260px] flex-1 min-[640px]:flex-initial"
+            >
+              <SearchableCheckboxMultiSelect
+                value={filter.value ?? []}
+                onChange={filter.onChange}
+                options={filter.options}
+                placeholder={placeholder}
+                searchPlaceholder={t(filter.searchPlaceholderKey)}
+                selectFilteredLabel={t("request_logs.select_filtered")}
+                deselectFilteredLabel={t("request_logs.deselect_filtered")}
+                selectedCountLabel={(count: number) =>
+                  t("request_logs.selected_count", { count })
+                }
+                noResultsLabel={t("request_logs.no_filter_results")}
+                aria-label={placeholder}
+                clearLabel={t(filter.clearLabelKey)}
+                onClear={filter.onClear}
+                showClearButton
+                size="sm"
+                emptyValueMeansAllSelected
+                emptyValueRepresentsAllSelected={filter.value === null}
+                showFilteredToggleWithoutQuery={false}
+                applyMode="manual"
+                applyLabel={t("request_logs.apply_filters")}
+                cancelLabel={t("common.cancel")}
+                selectAllLabel={t("request_logs.select_all")}
+                deselectAllLabel={t("request_logs.deselect_all")}
+                emptySelectionLabel={t("request_logs.none_selected")}
+              />
+            </div>
+          );
+        })}
 
         {hasActiveFilters ? (
           <button
