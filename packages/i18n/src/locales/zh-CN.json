@@ -2951,7 +2951,14 @@
     "no_api_keys": "暂无 API 密钥",
     "usage_table_caption": "使用记录",
     "no_usage_records": "暂无使用记录",
-    "more_suffix": " 等更多"
+    "more_suffix": " 等更多",
+    "filter_name_placeholder": "筛选名称",
+    "filter_key_placeholder": "筛选密钥",
+    "filter_channel_group_placeholder": "筛选渠道分组",
+    "search_names": "搜索名称...",
+    "clear_name_filter": "清空名称筛选",
+    "clear_channel_group_filter": "清空渠道分组筛选",
+    "reset_filters": "重置筛选"
   },
   "api_key_permissions_page": {
     "title": "API Key 权限配置",

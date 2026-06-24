@@ -40,6 +40,22 @@ import { ccSwitchConfigMatchesApiKeyPermissions } from "@code-proxy/domain/ccswi
 import { LogContentModal } from "@features/log-content-viewer";
 import { ErrorDetailModal } from "@features/log-content-viewer";
 import type { ApiKeyFormValues } from "./types";
+import { ApiKeysFilters } from "./components/ApiKeysFilters";
+import type { SearchableCheckboxMultiSelectOption } from "@code-proxy/ui";
+
+function normalizeFilterSelection(
+  selected: string[],
+  allowedOptions: SearchableCheckboxMultiSelectOption[],
+): string[] | null {
+  const allowed = allowedOptions.map((o) => o.value);
+  if (allowed.length === 0) return [];
+  const allowedSet = new Set(allowed);
+  const normalized = selected.filter(
+    (item, index) => allowedSet.has(item) && selected.indexOf(item) === index,
+  );
+  if (normalized.length === allowed.length) return null;
+  return normalized;
+}
 
 export function ApiKeysPage() {
   const { t, i18n } = useTranslation();
@@ -48,6 +64,12 @@ export function ApiKeysPage() {
 
   const [entries, setEntries] = useState<ApiKeyEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filter state
+  const [selectedNames, setSelectedNames] = useState<string[] | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<string[] | null>(null);
+  const [selectedChannelGroups, setSelectedChannelGroups] = useState<string[] | null>(null);
+
   const [showCreate, setShowCreate] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
@@ -206,6 +228,81 @@ export function ApiKeysPage() {
 
   const selectedPermissionProfile = (profileId: string) =>
     profileId ? (permissionProfileById.get(profileId) ?? null) : null;
+
+  /* ─── filter options & logic ─── */
+
+  const nameOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
+    const names = new Set<string>();
+    entries.forEach((e) => names.add(e.name || ""));
+    return Array.from(names)
+      .sort((a, b) => {
+        if (!a) return 1;
+        if (!b) return -1;
+        return a.localeCompare(b);
+      })
+      .map((n) => ({
+        value: n,
+        label: n || t("api_keys_page.unnamed"),
+        searchText: n || t("api_keys_page.unnamed"),
+      }));
+  }, [entries, t]);
+
+  const keyOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
+    return entries.map((e) => ({
+      value: e.key,
+      label: `${e.name || t("api_keys_page.unnamed")} (${maskApiKey(e.key)})`,
+      searchText: `${e.name || ""} ${e.key}`,
+    }));
+  }, [entries, t]);
+
+  const channelGroupOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
+    const groups = new Set<string>();
+    entries.forEach((e) => e["allowed-channel-groups"]?.forEach((g) => groups.add(g)));
+    return Array.from(groups)
+      .sort()
+      .map((g) => ({ value: g, label: g, searchText: g }));
+  }, [entries]);
+
+  const hasActiveFilters =
+    selectedNames !== null || selectedKeys !== null || selectedChannelGroups !== null;
+
+  const resetFilters = useCallback(() => {
+    setSelectedNames(null);
+    setSelectedKeys(null);
+    setSelectedChannelGroups(null);
+  }, []);
+
+  const clearNamesFilter = useCallback(() => setSelectedNames(null), []);
+  const clearKeysFilter = useCallback(() => setSelectedKeys(null), []);
+  const clearChannelGroupsFilter = useCallback(() => setSelectedChannelGroups(null), []);
+
+  const filteredEntries = useMemo(() => {
+    return entries.filter((entry) => {
+      if (selectedNames && !selectedNames.includes(entry.name || "")) return false;
+      if (selectedKeys && !selectedKeys.includes(entry.key)) return false;
+      if (selectedChannelGroups?.length) {
+        const entryGroups = entry["allowed-channel-groups"] || [];
+        if (entryGroups.length === 0) return false;
+        if (!selectedChannelGroups.some((g) => entryGroups.includes(g))) return false;
+      }
+      return true;
+    });
+  }, [entries, selectedNames, selectedKeys, selectedChannelGroups]);
+
+  /* ─── index lookup by key (for filtered → original mapping) ─── */
+
+  const entryIndexByKey = useMemo(
+    () => new Map(entries.map((e, i) => [e.key, i])),
+    [entries],
+  );
+
+  const resolveOriginalIndex = useCallback(
+    (filteredIndex: number) => {
+      const entry = filteredEntries[filteredIndex];
+      return entry ? (entryIndexByKey.get(entry.key) ?? -1) : -1;
+    },
+    [filteredEntries, entryIndexByKey],
+  );
 
   /* ─── toggle disable ─── */
 
@@ -486,12 +583,12 @@ export function ApiKeysPage() {
     () =>
       createApiKeyColumns({
         t,
-        onToggleDisable: (index) => void handleToggleDisable(index),
+        onToggleDisable: (index) => void handleToggleDisable(resolveOriginalIndex(index)),
         onViewUsage: handleViewUsage,
         onCopy: (key) => void handleCopy(key),
         onImportToCcSwitch: handleOpenCcSwitchImport,
-        onEdit: handleOpenEdit,
-        onDelete: handleOpenDelete,
+        onEdit: (index) => handleOpenEdit(resolveOriginalIndex(index)),
+        onDelete: (index) => handleOpenDelete(resolveOriginalIndex(index)),
       }),
     [
       handleToggleDisable,
@@ -500,6 +597,7 @@ export function ApiKeysPage() {
       handleOpenCcSwitchImport,
       handleOpenEdit,
       handleOpenDelete,
+      resolveOriginalIndex,
       t,
     ],
   );
@@ -537,10 +635,29 @@ export function ApiKeysPage() {
             icon={<KeyRound size={32} className="text-slate-400" />}
           />
         ) : (
-          <DataTable<ApiKeyEntry>
-            tableId="api-keys"
-            rows={entries}
-            columns={apiKeyColumns}
+          <>
+            <ApiKeysFilters
+              nameOptions={nameOptions}
+              selectedNames={selectedNames}
+              onNamesChange={(v) => setSelectedNames(normalizeFilterSelection(v, nameOptions))}
+              onNamesClear={clearNamesFilter}
+              keyOptions={keyOptions}
+              selectedKeys={selectedKeys}
+              onKeysChange={(v) => setSelectedKeys(normalizeFilterSelection(v, keyOptions))}
+              onKeysClear={clearKeysFilter}
+              channelGroupOptions={channelGroupOptions}
+              selectedChannelGroups={selectedChannelGroups}
+              onChannelGroupsChange={(v) =>
+                setSelectedChannelGroups(normalizeFilterSelection(v, channelGroupOptions))
+              }
+              onChannelGroupsClear={clearChannelGroupsFilter}
+              onResetFilters={resetFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
+            <DataTable<ApiKeyEntry>
+              tableId="api-keys"
+              rows={filteredEntries}
+              columns={apiKeyColumns}
             rowKey={(row) => row.key}
             rowHeight={44}
             height="h-[calc(100dvh-260px)] max-h-[70vh]"
@@ -550,6 +667,7 @@ export function ApiKeysPage() {
             emptyText={t("api_keys_page.no_api_keys")}
             rowClassName={(row) => (row.disabled ? "opacity-50" : "")}
           />
+          </>
         )}
       </Card>
 
