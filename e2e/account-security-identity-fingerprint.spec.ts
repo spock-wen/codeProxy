@@ -405,22 +405,30 @@ test("Account & Security shows auth files and account identity fingerprint detai
   await dialog.getByRole("tab", { name: /Identity|身份/i }).click();
 
   const identityPanel = dialog.getByTestId("auth-file-identity-fingerprint");
-  await expect(identityPanel).toContainText("authsub_codex_terminal");
-  await expect(identityPanel).toContainText("codex_cli_rs / Codex Desktop");
-  await expect(identityPanel).toContainText(codexTerminalUserAgent);
-  await expect(identityPanel).toContainText(codexBetaFeatures);
-  await expect(identityPanel).toContainText(/Section|分组/i);
-  await expect(identityPanel).toContainText(/Field|字段/i);
-  await expect(identityPanel).toContainText(/Value|值/i);
-  await expect(identityPanel).toContainText(/Source|来源/i);
-  await expect(identityPanel).toContainText(/Effective Fields|生效字段/i);
-  await expect(identityPanel).toContainText(/Learned Fields|自学习字段/i);
-  await expect(identityPanel).toContainText(/Observed Headers|观测请求头/i);
+  const identitySummary = identityPanel.getByTestId("auth-file-identity-summary");
+  const identityFields = identityPanel.getByTestId("auth-file-identity-fields");
+  await expect(identitySummary).toContainText("authsub_codex_terminal");
+  await expect(identitySummary).toContainText("codex_cli_rs / Codex Desktop");
+  await expect(identityFields).toContainText(codexTerminalUserAgent);
+  await expect(identityFields).toContainText(codexBetaFeatures);
+  await expect(identityFields).toContainText(/Section|分组/i);
+  await expect(identityFields).toContainText(/Field|字段/i);
+  await expect(identityFields).toContainText(/Value|值/i);
+  await expect(identityFields).toContainText(/Source|来源/i);
+  await expect(identityFields).toContainText(/Effective Fields|生效字段/i);
+  await expect(identityFields).toContainText(/Learned Fields|自学习字段/i);
+  await expect(identityFields).toContainText(/Observed Headers|观测请求头/i);
   await expect(identityPanel.getByText(/Learned|自学习/i).first()).toBeVisible();
   await expect(identityPanel.getByText(/System default|系统默认/i).first()).toBeVisible();
-  await expect(identityPanel.getByText("websocket-beta")).toBeVisible();
+  await expect(identityFields.getByText("websocket-beta")).toBeVisible();
   await expect(identityPanel).not.toContainText("Session_id");
   await expect(identityPanel).not.toContainText("Conversation_id");
+  const summaryBox = await identitySummary.boundingBox();
+  const fieldsBox = await identityFields.boundingBox();
+  if (!summaryBox || !fieldsBox) {
+    throw new Error("identity fingerprint summary and fields columns must be visible");
+  }
+  expect(fieldsBox.x).toBeGreaterThan(summaryBox.x + summaryBox.width - 8);
 
   await dialog.getByRole("button", { name: /^(Close|关闭)$/ }).click();
 
@@ -455,4 +463,39 @@ test("Account & Security keeps card mode usable and redirects old identity route
   await expect(
     page.locator('[class*="group/card"]', { hasText: "Claude OAuth Primary" }),
   ).toBeVisible();
+});
+
+test("Account & Security identity detail stacks cleanly on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setAuthed(page, "cards");
+  await routeManagementMocks(page);
+
+  await page.goto("/#/account-security");
+
+  const codexCard = page.locator('[class*="group/card"]', { hasText: "Codex Terminal OAuth" });
+  await expect(codexCard).toBeVisible();
+  await codexCard.getByRole("button", { name: /Details|详情/i }).click();
+
+  const dialog = page.getByRole("dialog", { name: /Codex Terminal OAuth|查看/i });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("tab", { name: /Identity|身份/i }).click();
+
+  const identityPanel = dialog.getByTestId("auth-file-identity-fingerprint");
+  const identitySummary = identityPanel.getByTestId("auth-file-identity-summary");
+  const identityFields = identityPanel.getByTestId("auth-file-identity-fields");
+  await expect(identitySummary).toContainText("authsub_codex_terminal");
+  await expect(identityFields.getByText("websocket-beta")).toBeVisible();
+
+  const summaryBox = await identitySummary.boundingBox();
+  const fieldsBox = await identityFields.boundingBox();
+  if (!summaryBox || !fieldsBox) {
+    throw new Error("identity fingerprint summary and fields columns must be visible on mobile");
+  }
+  expect(fieldsBox.y).toBeGreaterThan(summaryBox.y + summaryBox.height - 8);
+  expect(Math.abs(fieldsBox.x - summaryBox.x)).toBeLessThanOrEqual(8);
+
+  const documentOverflowX = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(documentOverflowX).toBeLessThanOrEqual(2);
 });
