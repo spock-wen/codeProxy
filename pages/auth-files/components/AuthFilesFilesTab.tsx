@@ -3,6 +3,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useTranslation } from "react-i18next";
 import {
   BarChart3,
+  CircleOff,
   ClipboardPaste,
   Download,
   Ellipsis,
@@ -533,6 +534,8 @@ interface AuthFilesFilesTabProps {
   refreshQuota: (file: AuthFileItem, provider: QuotaProvider) => Promise<void>;
   requestResetCredit: (file: AuthFileItem) => void;
   resettingCreditFileName: string | null;
+  clearAuthFileStatus: (file: AuthFileItem) => Promise<void>;
+  clearingStatusFileName: string | null;
   setFileEnabled: (file: AuthFileItem, enabled: boolean) => Promise<void>;
   statusUpdating: Record<string, boolean>;
   usageIndex: UsageIndex;
@@ -544,6 +547,7 @@ interface AuthFilesFilesTabProps {
   formatPlanTypeLabel: (planType: string) => string;
   translateQuotaText: (text: string) => string;
   renderRestrictionBadges: (file: AuthFileItem) => ReactNode | null;
+  renderClaudeOAuthHealthBadges: (file: AuthFileItem) => ReactNode | null;
   renderSubscriptionBadge: (file: AuthFileItem) => ReactNode | null;
   renderQuotaBar: (label: string, item: QuotaItem | null) => ReactNode;
   openTagsEditor: (file: AuthFileItem) => void;
@@ -614,6 +618,8 @@ export function AuthFilesFilesTab({
   refreshQuota,
   requestResetCredit,
   resettingCreditFileName,
+  clearAuthFileStatus,
+  clearingStatusFileName,
   setFileEnabled,
   statusUpdating,
   usageIndex,
@@ -622,6 +628,7 @@ export function AuthFilesFilesTab({
   formatPlanTypeLabel,
   translateQuotaText,
   renderRestrictionBadges,
+  renderClaudeOAuthHealthBadges,
   renderSubscriptionBadge,
   renderQuotaBar,
   openTagsEditor,
@@ -965,7 +972,7 @@ export function AuthFilesFilesTab({
   return (
     <Card
       padding="none"
-      className="overflow-hidden md:flex md:h-[calc(100dvh-113px)] md:min-h-0 md:flex-col"
+      className="md:flex md:h-[calc(100dvh-113px)] md:min-h-0 md:flex-col md:overflow-hidden"
       bodyClassName="md:flex md:min-h-0 md:flex-1 md:flex-col"
     >
       <input
@@ -1265,6 +1272,7 @@ export function AuthFilesFilesTab({
                 minWidth="min-w-[1840px]"
                 height="h-full"
                 minHeight="min-h-[360px] md:min-h-0"
+                allowWheelPropagationAtBoundary
                 rowClassName={(row) => {
                   const runtimeOnly = isRuntimeOnlyAuthFile(row);
                   const disabled = Boolean(row.disabled);
@@ -1285,8 +1293,9 @@ export function AuthFilesFilesTab({
             ) : (
               <ScrollArea
                 data-testid="auth-files-cards"
-                className="h-full items-stretch"
-                contentClassName="grid grid-cols-1 items-stretch gap-5 px-4 py-4 pr-8 sm:py-5 sm:pl-5 sm:pr-8 md:grid-cols-2 xl:grid-cols-3"
+                className="items-stretch md:h-full"
+                viewportClassName="max-md:h-auto max-md:overflow-visible max-md:overscroll-auto"
+                contentClassName="grid grid-cols-1 items-stretch justify-items-center gap-5 px-4 py-4 sm:px-5 sm:py-5 md:grid-cols-2 md:justify-items-stretch md:pr-8 xl:grid-cols-3"
                 scrollbarTrackInset={0}
               >
                 {pageItems.map((file) => {
@@ -1333,6 +1342,8 @@ export function AuthFilesFilesTab({
                       ? state.resetCreditCount
                       : 0;
                   const resetCreditBusy = resettingCreditFileName === file.name;
+                  const clearStatusBusy = clearingStatusFileName === file.name;
+                  const clearStatusDisabled = !authIndex || clearStatusBusy;
                   const resetCreditDisabled =
                     provider !== "codex" ||
                     quotaRefreshing ||
@@ -1350,7 +1361,7 @@ export function AuthFilesFilesTab({
                       padding="default"
                       bodyClassName="mt-0 flex min-h-0 flex-1 flex-col"
                       className={[
-                        "group/card flex h-full flex-col transition-colors duration-200 ease-out hover:border-slate-300 hover:bg-white dark:hover:border-neutral-700 dark:hover:bg-neutral-950/70",
+                        "group/card flex h-full w-full max-w-[34rem] flex-col transition-colors duration-200 ease-out hover:border-slate-300 hover:bg-white md:max-w-none dark:hover:border-neutral-700 dark:hover:bg-neutral-950/70",
                         fileSelected
                           ? "border-slate-900 ring-1 ring-slate-300 dark:border-white dark:ring-white/20"
                           : "",
@@ -1457,6 +1468,7 @@ export function AuthFilesFilesTab({
                             </span>
                           </span>
                           {renderRestrictionBadges(file)}
+                          {renderClaudeOAuthHealthBadges(file)}
                           {subscriptionBadge}
                           {runtimeOnly ? (
                             <span className="inline-flex shrink-0 items-center rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-semibold text-white dark:bg-white dark:text-neutral-950">
@@ -1537,13 +1549,13 @@ export function AuthFilesFilesTab({
                             </HoverTooltip>
                           ) : null}
 
-                          <HoverTooltip content={t("auth_files.view")}>
+                          <HoverTooltip content={t("auth_files.detail")}>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => void openDetail(file)}
-                              title={t("auth_files.view")}
-                              aria-label={t("auth_files.view")}
+                              title={t("auth_files.detail")}
+                              aria-label={t("auth_files.detail")}
                             >
                               <Eye size={16} />
                             </Button>
@@ -1577,6 +1589,18 @@ export function AuthFilesFilesTab({
                                 >
                                   <Tags size={15} />
                                   <span>{t("auth_files.edit_tags")}</span>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item
+                                  className={ACTION_MENU_ITEM_CLASS}
+                                  disabled={clearStatusDisabled}
+                                  onSelect={() => void clearAuthFileStatus(file)}
+                                >
+                                  {clearStatusBusy ? (
+                                    <Loader2 size={15} className="animate-spin" />
+                                  ) : (
+                                    <CircleOff size={15} />
+                                  )}
+                                  <span>{t("auth_files.clear_status")}</span>
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Item
                                   className={ACTION_MENU_ITEM_CLASS}
