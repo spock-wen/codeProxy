@@ -43,6 +43,35 @@ import { downloadTextAsFile } from "@code-proxy/domain";
 import { LogContentModal } from "@features/log-content-viewer";
 import { ErrorDetailModal } from "@features/log-content-viewer";
 import type { ApiKeyFormValues } from "./types";
+import { ApiKeysFilters } from "./components/ApiKeysFilters";
+import type { SearchableCheckboxMultiSelectOption } from "@code-proxy/ui";
+
+function normalizeFilterSelection(
+  selected: string[],
+  allowedOptions: SearchableCheckboxMultiSelectOption[],
+): string[] | null {
+  if (allowedOptions.length === 0) return null;
+  if (selected.length === allowedOptions.length) return null;
+  return selected;
+}
+
+/**
+ * Derive a filtered selection that contains only values still present
+ * in the current options — prevents stale orphaned selections from
+ * silently producing empty result sets after CRUD changes.
+ */
+function useStaleSelection(
+  selected: string[] | null,
+  options: { value: string }[],
+): string[] | null {
+  return useMemo(() => {
+    if (selected === null) return null;
+    if (options.length === 0) return null;
+    const allowed = new Set(options.map((o) => o.value));
+    const filtered = selected.filter((v) => allowed.has(v));
+    return filtered.length > 0 ? filtered : [];
+  }, [selected, options]);
+}
 
 export function ApiKeysPage() {
   const { t, i18n } = useTranslation();
@@ -51,9 +80,15 @@ export function ApiKeysPage() {
 
   const [entries, setEntries] = useState<ApiKeyEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filter state
+  const [selectedNames, setSelectedNames] = useState<string[] | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<string[] | null>(null);
+  const [selectedChannelGroups, setSelectedChannelGroups] = useState<string[] | null>(null);
+
   const [showCreate, setShowCreate] = useState(false);
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [editEntryKey, setEditEntryKey] = useState<string | null>(null);
+  const [deleteEntryKey, setDeleteEntryKey] = useState<string | null>(null);
   const [deleteLogsOnDelete, setDeleteLogsOnDelete] = useState(true);
   const [ccSwitchImportEntry, setCcSwitchImportEntry] = useState<ApiKeyEntry | null>(null);
   const [ccSwitchImportConfigs, setCcSwitchImportConfigs] = useState<
@@ -210,9 +245,90 @@ export function ApiKeysPage() {
   const selectedPermissionProfile = (profileId: string) =>
     profileId ? (permissionProfileById.get(profileId) ?? null) : null;
 
+  /* ─── filter options & logic ─── */
+
+  const nameOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
+    const names = new Set<string>();
+    entries.forEach((e) => names.add(e.name || ""));
+    return Array.from(names)
+      .sort((a, b) => {
+        if (a === "" && b !== "") return 1;
+        if (a !== "" && b === "") return -1;
+        return a.localeCompare(b);
+      })
+      .map((n) => ({
+        value: n,
+        label: n || t("api_keys_page.unnamed"),
+        searchText: n || t("api_keys_page.unnamed"),
+      }));
+  }, [entries, t]);
+
+  const keyOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
+    return entries.map((e) => ({
+      value: e.key,
+      label: `${e.name || t("api_keys_page.unnamed")} (${maskApiKey(e.key)})`,
+      searchText: `${e.name || ""} ${e.key}`,
+    }));
+  }, [entries, t]);
+
+  const channelGroupOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
+    const groups = new Set<string>();
+    entries.forEach((e) => e["allowed-channel-groups"]?.forEach((g) => groups.add(g)));
+    return Array.from(groups)
+      .sort()
+      .map((g) => ({ value: g, label: g, searchText: g }));
+  }, [entries]);
+
+  // Strip orphaned selections after CRUD changes (fix #1)
+  const effectiveNames = useStaleSelection(selectedNames, nameOptions);
+  const effectiveKeys = useStaleSelection(selectedKeys, keyOptions);
+  const effectiveChannelGroups = useStaleSelection(selectedChannelGroups, channelGroupOptions);
+
+  const hasActiveFilters =
+    effectiveNames !== null || effectiveKeys !== null || effectiveChannelGroups !== null;
+
+  const resetFilters = useCallback(() => {
+    setSelectedNames(null);
+    setSelectedKeys(null);
+    setSelectedChannelGroups(null);
+  }, []);
+
+  const clearNamesFilter = useCallback(() => setSelectedNames(null), []);
+  const clearKeysFilter = useCallback(() => setSelectedKeys(null), []);
+  const clearChannelGroupsFilter = useCallback(() => setSelectedChannelGroups(null), []);
+
+  const filteredEntries = useMemo(() => {
+    return entries.filter((entry) => {
+      if (effectiveNames && !effectiveNames.includes(entry.name || "")) return false;
+      if (effectiveKeys && !effectiveKeys.includes(entry.key)) return false;
+      if (effectiveChannelGroups) {
+        const entryGroups = entry["allowed-channel-groups"] || [];
+        if (entryGroups.length > 0 && !effectiveChannelGroups.some((g) => entryGroups.includes(g)))
+          return false;
+      }
+      return true;
+    });
+  }, [entries, effectiveNames, effectiveKeys, effectiveChannelGroups]);
+
+  /* ─── index lookup by key (for filtered → original mapping) ─── */
+
+  const entryIndexByKey = useMemo(
+    () => new Map(entries.map((e, i) => [e.key, i])),
+    [entries],
+  );
+
+  const resolveOriginalIndex = useCallback(
+    (filteredIndex: number) => {
+      const entry = filteredEntries[filteredIndex];
+      return entry ? (entryIndexByKey.get(entry.key) ?? -1) : -1;
+    },
+    [filteredEntries, entryIndexByKey],
+  );
+
   /* ─── toggle disable ─── */
 
   const handleToggleDisable = async (index: number) => {
+    if (index < 0 || index >= entries.length) return;
     const entry = entries[index];
     const updated = { ...entry, disabled: !entry.disabled };
     const newEntries = [...entries];
@@ -280,7 +396,9 @@ export function ApiKeysPage() {
   /* ─── edit ─── */
 
   const handleOpenEdit = (index: number) => {
+    if (index < 0 || index >= entries.length) return;
     const entry = entries[index];
+    setEditEntryKey(entry.key);
     const next = {
       name: entry.name || "",
       key: entry.key,
@@ -298,16 +416,21 @@ export function ApiKeysPage() {
       systemPrompt: entry["system-prompt"] || "",
     };
     setForm(next);
-    setEditIndex(index);
   };
 
   const handleEdit = async () => {
-    if (editIndex === null) return;
+    if (editEntryKey === null) return;
+    const editIdx = entries.findIndex((e) => e.key === editEntryKey);
+    if (editIdx === -1) {
+      notify({ type: "error", message: t("api_keys_page.entry_not_found") });
+      setEditEntryKey(null);
+      return;
+    }
     if (!form.name.trim()) {
       notify({ type: "error", message: t("api_keys_page.name_required") });
       return;
     }
-    const originalKey = entries[editIndex].key;
+    const originalKey = entries[editIdx].key;
     const newKey = form.key.trim();
     if (!newKey) {
       notify({ type: "error", message: t("api_keys_page.key_empty") });
@@ -316,24 +439,24 @@ export function ApiKeysPage() {
     setSaving(true);
     try {
       await apiKeyEntriesApi.update({
-        id: entries[editIndex].id,
-        index: editIndex,
+        id: entries[editIdx].id,
+        index: editIdx,
         value: {
           ...(newKey !== originalKey ? { key: newKey } : {}),
           name: form.name.trim(),
           ...(form.permissionProfileId === CUSTOM_PERMISSION_PROFILE_ID
             ? {
-                "permission-profile-id": entries[editIndex]["permission-profile-id"] ?? "",
-                "daily-limit": entries[editIndex]["daily-limit"] ?? 0,
-                "total-quota": entries[editIndex]["total-quota"] ?? 0,
-                "spending-limit": entries[editIndex]["spending-limit"] ?? 0,
-                "concurrency-limit": entries[editIndex]["concurrency-limit"] ?? 0,
-                "rpm-limit": entries[editIndex]["rpm-limit"] ?? 0,
-                "tpm-limit": entries[editIndex]["tpm-limit"] ?? 0,
-                "allowed-models": entries[editIndex]["allowed-models"] ?? [],
-                "allowed-channels": entries[editIndex]["allowed-channels"] ?? [],
-                "allowed-channel-groups": entries[editIndex]["allowed-channel-groups"] ?? [],
-                "system-prompt": entries[editIndex]["system-prompt"] ?? "",
+                "permission-profile-id": entries[editIdx]["permission-profile-id"] ?? "",
+                "daily-limit": entries[editIdx]["daily-limit"] ?? 0,
+                "total-quota": entries[editIdx]["total-quota"] ?? 0,
+                "spending-limit": entries[editIdx]["spending-limit"] ?? 0,
+                "concurrency-limit": entries[editIdx]["concurrency-limit"] ?? 0,
+                "rpm-limit": entries[editIdx]["rpm-limit"] ?? 0,
+                "tpm-limit": entries[editIdx]["tpm-limit"] ?? 0,
+                "allowed-models": entries[editIdx]["allowed-models"] ?? [],
+                "allowed-channels": entries[editIdx]["allowed-channels"] ?? [],
+                "allowed-channel-groups": entries[editIdx]["allowed-channel-groups"] ?? [],
+                "system-prompt": entries[editIdx]["system-prompt"] ?? "",
               }
             : applyApiKeyPermissionProfile(
                 {} as ApiKeyEntry,
@@ -342,7 +465,7 @@ export function ApiKeysPage() {
         },
       });
       notify({ type: "success", message: t("api_keys_page.updated_success") });
-      setEditIndex(null);
+      setEditEntryKey(null);
       await loadEntries();
     } catch (err: unknown) {
       notify({
@@ -357,12 +480,18 @@ export function ApiKeysPage() {
   /* ─── delete ─── */
 
   const handleDelete = async () => {
-    if (deleteIndex === null) return;
+    if (deleteEntryKey === null) return;
+    const deleteIdx = entries.findIndex((e) => e.key === deleteEntryKey);
+    if (deleteIdx === -1) {
+      notify({ type: "error", message: t("api_keys_page.entry_not_found") });
+      setDeleteEntryKey(null);
+      return;
+    }
     setSaving(true);
     try {
       const response = (await apiKeyEntriesApi.delete({
-        id: entries[deleteIndex]?.id,
-        index: deleteIndex,
+        id: entries[deleteIdx]?.id,
+        index: deleteIdx,
         deleteLogs: deleteLogsOnDelete,
       })) as { logs_deleted?: number } | undefined;
       const logsDeleted =
@@ -374,7 +503,7 @@ export function ApiKeysPage() {
             ? t("api_keys_page.deleted_success_with_logs", { count: logsDeleted })
             : t("api_keys_page.deleted_success"),
       });
-      setDeleteIndex(null);
+      setDeleteEntryKey(null);
       setDeleteLogsOnDelete(true);
       await loadEntries();
     } catch (err: unknown) {
@@ -388,8 +517,9 @@ export function ApiKeysPage() {
   };
 
   const handleOpenDelete = (index: number) => {
+    if (index < 0 || index >= entries.length) return;
     setDeleteLogsOnDelete(true);
-    setDeleteIndex(index);
+    setDeleteEntryKey(entries[index].key);
   };
 
   /* ─── copy ─── */
@@ -500,12 +630,12 @@ export function ApiKeysPage() {
     () =>
       createApiKeyColumns({
         t,
-        onToggleDisable: (index) => void handleToggleDisable(index),
+        onToggleDisable: (index) => void handleToggleDisable(resolveOriginalIndex(index)),
         onViewUsage: handleViewUsage,
         onCopy: (key) => void handleCopy(key),
         onImportToCcSwitch: handleOpenCcSwitchImport,
-        onEdit: handleOpenEdit,
-        onDelete: handleOpenDelete,
+        onEdit: (index) => handleOpenEdit(resolveOriginalIndex(index)),
+        onDelete: (index) => handleOpenDelete(resolveOriginalIndex(index)),
       }),
     [
       handleToggleDisable,
@@ -514,6 +644,7 @@ export function ApiKeysPage() {
       handleOpenCcSwitchImport,
       handleOpenEdit,
       handleOpenDelete,
+      resolveOriginalIndex,
       t,
     ],
   );
@@ -551,10 +682,29 @@ export function ApiKeysPage() {
             icon={<KeyRound size={32} className="text-slate-400" />}
           />
         ) : (
-          <DataTable<ApiKeyEntry>
-            tableId="api-keys"
-            rows={entries}
-            columns={apiKeyColumns}
+          <>
+            <ApiKeysFilters
+              nameOptions={nameOptions}
+              selectedNames={effectiveNames}
+              onNamesChange={(v) => setSelectedNames(normalizeFilterSelection(v, nameOptions))}
+              onNamesClear={clearNamesFilter}
+              keyOptions={keyOptions}
+              selectedKeys={effectiveKeys}
+              onKeysChange={(v) => setSelectedKeys(normalizeFilterSelection(v, keyOptions))}
+              onKeysClear={clearKeysFilter}
+              channelGroupOptions={channelGroupOptions}
+              selectedChannelGroups={effectiveChannelGroups}
+              onChannelGroupsChange={(v) =>
+                setSelectedChannelGroups(normalizeFilterSelection(v, channelGroupOptions))
+              }
+              onChannelGroupsClear={clearChannelGroupsFilter}
+              onResetFilters={resetFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
+            <DataTable<ApiKeyEntry>
+              tableId="api-keys"
+              rows={filteredEntries}
+              columns={apiKeyColumns}
             rowKey={(row) => row.key}
             rowHeight={44}
             height="h-[calc(100dvh-260px)] max-h-[70vh]"
@@ -564,6 +714,7 @@ export function ApiKeysPage() {
             emptyText={t("api_keys_page.no_api_keys")}
             rowClassName={(row) => (row.disabled ? "opacity-50" : "")}
           />
+          </>
         )}
       </Card>
 
@@ -582,26 +733,26 @@ export function ApiKeysPage() {
 
       <ApiKeyFormModal
         t={t}
-        open={editIndex !== null}
+        open={editEntryKey !== null}
         editMode
         saving={saving}
         form={form}
         setForm={setForm}
         permissionProfileOptions={permissionProfileOptions}
-        onClose={() => setEditIndex(null)}
+        onClose={() => setEditEntryKey(null)}
         onSubmit={handleEdit}
         regenerateKey={() => setForm((prev) => ({ ...prev, key: generateApiKey() }))}
       />
 
       <DeleteApiKeyModal
         t={t}
-        entry={deleteIndex === null ? null : (entries[deleteIndex] ?? null)}
-        open={deleteIndex !== null}
+        entry={deleteEntryKey === null ? null : (entries.find((e) => e.key === deleteEntryKey) ?? null)}
+        open={deleteEntryKey !== null}
         saving={saving}
         deleteLogsOnDelete={deleteLogsOnDelete}
         onDeleteLogsChange={setDeleteLogsOnDelete}
         onClose={() => {
-          setDeleteIndex(null);
+          setDeleteEntryKey(null);
           setDeleteLogsOnDelete(true);
         }}
         onConfirm={handleDelete}

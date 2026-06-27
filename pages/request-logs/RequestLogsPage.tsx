@@ -436,6 +436,7 @@ export function RequestLogsPage() {
   }, [timeRange, selectedApiKeys, notify, t]);
 
 
+
   const handleOpenClearDialog = useCallback(() => {
     setClearOptions(DEFAULT_CLEAR_OPTIONS);
     setConfirmClearOpen(true);
