@@ -139,6 +139,7 @@ export function useAuthFilesQuotaState({
           });
         }
         if (text.startsWith("claude_quota.")) return t(text);
+        if (text.startsWith("antigravity_quota.")) return t(text);
         return text;
       };
 
@@ -278,6 +279,7 @@ export function useAuthFilesQuotaState({
             status: "loading",
             items: prev[name]?.items ?? [],
             planType: prev[name]?.planType,
+            resetCreditCount: prev[name]?.resetCreditCount,
             error: prev[name]?.error,
             updatedAt: prev[name]?.updatedAt,
           },
@@ -288,6 +290,7 @@ export function useAuthFilesQuotaState({
         const result = await fetchQuota(provider, file);
         const items = Array.isArray(result) ? result : result.items;
         const nextPlanType = Array.isArray(result) ? null : (result.planType ?? null);
+        const nextResetCreditCount = Array.isArray(result) ? undefined : result.resetCreditCount;
         const rawAuthIndex = (file as { auth_index?: unknown }).auth_index ?? file.authIndex;
         const authIndex = normalizeAuthIndexValue(rawAuthIndex);
         if (authIndex) {
@@ -339,6 +342,10 @@ export function useAuthFilesQuotaState({
             status: "success",
             items,
             planType: nextPlanType ?? prev[name]?.planType,
+            resetCreditCount:
+              typeof nextResetCreditCount === "number"
+                ? nextResetCreditCount
+                : prev[name]?.resetCreditCount,
             updatedAt: Date.now(),
           },
         }));
@@ -353,6 +360,7 @@ export function useAuthFilesQuotaState({
             status: "error",
             items: prev[name]?.items ?? [],
             planType: prev[name]?.planType,
+            resetCreditCount: prev[name]?.resetCreditCount,
             error: message,
             updatedAt: Date.now(),
           },
@@ -419,6 +427,7 @@ export function useAuthFilesQuotaState({
             status: "loading",
             items: prev[target.file.name]?.items ?? [],
             planType: prev[target.file.name]?.planType,
+            resetCreditCount: prev[target.file.name]?.resetCreditCount,
             error: prev[target.file.name]?.error,
             updatedAt: prev[target.file.name]?.updatedAt,
           };

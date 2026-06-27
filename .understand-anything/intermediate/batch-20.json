@@ -1,0 +1,527 @@
+{
+  "nodes": [
+    {
+      "id": "file:pages/auth-files/hooks/useAuthFilesOAuthConfig.ts",
+      "type": "file",
+      "name": "useAuthFilesOAuthConfig.ts",
+      "filePath": "pages/auth-files/hooks/useAuthFilesOAuthConfig.ts",
+      "summary": "React hook managing OAuth excluded models and model alias configuration for auth files. Handles loading, saving, and UI state for excluded model and alias tabs.",
+      "tags": ["react", "hook", "oauth", "auth-files"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useAuthFilesOAuthConfig",
+      "type": "function",
+      "name": "useAuthFilesOAuthConfig",
+      "filePath": "pages/auth-files/hooks/useAuthFilesOAuthConfig.ts",
+      "summary": "Main hook that manages OAuth excluded models and alias editing state, including CRUD operations via authFilesApi.",
+      "tags": ["react", "hook", "oauth", "excluded-models", "alias"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/hooks/useAuthFilesQuotaState.ts",
+      "type": "file",
+      "name": "useAuthFilesQuotaState.ts",
+      "filePath": "pages/auth-files/hooks/useAuthFilesQuotaState.ts",
+      "summary": "React hook managing quota preview state for auth files. Handles quota fetching, auto-refresh intervals, connectivity checks, and quota display modes.",
+      "tags": ["react", "hook", "quota", "auth-files", "preview"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:useAuthFilesQuotaState",
+      "type": "function",
+      "name": "useAuthFilesQuotaState",
+      "filePath": "pages/auth-files/hooks/useAuthFilesQuotaState.ts",
+      "summary": "Hook that manages quota state including fetching from multiple providers, auto-refresh, warmup, and connectivity tracking.",
+      "tags": ["react", "hook", "quota", "refresh", "connectivity"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/auth-files/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/auth-files/index.ts",
+      "summary": "Barrel export file for the auth-files page module, re-exporting AuthFilesPage and authFilesRoute.",
+      "tags": ["barrel", "export", "auth-files"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/auth-files/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/auth-files/route.tsx",
+      "summary": "Route definition for /auth-files page with lazy loading, auth guard, dashboard layout, and redirects from legacy OAuth paths.",
+      "tags": ["route", "auth-files", "lazy-loading"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/ccswitch-import-settings/CcSwitchImportModal.tsx",
+      "type": "file",
+      "name": "CcSwitchImportModal.tsx",
+      "filePath": "pages/ccswitch-import-settings/CcSwitchImportModal.tsx",
+      "summary": "Modal component for configuring and importing CC Switch settings, supporting Claude/Codex/Gemini client types with channel groups, models, and provider names.",
+      "tags": ["react", "component", "modal", "ccswitch", "import"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:CcSwitchImportModal",
+      "type": "function",
+      "name": "CcSwitchImportModal",
+      "filePath": "pages/ccswitch-import-settings/CcSwitchImportModal.tsx",
+      "summary": "Modal component with tabs for selecting CC Switch client type, configuring API key fields, channel groups, model selection, and provider name.",
+      "tags": ["react", "component", "modal", "ccswitch"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/ccswitch-import-settings/CcSwitchImportOptions.tsx",
+      "type": "file",
+      "name": "CcSwitchImportOptions.tsx",
+      "filePath": "pages/ccswitch-import-settings/CcSwitchImportOptions.tsx",
+      "summary": "Options panel for CC Switch import, displaying import buttons for each client type with brand icons and model hints. Includes Claude auth field selection.",
+      "tags": ["react", "component", "ccswitch", "options", "client-selection"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:CcSwitchImportOptions",
+      "type": "function",
+      "name": "CcSwitchImportOptions",
+      "filePath": "pages/ccswitch-import-settings/CcSwitchImportOptions.tsx",
+      "summary": "Component showing import option buttons for each CC Switch client type (Claude Code, Codex, Gemini CLI) with configuration settings.",
+      "tags": ["react", "component", "ccswitch", "import-options"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/ccswitch-import-settings/CcSwitchImportSettingsPage.tsx",
+      "type": "file",
+      "name": "CcSwitchImportSettingsPage.tsx",
+      "filePath": "pages/ccswitch-import-settings/CcSwitchImportSettingsPage.tsx",
+      "summary": "Main page for managing CC Switch import configurations with a data table, create/edit/delete operations, channel group integration, and model filtering.",
+      "tags": ["react", "page", "ccswitch", "settings", "crud"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:CcSwitchImportSettingsPage",
+      "type": "function",
+      "name": "CcSwitchImportSettingsPage",
+      "filePath": "pages/ccswitch-import-settings/CcSwitchImportSettingsPage.tsx",
+      "summary": "Page component managing CC Switch import configs with data table, modal for create/edit, delete confirmation, and channel group integration.",
+      "tags": ["react", "page", "ccswitch", "settings", "crud"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/ccswitch-import-settings/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/ccswitch-import-settings/index.ts",
+      "summary": "Barrel export file for the ccswitch-import-settings page module.",
+      "tags": ["barrel", "export", "ccswitch"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/ccswitch-import-settings/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/ccswitch-import-settings/route.tsx",
+      "summary": "Route definition for /ccswitch-import-settings page with lazy loading and redirect from legacy /manage path.",
+      "tags": ["route", "ccswitch", "lazy-loading"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/channel-groups/ChannelGroupsPage.tsx",
+      "type": "file",
+      "name": "ChannelGroupsPage.tsx",
+      "filePath": "pages/channel-groups/ChannelGroupsPage.tsx",
+      "summary": "Main page for managing channel groups with routing configuration editor, supporting visual config, channel details, model availability filtering, and mapping.",
+      "tags": ["react", "page", "channel-groups", "routing", "config"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ChannelGroupsPage",
+      "type": "function",
+      "name": "ChannelGroupsPage",
+      "filePath": "pages/channel-groups/ChannelGroupsPage.tsx",
+      "summary": "Page component that manages channel groups using the RoutingConfigEditor with model availability integration.",
+      "tags": ["react", "page", "channel-groups", "routing"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/channel-groups/routingConfigUtils.tsx",
+      "type": "file",
+      "name": "routingConfigUtils.tsx",
+      "filePath": "pages/channel-groups/routingConfigUtils.tsx",
+      "summary": "Utilities for routing configuration including GroupDraft type, EMPTY_ROUTE_DRAFT, channel/tag normalization, priority parsing, and display helpers.",
+      "tags": ["utilities", "routing", "channel-groups", "types"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/channel-groups/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/channel-groups/index.ts",
+      "summary": "Barrel export file for the channel-groups page module.",
+      "tags": ["barrel", "export", "channel-groups"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/channel-groups/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/channel-groups/route.tsx",
+      "summary": "Route definition for /channel-groups page with lazy loading and auth guard.",
+      "tags": ["route", "channel-groups", "lazy-loading"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/config/ConfigPage.tsx",
+      "type": "file",
+      "name": "ConfigPage.tsx",
+      "filePath": "pages/config/ConfigPage.tsx",
+      "summary": "Main configuration page with visual/source/runtime tabs, YAML editing with search, save/reload operations, and integration with visual config editor.",
+      "tags": ["react", "page", "config", "yaml", "visual-editor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ConfigPage",
+      "type": "function",
+      "name": "ConfigPage",
+      "filePath": "pages/config/ConfigPage.tsx",
+      "summary": "Page component providing YAML configuration editing with visual editor tab, source tab, and runtime panel tab plus search functionality.",
+      "tags": ["react", "page", "config", "yaml", "editor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/config/FloatingSaveBar.tsx",
+      "type": "file",
+      "name": "FloatingSaveBar.tsx",
+      "filePath": "pages/config/FloatingSaveBar.tsx",
+      "summary": "Floating save status bar component showing save states (saved/dirty/saving/loading/error/offline) with save and reload buttons.",
+      "tags": ["react", "component", "ui", "save-bar"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:FloatingSaveBar",
+      "type": "function",
+      "name": "FloatingSaveBar",
+      "filePath": "pages/config/FloatingSaveBar.tsx",
+      "summary": "UI component that displays a floating bar indicating the save status of configuration changes.",
+      "tags": ["react", "component", "ui", "save-status"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/config/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/config/index.ts",
+      "summary": "Barrel export file for the config page module.",
+      "tags": ["barrel", "export", "config"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/config/route.tsx",
+      "type": "file",
+      "name": "route.tsx",
+      "filePath": "pages/config/route.tsx",
+      "summary": "Route definition for /config page with lazy loading and redirect from /settings legacy path.",
+      "tags": ["route", "config", "lazy-loading"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/ccswitch-import-settings/__tests__/ccswitchImport.test.ts",
+      "type": "file",
+      "name": "ccswitchImport.test.ts",
+      "filePath": "pages/ccswitch-import-settings/__tests__/ccswitchImport.test.ts",
+      "summary": "Tests for CC Switch import utilities including URL building, default model picking, and config resolution.",
+      "tags": ["test", "vitest", "ccswitch", "import"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/ccswitch-import-settings/__tests__/ccswitchImportConfigList.test.ts",
+      "type": "file",
+      "name": "ccswitchImportConfigList.test.ts",
+      "filePath": "pages/ccswitch-import-settings/__tests__/ccswitchImportConfigList.test.ts",
+      "summary": "Tests for CC Switch config list route path creation utility.",
+      "tags": ["test", "vitest", "ccswitch", "config-list"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/ccswitch-import-settings/__tests__/CcSwitchImportOptions.test.tsx",
+      "type": "file",
+      "name": "CcSwitchImportOptions.test.tsx",
+      "filePath": "pages/ccswitch-import-settings/__tests__/CcSwitchImportOptions.test.tsx",
+      "summary": "Tests for the CcSwitchImportOptions component verifying client icons, model hints, and auth field behavior.",
+      "tags": ["test", "vitest", "react-testing-library", "ccswitch"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/ccswitch-import-settings/__tests__/CcSwitchImportSettingsPage.test.tsx",
+      "type": "file",
+      "name": "CcSwitchImportSettingsPage.test.tsx",
+      "filePath": "pages/ccswitch-import-settings/__tests__/CcSwitchImportSettingsPage.test.tsx",
+      "summary": "Comprehensive tests for the CcSwitchImportSettingsPage covering CRUD operations, channel group integration, and model availability filtering.",
+      "tags": ["test", "vitest", "react-testing-library", "ccswitch", "integration"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/channel-groups/__tests__/ChannelGroupsPage.test.tsx",
+      "type": "file",
+      "name": "ChannelGroupsPage.test.tsx",
+      "filePath": "pages/channel-groups/__tests__/ChannelGroupsPage.test.tsx",
+      "summary": "Tests for the ChannelGroupsPage covering routing config loading, editing, and error handling.",
+      "tags": ["test", "vitest", "react-testing-library", "channel-groups"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/channel-groups/__tests__/RoutingConfigEditor.test.tsx",
+      "type": "file",
+      "name": "RoutingConfigEditor.test.tsx",
+      "filePath": "pages/channel-groups/__tests__/RoutingConfigEditor.test.tsx",
+      "summary": "Tests for the RoutingConfigEditor component covering channel management, path routes, and tag configuration.",
+      "tags": ["test", "vitest", "react-testing-library", "routing"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/config/__tests__/ConfigPage.test.tsx",
+      "type": "file",
+      "name": "ConfigPage.test.tsx",
+      "filePath": "pages/config/__tests__/ConfigPage.test.tsx",
+      "summary": "Tests for the ConfigPage component verifying YAML loading, tab switching, and visual editor integration.",
+      "tags": ["test", "vitest", "react-testing-library", "config"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/config/__tests__/RuntimeConfigPanel.test.tsx",
+      "type": "file",
+      "name": "RuntimeConfigPanel.test.tsx",
+      "filePath": "pages/config/__tests__/RuntimeConfigPanel.test.tsx",
+      "summary": "Tests for the RuntimeConfigPanel component covering config getters and setters for proxy, logging, routing, and auto-update settings.",
+      "tags": ["test", "vitest", "react-testing-library", "runtime-config"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesOAuthConfig.ts",
+      "target": "file:pages/auth-files/index.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "exported_by"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesQuotaState.ts",
+      "target": "file:pages/auth-files/index.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "exported_by"
+    },
+    {
+      "source": "file:pages/auth-files/route.tsx",
+      "target": "file:pages/auth-files/index.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "exported_by"
+    },
+    {
+      "source": "file:pages/auth-files/index.ts",
+      "target": "file:pages/pages/registry.ts",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "registered_in"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/CcSwitchImportSettingsPage.tsx",
+      "target": "file:pages/ccswitch-import-settings/index.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "exported_by"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/index.ts",
+      "target": "file:pages/pages/registry.ts",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "registered_in"
+    },
+    {
+      "source": "file:pages/channel-groups/ChannelGroupsPage.tsx",
+      "target": "file:pages/channel-groups/index.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "exported_by"
+    },
+    {
+      "source": "file:pages/channel-groups/index.ts",
+      "target": "file:pages/pages/registry.ts",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "registered_in"
+    },
+    {
+      "source": "file:pages/config/ConfigPage.tsx",
+      "target": "file:pages/config/index.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "exported_by"
+    },
+    {
+      "source": "file:pages/config/index.ts",
+      "target": "file:pages/pages/registry.ts",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "registered_in"
+    },
+    {
+      "source": "file:pages/channel-groups/ChannelGroupsPage.tsx",
+      "target": "file:pages/channel-groups/routingConfigUtils.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports"
+    },
+    {
+      "source": "file:pages/config/ConfigPage.tsx",
+      "target": "file:pages/config/FloatingSaveBar.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports"
+    },
+    {
+      "source": "file:pages/config/ConfigPage.tsx",
+      "target": "file:pages/config/__tests__/ConfigPage.test.tsx",
+      "type": "depends_on",
+      "weight": 0.2,
+      "label": "tested_by"
+    },
+    {
+      "source": "file:pages/channel-groups/ChannelGroupsPage.tsx",
+      "target": "file:pages/channel-groups/__tests__/ChannelGroupsPage.test.tsx",
+      "type": "depends_on",
+      "weight": 0.2,
+      "label": "tested_by"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/CcSwitchImportOptions.tsx",
+      "target": "file:pages/ccswitch-import-settings/__tests__/CcSwitchImportOptions.test.tsx",
+      "type": "depends_on",
+      "weight": 0.2,
+      "label": "tested_by"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/CcSwitchImportSettingsPage.tsx",
+      "target": "file:pages/ccswitch-import-settings/__tests__/CcSwitchImportSettingsPage.test.tsx",
+      "type": "depends_on",
+      "weight": 0.2,
+      "label": "tested_by"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/CcSwitchImportModal.tsx",
+      "target": "file:pages/ccswitch-import-settings/CcSwitchImportSettingsPage.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/CcSwitchImportOptions.tsx",
+      "target": "file:pages/ccswitch-import-settings/CcSwitchImportSettingsPage.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesOAuthConfig.ts",
+      "target": "file:packages/api-client/src/endpoints/auth-files.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports authFilesApi"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesQuotaState.ts",
+      "target": "file:packages/api-client/src/endpoints/auth-files.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports authFilesApi"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesQuotaState.ts",
+      "target": "file:features/quota-preview/quota-fetch.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports fetchQuota"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesQuotaState.ts",
+      "target": "file:features/quota-preview/quota-helpers.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports quota helpers"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesOAuthConfig.ts",
+      "target": "file:features/model-availability/configuredAvailabilityCache.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports cache invalidator"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/CcSwitchImportSettingsPage.tsx",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportConfigList.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports config list utils"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/CcSwitchImportModal.tsx",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImport.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports ccswitch import domain"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/CcSwitchImportModal.tsx",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImportSettings.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports import settings domain"
+    },
+    {
+      "source": "file:pages/ccswitch-import-settings/CcSwitchImportOptions.tsx",
+      "target": "file:packages/domain/src/ccswitch/ccswitchImport.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports ccswitch import domain"
+    },
+    {
+      "source": "file:pages/channel-groups/ChannelGroupsPage.tsx",
+      "target": "file:features/routing-config-editor/RoutingConfigEditor.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports RoutingConfigEditor"
+    },
+    {
+      "source": "file:pages/channel-groups/ChannelGroupsPage.tsx",
+      "target": "file:features/visual-config-editor/types.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports visual config types"
+    },
+    {
+      "source": "file:pages/channel-groups/ChannelGroupsPage.tsx",
+      "target": "file:features/model-availability/modelAvailability.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports model availability"
+    },
+    {
+      "source": "file:pages/channel-groups/routingConfigUtils.tsx",
+      "target": "file:features/visual-config-editor/types.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "imports visual config types"
+    },
+    {
+      "source": "file:pages/config/ConfigPage.tsx",
+      "target": "file:pages/config/__tests__/RuntimeConfigPanel.test.tsx",
+      "type": "depends_on",
+      "weight": 0.2,
+      "label": "tested_by"
+    }
+  ]
+}

@@ -20,7 +20,11 @@ vi.mock("@code-proxy/api-client", async (importOriginal) => {
   };
 });
 
-import { fetchQuota, resolveQuotaProvider } from "@features/quota-preview/quota-fetch";
+import {
+  consumeCodexResetCredit,
+  fetchQuota,
+  resolveQuotaProvider,
+} from "@features/quota-preview/quota-fetch";
 
 beforeEach(() => {
   mocks.request.mockReset();
@@ -107,8 +111,47 @@ describe("fetchQuota for codex", () => {
   });
 });
 
+describe("consumeCodexResetCredit", () => {
+  test("posts a redeem request id to the ChatGPT reset-credit consume endpoint", async () => {
+    mocks.request.mockResolvedValueOnce({
+      statusCode: 200,
+      header: {},
+      bodyText: "",
+      body: { code: "success", windows_reset: 1 },
+    });
+
+    await consumeCodexResetCredit({
+      name: "codex-alpha@example.test-plus.json",
+      type: "codex",
+      provider: "codex",
+      auth_index: "auth-codex-alpha",
+      id_token: buildSyntheticCodexIdToken("acct-111"),
+    } as any);
+
+    expect(mocks.request).toHaveBeenCalledTimes(1);
+    const payload = mocks.request.mock.calls[0]?.[0];
+    expect(payload).toEqual(
+      expect.objectContaining({
+        authIndex: "auth-codex-alpha",
+        method: "POST",
+        url: "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits/consume",
+        header: expect.objectContaining({
+          Authorization: "Bearer $TOKEN$",
+          "Chatgpt-Account-Id": "acct-111",
+          "Content-Type": "application/json",
+        }),
+      }),
+    );
+    expect(JSON.parse(payload.data)).toEqual({
+      redeem_request_id: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      ),
+    });
+  });
+});
+
 describe("fetchQuota for antigravity", () => {
-  test("requests fetchAvailableModels with the auth project and returns dynamic quota items", async () => {
+  test("requests fetchAvailableModels with the auth project and returns quota summaries", async () => {
     mocks.downloadText.mockResolvedValueOnce(
       JSON.stringify({ project_id: "bamboo-precept-lgxtn" }),
     );
@@ -197,17 +240,27 @@ describe("fetchQuota for antigravity", () => {
       }),
     );
     expect(result.items.map((item) => item.key)).toEqual([
-      "model:gemini-3.1-pro-high",
-      "model:gemini-3.1-pro-low",
-      "model:gemini-3-flash-agent",
-      "model:claude-sonnet-4-6",
-      "model:gpt-oss-120b-medium",
+      "provider:gemini3-pro",
+      "provider:gemini3-flash",
+      "provider:claude",
     ]);
     expect(result.items[0]).toEqual(
       expect.objectContaining({
-        label: "Gemini 3.1 Pro (High) [gemini-3.1-pro-high]",
-        percent: 100,
+        label: "antigravity_quota.gemini3_pro",
+        percent: 80,
         resetAtMs: Date.parse("2026-05-09T15:50:29Z"),
+      }),
+    );
+    expect(result.items[1]).toEqual(
+      expect.objectContaining({
+        label: "antigravity_quota.gemini3_flash",
+        percent: 70,
+      }),
+    );
+    expect(result.items[2]).toEqual(
+      expect.objectContaining({
+        label: "antigravity_quota.claude",
+        percent: 60,
       }),
     );
     expect(result.items[0].meta).toBeUndefined();

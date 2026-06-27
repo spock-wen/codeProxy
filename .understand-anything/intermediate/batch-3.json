@@ -1,0 +1,139 @@
+{
+  "nodes": [
+    {
+      "id": "file:apps/admin-panel/index.html",
+      "type": "file",
+      "name": "index.html",
+      "filePath": "apps/admin-panel/index.html",
+      "summary": "Primary HTML entry point for the admin panel. Contains inline theme-detection script reading localStorage, a full-screen loading animation (ring spinner with glow effects), Inter font preconnect, and mounts the React app via /src/main.tsx into #root.",
+      "tags": ["entry-point", "html", "admin-panel", "loading-screen", "theme-detection"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/manage.html",
+      "type": "file",
+      "name": "manage.html",
+      "filePath": "apps/admin-panel/manage.html",
+      "summary": "Secondary HTML entry point for the management sub-app. Shares identical theme-detection script and loading screen as index.html, but mounts the management React app via /src/manage-entry.tsx with a BrowserRouter using /manage base path.",
+      "tags": ["entry-point", "html", "admin-panel", "management", "loading-screen", "theme-detection"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "apps/admin-panel/package.json",
+      "summary": "Package configuration for @code-proxy/admin-panel (private, v0.1.0). Declares workspace membership under root workspaces. Scripts: dev (vite), build (tsc + vite), test (vitest). Dependencies include React 19, react-router-dom 7, zustand, echarts, framer-motion, axios, i18next, yaml, chart.js, gsap. DevDeps: vite 7, vitest 4, typescript 5.9, tailwindcss 4.1, sass, playwright, testing-library, oxlint.",
+      "tags": ["config", "dependencies", "package", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "apps/admin-panel/tsconfig.json",
+      "summary": "TypeScript configuration extending root tsconfig.base.json. Sets baseUrl to '.' and defines path aliases mapping @/* to ./src/*, @app/* to ./src/app/*, @pages/*, @features/*, @code-proxy/ui, @code-proxy/api-client, @code-proxy/domain, @code-proxy/assets, and @code-proxy/i18n. Includes src, pages, features, packages, and vite.config.ts.",
+      "tags": ["config", "typescript", "path-aliases", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/main.tsx",
+      "type": "file",
+      "name": "main.tsx",
+      "filePath": "apps/admin-panel/src/main.tsx",
+      "summary": "React entry point for the admin panel. Mounts AppRouter inside StrictMode and HashRouter. Imports global CSS styles, goey-toast styles, i18n initialization, and GlobalIconButtonTooltip. Calls dismissAppLoader after render.",
+      "tags": ["react", "entry-point", "app-router", "hash-router", "admin-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/admin-panel/src/manage-entry.tsx",
+      "type": "file",
+      "name": "manage-entry.tsx",
+      "filePath": "apps/admin-panel/src/manage-entry.tsx",
+      "summary": "React entry point for the management sub-app. Mounts AppRouter inside StrictMode and BrowserRouter with /manage basename. Imports global CSS and i18n. Calls dismissAppLoader after render.",
+      "tags": ["react", "entry-point", "app-router", "browser-router", "management"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tsconfig.base.json",
+      "type": "config",
+      "name": "tsconfig.base.json",
+      "filePath": "tsconfig.base.json",
+      "summary": "Root TypeScript base configuration. Sets ES2022 target, Bundler module resolution, strict mode, react-jsx, and defines workspace-wide path aliases for @/*, @app/*, @pages/*, @features/*, and all @code-proxy/* packages.",
+      "tags": ["config", "typescript", "base-config", "path-aliases"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:apps/admin-panel/index.html",
+      "target": "file:apps/admin-panel/src/main.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "loads script module"
+    },
+    {
+      "source": "file:apps/admin-panel/manage.html",
+      "target": "file:apps/admin-panel/src/manage-entry.tsx",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "loads script module"
+    },
+    {
+      "source": "file:apps/admin-panel/tsconfig.json",
+      "target": "file:tsconfig.base.json",
+      "type": "configures",
+      "weight": 1.0,
+      "label": "extends"
+    },
+    {
+      "source": "file:apps/admin-panel/package.json",
+      "target": "file:package.json",
+      "type": "configures",
+      "weight": 0.9,
+      "label": "workspace member"
+    },
+    {
+      "source": "file:apps/admin-panel/tsconfig.json",
+      "target": "file:apps/admin-panel/src/main.tsx",
+      "type": "configures",
+      "weight": 0.8,
+      "label": "compiles"
+    },
+    {
+      "source": "file:apps/admin-panel/tsconfig.json",
+      "target": "file:apps/admin-panel/src/manage-entry.tsx",
+      "type": "configures",
+      "weight": 0.8,
+      "label": "compiles"
+    },
+    {
+      "source": "file:apps/admin-panel/package.json",
+      "target": "file:apps/admin-panel/index.html",
+      "type": "configures",
+      "weight": 0.7,
+      "label": "builds"
+    },
+    {
+      "source": "file:apps/admin-panel/package.json",
+      "target": "file:apps/admin-panel/manage.html",
+      "type": "configures",
+      "weight": 0.7,
+      "label": "builds"
+    },
+    {
+      "source": "file:apps/admin-panel/index.html",
+      "target": "file:apps/admin-panel/manage.html",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "shared theme and loader design"
+    },
+    {
+      "source": "file:apps/admin-panel/tsconfig.json",
+      "target": "file:package.json",
+      "type": "depends_on",
+      "weight": 0.4,
+      "label": "workspace path resolution"
+    }
+  ]
+}

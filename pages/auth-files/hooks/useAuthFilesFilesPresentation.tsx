@@ -5,6 +5,7 @@ import {
   CalendarClock,
   Download,
   Eye,
+  Gauge,
   Loader2,
   RefreshCw,
   Tags,
@@ -28,6 +29,7 @@ import {
   formatAuthFileRestrictionRemaining,
   formatFileSize,
   formatModified,
+  resolveClaudeOAuthHealthBadges,
   isRuntimeOnlyAuthFile,
   parseAdditionalQuotaWindowLabel,
   resolveAuthFileDisplayName,
@@ -76,6 +78,13 @@ const RESTRICTION_TONE_CLASSES = {
     "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/15 dark:text-amber-200",
   neutral:
     "border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/[0.08] dark:text-white/70",
+} as const;
+
+const CLAUDE_OAUTH_HEALTH_TONE_CLASSES = {
+  danger:
+    "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/15 dark:text-rose-200",
+  warning:
+    "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/15 dark:text-amber-200",
 } as const;
 
 type QuotaVisualTone = {
@@ -139,6 +148,8 @@ interface UseAuthFilesFilesPresentationOptions {
   checkAuthFileConnectivity: (name: string) => Promise<void>;
   quotaByFileName: Record<string, QuotaState>;
   refreshQuota: (file: AuthFileItem, provider: QuotaProvider) => Promise<void>;
+  requestResetCredit: (file: AuthFileItem) => void;
+  resettingCreditFileName: string | null;
   openDetail: (file: AuthFileItem) => Promise<void>;
   downloadAuthFile: (file: AuthFileItem) => Promise<void>;
   openTagsEditor: (file: AuthFileItem) => void;
@@ -163,6 +174,8 @@ export function useAuthFilesFilesPresentation({
   checkAuthFileConnectivity,
   quotaByFileName,
   refreshQuota,
+  requestResetCredit,
+  resettingCreditFileName,
   openDetail,
   downloadAuthFile,
   openTagsEditor,
@@ -177,6 +190,7 @@ export function useAuthFilesFilesPresentation({
       if (!text) return text;
       if (text.startsWith("m_quota.")) return t(text);
       if (text.startsWith("claude_quota.")) return t(text);
+      if (text.startsWith("antigravity_quota.")) return t(text);
       if (KNOWN_QUOTA_TEXT_KEYS.has(text)) return t(`m_quota.${text}`);
       const additionalQuota = parseAdditionalQuotaWindowLabel(text);
       if (additionalQuota) {
@@ -289,6 +303,62 @@ export function useAuthFilesFilesPresentation({
       );
     },
     [formatRestrictionBadgeLabel, formatRestrictionTooltip, nowMs],
+  );
+
+  const renderClaudeOAuthHealthBadges = useCallback(
+    (file: AuthFileItem): ReactNode | null => {
+      const badges = resolveClaudeOAuthHealthBadges(file, nowMs);
+      if (badges.length === 0) return null;
+
+      const formatBadgeLabel = (label: string) => {
+        if (label === "OAuth refresh pending") {
+          return t("auth_files.claude_oauth_health_badge_refresh_pending");
+        }
+        if (label === "5h limited") return t("auth_files.claude_oauth_health_badge_5h_limited");
+        if (label === "7d limited") return t("auth_files.claude_oauth_health_badge_7d_limited");
+        return label;
+      };
+
+      const formatBadgeTooltip = (
+        badge: ReturnType<typeof resolveClaudeOAuthHealthBadges>[number],
+      ) => {
+        const parts = [
+          formatBadgeLabel(badge.label),
+          badge.status ? t("auth_files.claude_oauth_health_status", { status: badge.status }) : "",
+          badge.reason ? t("auth_files.claude_oauth_health_reason", { reason: badge.reason }) : "",
+          badge.resetAtMs
+            ? t("auth_files.claude_oauth_health_reset", {
+                time: new Date(badge.resetAtMs).toLocaleString(),
+              })
+            : "",
+          typeof badge.utilization === "number" && Number.isFinite(badge.utilization)
+            ? t("auth_files.claude_oauth_health_utilization", {
+                value: `${Math.round(badge.utilization * 100)}%`,
+              })
+            : "",
+        ].filter(Boolean);
+        return parts.join(" · ");
+      };
+
+      return (
+        <div className="flex min-w-0 flex-wrap gap-1.5">
+          {badges.map((badge) => (
+            <HoverTooltip key={badge.key} content={formatBadgeTooltip(badge)} placement="top">
+              <span
+                className={[
+                  "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums",
+                  CLAUDE_OAUTH_HEALTH_TONE_CLASSES[badge.tone],
+                ].join(" ")}
+              >
+                <AlertTriangle size={11} className="shrink-0" />
+                <span className="min-w-0 truncate">{formatBadgeLabel(badge.label)}</span>
+              </span>
+            </HoverTooltip>
+          ))}
+        </div>
+      );
+    },
+    [nowMs, t],
   );
 
   const renderSubscriptionBadge = useCallback(
@@ -540,28 +610,37 @@ export function useAuthFilesFilesPresentation({
         key: "name",
         label: t("auth_files.col_name"),
         width: "w-72",
-        render: (file) => (
-          <div className="min-w-0">
-            <p className="truncate font-mono text-xs text-slate-900 dark:text-white">
-              {resolveAuthFileDisplayName(file) || "--"}
-            </p>
-            {resolveAuthFileSupplementalTags(file, quotaByFileName[file.name]).length > 0 ? (
-              <div className="mt-1 flex flex-wrap gap-1">
-                {resolveAuthFileSupplementalTags(file, quotaByFileName[file.name]).map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            {renderRestrictionBadges(file) ? (
-              <div className="mt-1">{renderRestrictionBadges(file)}</div>
-            ) : null}
-          </div>
-        ),
+        render: (file) => {
+          const supplementalTags = resolveAuthFileSupplementalTags(
+            file,
+            quotaByFileName[file.name],
+          );
+          const restrictionBadges = renderRestrictionBadges(file);
+          const claudeOAuthHealthBadges = renderClaudeOAuthHealthBadges(file);
+          return (
+            <div className="min-w-0">
+              <p className="truncate font-mono text-xs text-slate-900 dark:text-white">
+                {resolveAuthFileDisplayName(file) || "--"}
+              </p>
+              {supplementalTags.length > 0 ? (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {supplementalTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {restrictionBadges ? <div className="mt-1">{restrictionBadges}</div> : null}
+              {claudeOAuthHealthBadges ? (
+                <div className="mt-1">{claudeOAuthHealthBadges}</div>
+              ) : null}
+            </div>
+          );
+        },
       },
       {
         key: "type",
@@ -823,6 +902,21 @@ export function useAuthFilesFilesPresentation({
           const quotaRefreshing = quotaProvider
             ? quotaByFileName[file.name]?.status === "loading"
             : false;
+          const resetCreditCount =
+            quotaProvider === "codex" &&
+            typeof quotaByFileName[file.name]?.resetCreditCount === "number"
+              ? (quotaByFileName[file.name]?.resetCreditCount ?? 0)
+              : 0;
+          const resetCreditBusy = resettingCreditFileName === file.name;
+          const resetCreditDisabled =
+            quotaProvider !== "codex" ||
+            quotaRefreshing ||
+            resetCreditBusy ||
+            resetCreditCount <= 0;
+          const resetCreditTitle =
+            resetCreditCount > 0
+              ? t("auth_files.reset_credit_consume")
+              : t("auth_files.reset_credit_no_credits");
 
           return (
             <div className="inline-flex min-w-max items-center justify-center gap-1 whitespace-nowrap">
@@ -840,6 +934,25 @@ export function useAuthFilesFilesPresentation({
                 </HoverTooltip>
               ) : null}
 
+              {quotaProvider === "codex" ? (
+                <HoverTooltip content={resetCreditTitle}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={resetCreditDisabled}
+                    onClick={() => requestResetCredit(file)}
+                    title={resetCreditTitle}
+                    aria-label={t("auth_files.reset_credit_consume")}
+                  >
+                    {resetCreditBusy ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Gauge size={16} />
+                    )}
+                  </Button>
+                </HoverTooltip>
+              ) : null}
+
               <HoverTooltip content={t("auth_files.edit_tags")}>
                 <Button
                   variant="ghost"
@@ -852,13 +965,13 @@ export function useAuthFilesFilesPresentation({
                 </Button>
               </HoverTooltip>
 
-              <HoverTooltip content={t("auth_files.view")}>
+              <HoverTooltip content={t("auth_files.detail")}>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => void openDetail(file)}
-                  title={t("auth_files.view")}
-                  aria-label={t("auth_files.view")}
+                  title={t("auth_files.detail")}
+                  aria-label={t("auth_files.detail")}
                 >
                   <Eye size={16} />
                 </Button>
@@ -893,8 +1006,11 @@ export function useAuthFilesFilesPresentation({
     quotaPreviewMode,
     quotaProgressCircle,
     refreshQuota,
+    requestResetCredit,
     renderRestrictionBadges,
+    renderClaudeOAuthHealthBadges,
     renderSubscriptionBadge,
+    resettingCreditFileName,
     selectCurrentPage,
     selectablePageNames.length,
     selectedFileNameSet,
@@ -912,6 +1028,7 @@ export function useAuthFilesFilesPresentation({
     translateQuotaText,
     formatPlanTypeLabel,
     renderRestrictionBadges,
+    renderClaudeOAuthHealthBadges,
     renderSubscriptionBadge,
     renderQuotaBar,
     renderFilesViewModeTabs,

@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 const setAuthed = async (page: Page) => {
   await page.addInitScript(() => {
     localStorage.removeItem("codeProxy.dataTable.columnOrder.v1.request-logs");
+    localStorage.removeItem("codeProxy.dataTable.columnWidths.v1.request-logs");
     localStorage.setItem(
       "code-proxy-admin-auth",
       JSON.stringify({
@@ -30,6 +31,7 @@ const mockRequestLogsApis = async (page: Page) => {
         channel_name: index % 2 ? "Anthropic long provider channel" : "OpenAI fallback channel",
         auth_index: `auth-${index + 1}`,
         failed: index === 4,
+        streaming: true,
         latency_ms: 850 + index * 120,
         first_token_ms: 90 + index * 8,
         input_tokens: 120 + index,
@@ -90,6 +92,7 @@ const readTableState = async (page: Page) =>
       clientWidth: scroller?.clientWidth ?? 0,
       draggingCells: document.querySelectorAll("[data-vt-column-dragging-cell]").length,
       shiftedCells: document.querySelectorAll("[data-vt-column-shifted-cell]").length,
+      settledCells: document.querySelectorAll("[data-vt-column-settled-cell]").length,
       storedOrder: localStorage.getItem("codeProxy.dataTable.columnOrder.v1.request-logs"),
     };
   });
@@ -166,6 +169,101 @@ const readDragVisualState = async (page: Page) =>
       ),
     };
   });
+
+const readSettleVisualState = async (page: Page) =>
+  page.evaluate(() => {
+    const cells = [...document.querySelectorAll<HTMLElement>("[data-vt-column-settled-cell]")];
+    return {
+      count: cells.length,
+      columnKeys: cells.map((element) => element.dataset.vtColumnKey),
+      headerKeys: cells
+        .filter((element) => element.tagName === "TH")
+        .map((element) => element.dataset.vtColumnKey),
+      styles: cells.map((element) => {
+        const style = getComputedStyle(element);
+        return {
+          animationName: style.animationName,
+          animationDuration: style.animationDuration,
+          backgroundColor: style.backgroundColor,
+          boxShadow: style.boxShadow,
+        };
+      }),
+    };
+  });
+
+const readResponseMetricsColumnState = async (page: Page) =>
+  page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>('th[data-vt-column-key="latency"]');
+    const firstCell = document.querySelector<HTMLElement>('td[data-vt-column-key="latency"]');
+    if (!header || !firstCell) throw new Error("Missing response metrics column");
+
+    const cellRect = firstCell.getBoundingClientRect();
+    const chips = [...firstCell.querySelectorAll<HTMLElement>(".rounded-full")].map((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return {
+        text: element.textContent?.trim() ?? "",
+        left: rect.left,
+        right: rect.right,
+        borderTopWidth: style.borderTopWidth,
+      };
+    });
+    const storedWidths = JSON.parse(
+      localStorage.getItem("codeProxy.dataTable.columnWidths.v1.request-logs") ?? "{}",
+    ) as Record<string, unknown>;
+
+    return {
+      width: Math.round(header.getBoundingClientRect().width),
+      text: firstCell.textContent?.trim() ?? "",
+      chips,
+      chipsStayInsideCell: chips.every(
+        (chip) => chip.left >= cellRect.left - 1 && chip.right <= cellRect.right + 1,
+      ),
+      storedLatencyWidth:
+        typeof storedWidths.latency === "number" ? Math.round(storedWidths.latency) : null,
+    };
+  });
+
+test("Request Logs: response metrics column resize clamps at its minimum width", async ({
+  page,
+}) => {
+  await setAuthed(page);
+  await mockRequestLogsApis(page);
+
+  await page.goto("/manage/#/monitor/request-logs");
+  await page.locator('th[data-vt-column-key="latency"]').waitFor({ state: "visible" });
+
+  const dragStart = await page
+    .locator('th[data-vt-column-key="latency"] [data-vt-column-resizer]')
+    .evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const headerRect = element.closest("th")?.getBoundingClientRect();
+      return {
+        x: headerRect ? Math.min(rect.left + rect.width / 2, headerRect.right - 2) : rect.left,
+        y: rect.top + rect.height / 2,
+      };
+    });
+
+  await page.mouse.move(dragStart.x, dragStart.y);
+  await page.mouse.down();
+  await page.mouse.move(dragStart.x - 520, dragStart.y, { steps: 10 });
+  await page.waitForTimeout(80);
+
+  const during = await readResponseMetricsColumnState(page);
+  expect(during.width).toBeGreaterThanOrEqual(239);
+  expect(during.width).toBeLessThanOrEqual(241);
+  expect(during.text).not.toMatch(/First Token Latency|首 Token 耗时/);
+  expect(during.text).toMatch(/90ms/);
+  expect(during.text).toMatch(/Streaming|流式/);
+  expect(during.text).not.toContain("--");
+  expect(during.chipsStayInsideCell).toBe(true);
+  expect(during.chips.find((chip) => /Streaming|流式/.test(chip.text))?.borderTopWidth).toBe("1px");
+
+  await page.mouse.up();
+
+  const after = await readResponseMetricsColumnState(page);
+  expect(after.storedLatencyWidth).toBe(240);
+});
 
 test("Request Logs: column reorder follows the pointer and auto-scrolls horizontally", async ({
   page,
@@ -252,7 +350,28 @@ test("Request Logs: column reorder follows the pointer and auto-scrolls horizont
   expect(after.draggingCells).toBe(0);
   expect(after.shiftedCells).toBe(0);
   expect(after.storedOrder).toContain('"timestamp"');
-  await page.waitForTimeout(160);
+  expect(after.settledCells).toBeGreaterThan(0);
+
+  const settleVisual = await readSettleVisualState(page);
+  expect(settleVisual.count).toBeGreaterThan(0);
+  expect(settleVisual.headerKeys).toEqual(["timestamp"]);
+  expect(settleVisual.columnKeys.every((key) => key === "timestamp")).toBe(true);
+  expect(
+    settleVisual.styles.every(
+      (style) =>
+        style.animationName.includes("dataTableColumnSettle") &&
+        style.animationDuration !== "0s" &&
+        style.boxShadow !== "none",
+    ),
+  ).toBe(true);
+
+  await expect
+    .poll(async () => {
+      const state = await readTableState(page);
+      return state.settledCells;
+    })
+    .toBe(0);
+
   const visualAfterDrag = await readDragVisualState(page);
   expect(visualAfterDrag.inlineStylesCleared).toBe(true);
 });

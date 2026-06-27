@@ -1,0 +1,251 @@
+{
+  "nodes": [
+    {
+      "id": "file:playwright.config.ts",
+      "type": "config",
+      "name": "playwright.config.ts",
+      "filePath": "playwright.config.ts",
+      "summary": "Playwright E2E test configuration for the admin panel, defining Chromium browser tests against localhost:5173 with a Vite dev server webServer setup",
+      "tags": ["e2e", "test-config", "playwright", "chromium"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:scripts/bundle-diff.mjs",
+      "type": "file",
+      "name": "bundle-diff.mjs",
+      "filePath": "scripts/bundle-diff.mjs",
+      "summary": "Bundle size diffing script that compares current dist/assets chunk sizes (raw and gzipped) against a baseline Markdown table, enforcing per-chunk gzip budget and delta tolerance thresholds",
+      "tags": ["script", "bundle-analysis", "ci", "size-budget"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/check-import-boundaries.mjs",
+      "type": "file",
+      "name": "check-import-boundaries.mjs",
+      "filePath": "scripts/check-import-boundaries.mjs",
+      "summary": "Import boundary enforcement script that validates module layering rules across apps, pages, features, and packages directories, forbidding cross-layer violations such as packages importing from features or apps",
+      "tags": ["script", "linting", "architecture", "import-boundaries"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/scan-large-files.sh",
+      "type": "script",
+      "name": "scan-large-files.sh",
+      "filePath": "scripts/scan-large-files.sh",
+      "summary": "Shell script that scans for large TS/TSX (>=800 lines) and Go files (>=1000 lines) across the codeProxy frontend and CliRelay backend directories",
+      "tags": ["script", "code-quality", "refactoring"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tooling/vite-plugins/panelMetadata.ts",
+      "type": "file",
+      "name": "panelMetadata.ts",
+      "filePath": "tooling/vite-plugins/panelMetadata.ts",
+      "summary": "Vite plugin that emits a panel-meta.json asset during build containing version, commit SHA, git ref, repository URL, and build date, derived from environment variables or git commands",
+      "tags": ["vite-plugin", "build-metadata", "versioning"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tooling/vite-plugins/panelMetadata.test.ts",
+      "type": "file",
+      "name": "panelMetadata.test.ts",
+      "filePath": "tooling/vite-plugins/panelMetadata.test.ts",
+      "summary": "Unit tests for createPanelMetadata verifying version derivation from commit/ref and preservation of explicit version strings",
+      "tags": ["test", "vitest", "unit-test"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:vite.config.ts",
+      "type": "config",
+      "name": "vite.config.ts",
+      "filePath": "vite.config.ts",
+      "summary": "Root Vite build configuration for the admin panel with React, Tailwind CSS, path aliases, SCSS preprocessing, manual chunk splitting for vendor libraries, dev server proxy to backend, and Vitest test configuration",
+      "tags": ["vite", "build-config", "react", "tailwind"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "func:createPanelMetadata",
+      "type": "function",
+      "name": "createPanelMetadata",
+      "filePath": "tooling/vite-plugins/panelMetadata.ts",
+      "summary": "Creates a PanelMetadata object from input, normalizing ref, committing, and deriving a version string from appVersion, ref, and short commit SHA",
+      "tags": ["function", "metadata"],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:resolvePanelMetadata",
+      "type": "function",
+      "name": "resolvePanelMetadata",
+      "filePath": "tooling/vite-plugins/panelMetadata.ts",
+      "summary": "Resolves panel metadata by reading environment variables with fallback to git commands, then delegates to createPanelMetadata",
+      "tags": ["function", "metadata"],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:panelMetadataPlugin",
+      "type": "function",
+      "name": "panelMetadataPlugin",
+      "filePath": "tooling/vite-plugins/panelMetadata.ts",
+      "summary": "Returns a Vite Plugin that emits panel-meta.json as a build asset using resolved panel metadata",
+      "tags": ["function", "vite-plugin"],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:readBaseline",
+      "type": "function",
+      "name": "readBaseline",
+      "filePath": "scripts/bundle-diff.mjs",
+      "summary": "Parses the bundle-baseline.md Markdown table to extract baseline chunk size and gzip values",
+      "tags": ["function", "bundle-analysis"],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:findCurrentChunks",
+      "type": "function",
+      "name": "findCurrentChunks",
+      "filePath": "scripts/bundle-diff.mjs",
+      "summary": "Scans dist/assets directory and matches files to baseline chunk keys, computing current raw and gzip sizes",
+      "tags": ["function", "bundle-analysis"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "func:resolveAlias",
+      "type": "function",
+      "name": "resolveAlias",
+      "filePath": "scripts/check-import-boundaries.mjs",
+      "summary": "Resolves path aliases (@code-proxy/, @pages/, @features/, @app/, @/) to their filesystem paths",
+      "tags": ["function", "import-analysis"],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:canImport",
+      "type": "function",
+      "name": "canImport",
+      "filePath": "scripts/check-import-boundaries.mjs",
+      "summary": "Evaluates whether a source module layer is allowed to import from a target module layer based on dependency rules (apps can import anything, features can only import features/packages, packages can only import packages)",
+      "tags": ["function", "import-analysis"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:tooling/vite-plugins/panelMetadata.test.ts",
+      "target": "file:tooling/vite-plugins/panelMetadata.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "imports createPanelMetadata"
+    },
+    {
+      "source": "file:vite.config.ts",
+      "target": "func:panelMetadataPlugin",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports panelMetadataPlugin (broken import path: ./src/build/panelMetadata)"
+    },
+    {
+      "source": "file:scripts/bundle-diff.mjs",
+      "target": "file:vite.config.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "analyzes dist output produced by vite build"
+    },
+    {
+      "source": "file:scripts/check-import-boundaries.mjs",
+      "target": "file:vite.config.ts",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "enforces import boundaries for modules built by vite"
+    },
+    {
+      "source": "file:playwright.config.ts",
+      "target": "file:vite.config.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "uses vite dev server for E2E tests"
+    },
+    {
+      "source": "func:panelMetadataPlugin",
+      "target": "file:vite.config.ts",
+      "type": "configures",
+      "weight": 0.9,
+      "label": "used as vite plugin in build chain"
+    },
+    {
+      "source": "func:resolveAlias",
+      "target": "func:canImport",
+      "type": "calls",
+      "weight": 0.7,
+      "label": "resolveAlias provides resolved paths to canImport for boundary checks"
+    },
+    {
+      "source": "func:readBaseline",
+      "target": "func:findCurrentChunks",
+      "type": "calls",
+      "weight": 0.5,
+      "label": "baseline keys are used by findCurrentChunks for matching"
+    },
+    {
+      "source": "file:scripts/bundle-diff.mjs",
+      "target": "func:readBaseline",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines readBaseline"
+    },
+    {
+      "source": "file:scripts/bundle-diff.mjs",
+      "target": "func:findCurrentChunks",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines findCurrentChunks"
+    },
+    {
+      "source": "file:scripts/check-import-boundaries.mjs",
+      "target": "func:resolveAlias",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines resolveAlias"
+    },
+    {
+      "source": "file:scripts/check-import-boundaries.mjs",
+      "target": "func:canImport",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines canImport"
+    },
+    {
+      "source": "file:tooling/vite-plugins/panelMetadata.ts",
+      "target": "func:createPanelMetadata",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines createPanelMetadata"
+    },
+    {
+      "source": "file:tooling/vite-plugins/panelMetadata.ts",
+      "target": "func:resolvePanelMetadata",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines resolvePanelMetadata"
+    },
+    {
+      "source": "file:tooling/vite-plugins/panelMetadata.ts",
+      "target": "func:panelMetadataPlugin",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines panelMetadataPlugin"
+    },
+    {
+      "source": "func:resolvePanelMetadata",
+      "target": "func:createPanelMetadata",
+      "type": "calls",
+      "weight": 1.0,
+      "label": "resolvePanelMetadata delegates to createPanelMetadata"
+    },
+    {
+      "source": "func:panelMetadataPlugin",
+      "target": "func:resolvePanelMetadata",
+      "type": "calls",
+      "weight": 1.0,
+      "label": "panelMetadataPlugin calls resolvePanelMetadata"
+    }
+  ]
+}

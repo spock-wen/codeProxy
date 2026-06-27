@@ -1,0 +1,88 @@
+{
+  "steps": [
+    {
+      "order": 1,
+      "title": "Project Overview & Structure",
+      "description": "Start here to understand what Code Proxy is and how it fits into the CliRelay ecosystem. This step covers the README, project documentation, design specs, and the monorepo project structure (apps/admin-panel, pages, features, packages/api-client, packages/domain, packages/ui, packages/i18n, tooling).",
+      "nodeIds": [
+        "file:README.md",
+        "file:docs/internal-review/bundle-baseline.md",
+        "file:docs/superpowers/specs/2026-04-27-proxy-pool-management-design.md",
+        "file:docs/superpowers/specs/2026-05-06-api-key-permissions-design.md",
+        "file:package.json",
+        "file:apps/admin-panel/package.json"
+      ]
+    },
+    {
+      "order": 2,
+      "title": "Entry Point & Application Bootstrap",
+      "description": "Trace how the application starts: from the HTML shell (index.html) through the React entry points (main.tsx, manage-entry.tsx), into the AppRouter with public and protected routes. Understand the bootstrap sequence including auth provider initialization, loader dismissal, and route resolution.",
+      "nodeIds": [
+        "file:apps/admin-panel/index.html",
+        "file:apps/admin-panel/manage.html",
+        "file:apps/admin-panel/src/main.tsx",
+        "file:apps/admin-panel/src/manage-entry.tsx",
+        "file:apps/admin-panel/src/app/AppRouter.tsx",
+        "file:apps/admin-panel/src/app/bootstrap/dismissAppLoader.ts",
+        "file:apps/admin-panel/src/app/providers/AuthProvider.tsx",
+        "file:apps/admin-panel/src/app/guards/ProtectedRoute.tsx"
+      ]
+    },
+    {
+      "order": 3,
+      "title": "Architectural Layers: Shell, Routing, and State Management",
+      "description": "Explore the core architectural layers: the AppShell layout (responsive sidebar, header, navigation), DashboardLayout with lazy-loaded shells, the Zustand state management stores (theme, language, notifications, disabled models), and the i18n setup. These layers form the backbone of every page.",
+      "nodeIds": [
+        "file:apps/admin-panel/src/app/layout/AppShell.tsx",
+        "file:apps/admin-panel/src/app/layout/DashboardLayout.tsx",
+        "file:apps/admin-panel/src/stores/useThemeStore.ts",
+        "file:apps/admin-panel/src/stores/useLanguageStore.ts",
+        "file:apps/admin-panel/src/stores/useNotificationStore.ts",
+        "file:apps/admin-panel/src/stores/useDisabledModelsStore.ts",
+        "file:apps/admin-panel/src/i18n/index.ts",
+        "file:packages/i18n/src/index.ts"
+      ]
+    },
+    {
+      "order": 4,
+      "title": "API Client Layer & Data Flow",
+      "description": "Understand how the frontend communicates with the CliRelay backend. The api-client package provides the core ApiClient class (axios-based HTTP methods), typed DTOs, and per-resource endpoint modules (providers, api-keys, auth-files, usage, config, oauth, logs, etc.). The domain package contains pure business logic for normalization, formatting, pricing, and quota calculations.",
+      "nodeIds": [
+        "file:packages/api-client/src/client/client.ts",
+        "file:packages/api-client/src/client/constants.ts",
+        "file:packages/api-client/src/dto/types.ts",
+        "file:packages/api-client/src/endpoints/providers.ts",
+        "file:packages/api-client/src/endpoints/api-keys.ts",
+        "file:packages/api-client/src/endpoints/auth-files.ts",
+        "file:packages/api-client/src/endpoints/usage.ts",
+        "file:packages/api-client/src/endpoints/config.ts",
+        "file:packages/api-client/src/endpoints/logs.ts",
+        "file:packages/api-client/src/endpoints/oauth.ts",
+        "file:packages/domain/src/index.ts",
+        "file:packages/domain/src/quota/index.ts",
+        "file:packages/domain/src/usage/index.ts"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "UI Components, Shared Hooks, and Feature Modules",
+      "description": "Examine the shared UI component library (DataTable, ECharts wrappers, feedback components, form controls, overlays), shared hooks (useDebounce, useMediaQuery, usePagination, etc.), and cross-page feature modules (log-content-viewer, monitor-widgets, oauth-login, visual-config-editor, routing-config-editor, request-log-viewer, proxy-pool, etc.) that compose page-level functionality.",
+      "nodeIds": [
+        "file:packages/ui/src/data-table/DataTable.tsx",
+        "file:packages/ui/src/charts/EChart.tsx",
+        "file:packages/ui/src/charts/EChartRenderer.tsx",
+        "file:packages/ui/src/feedback/EmptyState.tsx",
+        "file:packages/ui/src/feedback/Reveal.tsx",
+        "file:apps/admin-panel/src/hooks/useDebounce.ts",
+        "file:apps/admin-panel/src/hooks/useMediaQuery.ts",
+        "file:apps/admin-panel/src/hooks/usePagination.ts",
+        "file:features/log-content-viewer/index.ts",
+        "file:features/monitor-widgets/index.ts",
+        "file:features/oauth-login/index.ts",
+        "file:features/request-log-viewer/index.ts",
+        "file:features/visual-config-editor/index.ts",
+        "file:features/proxy-pool/index.ts"
+      ]
+    }
+  ]
+}

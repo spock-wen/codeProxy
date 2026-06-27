@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import i18n from "@code-proxy/i18n";
@@ -153,8 +153,9 @@ describe("RequestLogsPage", () => {
     mocks.clearUsageLogs.mockReset();
   });
 
-  test("renders the first token latency column from backend data", async () => {
+  test("renders first token latency value in the response metrics column", async () => {
     await i18n.changeLanguage("en");
+    const user = userEvent.setup();
 
     mocks.getUsageLogs.mockResolvedValue({
       items: [
@@ -168,6 +169,7 @@ describe("RequestLogsPage", () => {
           channel_name: "Codex",
           auth_index: "auth-1",
           failed: false,
+          streaming: true,
           latency_ms: 1200,
           first_token_ms: 183,
           input_tokens: 10,
@@ -203,8 +205,41 @@ describe("RequestLogsPage", () => {
       </ThemeProvider>,
     );
 
-    expect(await screen.findByText("Duration")).toBeInTheDocument();
-    expect(await screen.findByText("183ms")).toBeInTheDocument();
+    const table = await screen.findByRole("table", { name: "Request Logs Table" });
+    expect(
+      within(table).getByRole("columnheader", { name: "Response Metrics" }),
+    ).toBeInTheDocument();
+    expect(within(table).getByText("Streaming")).toBeInTheDocument();
+    expect(within(table).getByText("1.20s")).toBeInTheDocument();
+    expect(within(table).getByText("183ms")).toBeInTheDocument();
+    expect(within(table).queryByText("First Token Latency")).not.toBeInTheDocument();
+
+    await user.hover(within(table).getByLabelText("Duration: 1.20s"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("First Token Latency: 183ms");
+  });
+
+  test("labels non-streaming logs without rendering a first token placeholder", async () => {
+    await i18n.changeLanguage("en");
+
+    mocks.getUsageLogs.mockResolvedValue(
+      responseWithRows([
+        buildUsageLogItem({
+          streaming: false,
+          first_token_ms: 0,
+        }),
+      ]),
+    );
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    expect(await screen.findByText("Non-streaming")).toBeInTheDocument();
+    expect(screen.queryByLabelText("First Token Latency: --")).not.toBeInTheDocument();
   });
 
   test("does not crash when backend returns null filter arrays", async () => {
@@ -412,12 +447,8 @@ describe("RequestLogsPage", () => {
           buildUsageLogItem({ id: 2, model: "gpt-4.1" }),
         ]),
       )
-      .mockResolvedValueOnce(
-        responseWithRows([buildUsageLogItem({ id: 3, model: "gpt-5.4" })]),
-      )
-      .mockResolvedValueOnce(
-        responseWithRows([buildUsageLogItem({ id: 4, model: "gpt-4.1" })]),
-      );
+      .mockResolvedValueOnce(responseWithRows([buildUsageLogItem({ id: 3, model: "gpt-5.4" })]))
+      .mockResolvedValueOnce(responseWithRows([buildUsageLogItem({ id: 4, model: "gpt-4.1" })]));
 
     render(
       <ThemeProvider>
@@ -442,9 +473,7 @@ describe("RequestLogsPage", () => {
         }),
       ),
     );
-    expect(screen.getByRole("combobox", { name: "Filter by model" })).toHaveTextContent(
-      "gpt-5.4",
-    );
+    expect(screen.getByRole("combobox", { name: "Filter by model" })).toHaveTextContent("gpt-5.4");
 
     await user.click(screen.getByRole("button", { name: "Clear model filter" }));
 
@@ -458,9 +487,7 @@ describe("RequestLogsPage", () => {
       ),
     );
     await waitFor(() =>
-      expect(
-        screen.queryByRole("button", { name: "Clear model filter" }),
-      ).not.toBeInTheDocument(),
+      expect(screen.queryByRole("button", { name: "Clear model filter" })).not.toBeInTheDocument(),
     );
     expect(screen.getByRole("combobox", { name: "Filter by model" })).toHaveTextContent(
       "All Models",
@@ -547,6 +574,129 @@ describe("RequestLogsPage", () => {
 
     await screen.findByRole("table", { name: "请求日志表" });
     expect(container.querySelector(".table-scrollbar")).not.toBeNull();
+  });
+
+  test("renders response metrics without missing-value placeholders", async () => {
+    await i18n.changeLanguage("zh-CN");
+    const user = userEvent.setup();
+
+    mocks.getUsageLogs.mockResolvedValue(
+      responseWithRows([
+        buildUsageLogItem({
+          id: 1,
+          streaming: true,
+          latency_ms: 354,
+          first_token_ms: 0,
+          output_tokens: 0,
+        }),
+        buildUsageLogItem({
+          id: 2,
+          streaming: false,
+          latency_ms: -1,
+          first_token_ms: 0,
+          output_tokens: 0,
+        }),
+      ]),
+    );
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    const table = await screen.findByRole("table", { name: "请求日志表" });
+    expect(within(table).getByRole("columnheader", { name: "响应指标" })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "类型" })).not.toBeInTheDocument();
+    expect(within(table).getByText("354ms")).toBeInTheDocument();
+    expect(within(table).getByText("流式")).toBeInTheDocument();
+    expect(within(table).getByText("非流式")).toBeInTheDocument();
+    expect(within(table).queryByText("--")).not.toBeInTheDocument();
+
+    await user.hover(within(table).getByLabelText("耗时: 354ms"));
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent("耗时: 354ms");
+    expect(tooltip).not.toHaveTextContent("首 Token 耗时");
+    expect(tooltip).not.toHaveTextContent("每秒 Token");
+    expect(tooltip).not.toHaveTextContent("--");
+    await user.unhover(within(table).getByLabelText("耗时: 354ms"));
+    await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+
+    await user.hover(within(table).getByText("非流式"));
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
+  test("shows full numeric values in the table while keeping the summary bar compact", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+
+    mocks.getUsageLogs.mockResolvedValue({
+      items: [
+        buildUsageLogItem({
+          input_tokens: 2_806_800_000,
+          cached_tokens: 2_576_200_000,
+          output_tokens: 13_100_000,
+          total_tokens: 2_819_900_000,
+          cost: 12_345.67891,
+          has_content: true,
+        }),
+      ],
+      total: 23_800,
+      page: 1,
+      size: 50,
+      filters: {
+        api_keys: [],
+        api_key_names: {},
+        models: [],
+        channels: [],
+      },
+      stats: {
+        total: 23_800,
+        success_rate: 99.5,
+        total_tokens: 2_819_900_000,
+        total_cost: 12_345.67891,
+        cache_rate: 91.234,
+      },
+    });
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    const recordsCount = await screen.findByText("23.8K records");
+    expect(screen.queryByText(/Updated at/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Not yet refreshed/i)).not.toBeInTheDocument();
+    expect(screen.getByText("91.23%")).toBeInTheDocument();
+
+    // Summary bar keeps compact metric formatting, with a full-precision tooltip.
+    expect(screen.getAllByText("2.8B").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("$12.35K").length).toBeGreaterThan(0);
+
+    // Table rows render complete numeric values (no k/M/B compact suffix).
+    expect(screen.getByText("2,806,800,000")).toBeInTheDocument();
+    expect(screen.getByText("2,576,200,000")).toBeInTheDocument();
+    expect(screen.getByText("13,100,000")).toBeInTheDocument();
+    expect(screen.getByText("2,819,900,000")).toBeInTheDocument();
+    expect(screen.getByText("$12,345.6789")).toBeInTheDocument();
+
+    await user.hover(recordsCount);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("23,800.00");
+    await user.unhover(recordsCount);
+
+    const summaryTotalTokens = screen.getAllByText("2.8B")[0];
+    await user.hover(summaryTotalTokens);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("2,819,900,000.00");
+    await user.unhover(summaryTotalTokens);
+
+    const summaryCost = screen.getAllByText("$12.35K")[0];
+    await user.hover(summaryCost);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("$12,345.6789");
   });
 
   test("clears bulky request-log content by default while preserving request rows", async () => {

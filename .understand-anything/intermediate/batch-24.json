@@ -1,0 +1,745 @@
+{
+  "nodes": [
+    {
+      "id": "file:pages/providers/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "pages/providers/index.ts",
+      "summary": "Barrel export file that re-exports ProvidersPage component and providersRoute from the providers page module.",
+      "tags": ["barrel", "export", "providers"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "type": "file",
+      "name": "ProvidersPageContent.tsx",
+      "filePath": "pages/providers/components/ProvidersPageContent.tsx",
+      "summary": "Main Providers page component. Manages state for all provider types (Gemini, Claude, Codex, OpenCode Go, Vertex, Bedrock, OpenAI, Ampcode). Handles data fetching, caching, tab switching, import/export workflows, OpenCode Go usage auto-refresh, and coordinates child modals and editor hooks.",
+      "tags": ["page", "providers", "state-management", "tabs", "import-export"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ProvidersPage",
+      "type": "function",
+      "name": "ProvidersPage",
+      "filePath": "pages/providers/components/ProvidersPageContent.tsx",
+      "summary": "Main page component that orchestrates provider management UI with tabbed interface, CRUD operations, import/export, and modal dialogs for all provider types.",
+      "tags": ["page", "component", "providers"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/providers/components/OpenAIProviderModal.tsx",
+      "type": "file",
+      "name": "OpenAIProviderModal.tsx",
+      "filePath": "pages/providers/components/OpenAIProviderModal.tsx",
+      "summary": "Modal dialog for adding or editing an OpenAI-compatible provider. Contains sections for basic configuration, API key entries, and model discovery/management.",
+      "tags": ["modal", "openai", "provider-editor"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:OpenAIProviderModal",
+      "type": "function",
+      "name": "OpenAIProviderModal",
+      "filePath": "pages/providers/components/OpenAIProviderModal.tsx",
+      "summary": "React component rendering a modal with basic settings, key entries editor, and model sections for OpenAI provider configuration.",
+      "tags": ["modal", "component", "openai"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/components/OpenAIProviderBasicSection.tsx",
+      "type": "file",
+      "name": "OpenAIProviderBasicSection.tsx",
+      "filePath": "pages/providers/components/OpenAIProviderBasicSection.tsx",
+      "summary": "Form section for editing basic OpenAI provider fields: name, base URL, prefix, priority, test model, and custom headers.",
+      "tags": ["form", "openai", "provider-config"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:OpenAIProviderBasicSection",
+      "type": "function",
+      "name": "OpenAIProviderBasicSection",
+      "filePath": "pages/providers/components/OpenAIProviderBasicSection.tsx",
+      "summary": "React component rendering input fields for OpenAI provider name, base URL, prefix, priority, test model, and headers.",
+      "tags": ["form", "component", "openai"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/OpenAIProviderModelsSection.tsx",
+      "type": "file",
+      "name": "OpenAIProviderModelsSection.tsx",
+      "filePath": "pages/providers/components/OpenAIProviderModelsSection.tsx",
+      "summary": "Section for managing OpenAI provider models including manual entry via ModelInputList and automatic model discovery.",
+      "tags": ["models", "openai", "discovery"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:OpenAIProviderModelsSection",
+      "type": "function",
+      "name": "OpenAIProviderModelsSection",
+      "filePath": "pages/providers/components/OpenAIProviderModelsSection.tsx",
+      "summary": "React component combining manual model entry list and model discovery panel for OpenAI providers.",
+      "tags": ["models", "component", "openai"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/OpenAIProvidersTab.tsx",
+      "type": "file",
+      "name": "OpenAIProvidersTab.tsx",
+      "filePath": "pages/providers/components/OpenAIProvidersTab.tsx",
+      "summary": "Tab panel displaying all OpenAI-compatible providers as cards with metrics, model chips, key entry summaries, and status bars. Supports selection for batch export.",
+      "tags": ["tab", "openai", "provider-list", "cards"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:OpenAIProvidersTab",
+      "type": "function",
+      "name": "OpenAIProvidersTab",
+      "filePath": "pages/providers/components/OpenAIProvidersTab.tsx",
+      "summary": "React component rendering a grid of ProviderCards for OpenAI providers with stats, models, key entries, and selection support.",
+      "tags": ["tab", "component", "openai", "list"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/components/OpenCodeGoUsageCardSection.tsx",
+      "type": "file",
+      "name": "OpenCodeGoUsageCardSection.tsx",
+      "filePath": "pages/providers/components/OpenCodeGoUsageCardSection.tsx",
+      "summary": "Displays OpenCode Go usage quota information with progress bars for rolling/weekly/monthly windows. Includes merge logic for caching usage data and color-coded remaining percentage indicators.",
+      "tags": ["usage", "opencode-go", "quota", "widget"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:OpenCodeGoUsageCardSection",
+      "type": "function",
+      "name": "OpenCodeGoUsageCardSection",
+      "filePath": "pages/providers/components/OpenCodeGoUsageCardSection.tsx",
+      "summary": "React component rendering usage quota bars for OpenCode Go provider with loading, error, and empty states.",
+      "tags": ["usage", "component", "opencode-go"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:mergeOpenCodeGoUsage",
+      "type": "function",
+      "name": "mergeOpenCodeGoUsage",
+      "filePath": "pages/providers/components/OpenCodeGoUsageCardSection.tsx",
+      "summary": "Merges two arrays of OpenCodeGoUsageItem, deduplicating by type, with incoming items taking priority.",
+      "tags": ["utility", "opencode-go", "merge"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderAccessChips.tsx",
+      "type": "file",
+      "name": "ProviderAccessChips.tsx",
+      "filePath": "pages/providers/components/ProviderAccessChips.tsx",
+      "summary": "Displays a summary of provider access status with color-coded chips showing reachable keys, total keys, and exact override counts.",
+      "tags": ["access", "status", "badge"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProviderAccessChips",
+      "type": "function",
+      "name": "ProviderAccessChips",
+      "filePath": "pages/providers/components/ProviderAccessChips.tsx",
+      "summary": "React component rendering color-coded access summary chips for provider key reachability.",
+      "tags": ["access", "component", "badge"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderConnectionRows.tsx",
+      "type": "file",
+      "name": "ProviderConnectionRows.tsx",
+      "filePath": "pages/providers/components/ProviderConnectionRows.tsx",
+      "summary": "Displays provider connection details: masked API key, base URL, proxy URL, and proxy ID in a compact format.",
+      "tags": ["connection", "info", "display"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProviderConnectionRows",
+      "type": "function",
+      "name": "ProviderConnectionRows",
+      "filePath": "pages/providers/components/ProviderConnectionRows.tsx",
+      "summary": "React component rendering connection info rows for provider cards.",
+      "tags": ["connection", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderKeyBasicTab.tsx",
+      "type": "file",
+      "name": "ProviderKeyBasicTab.tsx",
+      "filePath": "pages/providers/components/ProviderKeyBasicTab.tsx",
+      "summary": "Basic settings tab for the provider key editor modal. Fields for channel name, enable/disable toggle, API key input (with optional Bedrock SigV4 auth mode and credentials), and prefix.",
+      "tags": ["form", "key-editor", "basic", "bedrock"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ProviderKeyBasicTab",
+      "type": "function",
+      "name": "ProviderKeyBasicTab",
+      "filePath": "pages/providers/components/ProviderKeyBasicTab.tsx",
+      "summary": "React component rendering the basic configuration tab for provider key editing with name, enable toggle, API key/SigV4 fields, and prefix.",
+      "tags": ["form", "component", "key-editor"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderKeyModal.tsx",
+      "type": "file",
+      "name": "ProviderKeyModal.tsx",
+      "filePath": "pages/providers/components/ProviderKeyModal.tsx",
+      "summary": "Multi-tab modal for editing provider keys (Gemini, Claude, Codex, OpenCode Go, Vertex, Bedrock). Contains basic, request, and models tabs. Handles model loading from library, OpenCode Go model fetching, excluded models management, and vision fallback configuration.",
+      "tags": ["modal", "key-editor", "tabs", "providers"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ProviderKeyModal",
+      "type": "function",
+      "name": "ProviderKeyModal",
+      "filePath": "pages/providers/components/ProviderKeyModal.tsx",
+      "summary": "React component rendering a multi-tab modal for creating/editing provider API key configurations across all provider types.",
+      "tags": ["modal", "component", "key-editor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderKeyModelsTab.tsx",
+      "type": "file",
+      "name": "ProviderKeyModelsTab.tsx",
+      "filePath": "pages/providers/components/ProviderKeyModelsTab.tsx",
+      "summary": "Models tab for provider key editor. For OpenCode Go shows fetched model list with allow/block toggles; for other providers shows model group loading from library, manual model entry, and excluded models editor.",
+      "tags": ["models", "key-editor", "opencode-go", "excluded"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ProviderKeyModelsTab",
+      "type": "function",
+      "name": "ProviderKeyModelsTab",
+      "filePath": "pages/providers/components/ProviderKeyModelsTab.tsx",
+      "summary": "React component rendering the models management tab with conditional UI for OpenCode Go vs standard providers.",
+      "tags": ["models", "component", "key-editor"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderKeyRequestTab.tsx",
+      "type": "file",
+      "name": "ProviderKeyRequestTab.tsx",
+      "filePath": "pages/providers/components/ProviderKeyRequestTab.tsx",
+      "summary": "Request configuration tab for provider key editor. Contains OpenCode Go fixed endpoint display, workspace/auth config, vision fallback select, Bedrock region/force-global settings, proxy pool selection, custom headers, and Anthropic processing toggle.",
+      "tags": ["request", "key-editor", "proxy", "headers", "bedrock", "opencode-go"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ProviderKeyRequestTab",
+      "type": "function",
+      "name": "ProviderKeyRequestTab",
+      "filePath": "pages/providers/components/ProviderKeyRequestTab.tsx",
+      "summary": "React component rendering the request configuration tab with provider-specific settings for connection, proxy, headers, and advanced options.",
+      "tags": ["request", "component", "key-editor"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderKeyStatusBadges.tsx",
+      "type": "file",
+      "name": "ProviderKeyStatusBadges.tsx",
+      "filePath": "pages/providers/components/ProviderKeyStatusBadges.tsx",
+      "summary": "Status badge row showing enabled/disabled state, header count, model count (or allowed/total for OpenCode Go), excluded models count, and provider-specific badges (Vertex alias required, Bedrock auth mode).",
+      "tags": ["badges", "status", "key-editor"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProviderKeyStatusBadges",
+      "type": "function",
+      "name": "ProviderKeyStatusBadges",
+      "filePath": "pages/providers/components/ProviderKeyStatusBadges.tsx",
+      "summary": "React component rendering status summary badges for the provider key editor modal header.",
+      "tags": ["badges", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderMetricChip.tsx",
+      "type": "file",
+      "name": "ProviderMetricChip.tsx",
+      "filePath": "pages/providers/components/ProviderMetricChip.tsx",
+      "summary": "Small colored chip component for displaying a labeled metric value with tone-based styling (slate, emerald, rose, amber, blue).",
+      "tags": ["ui", "metric", "chip", "badge"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProviderMetricChip",
+      "type": "function",
+      "name": "ProviderMetricChip",
+      "filePath": "pages/providers/components/ProviderMetricChip.tsx",
+      "summary": "React component rendering a small colored label-value badge for metrics display.",
+      "tags": ["ui", "component", "metric"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderModelChips.tsx",
+      "type": "file",
+      "name": "ProviderModelChips.tsx",
+      "filePath": "pages/providers/components/ProviderModelChips.tsx",
+      "summary": "Displays a list of model names as inline chips with a configurable max visible count and a '+N' overflow indicator. Shows alias labels when applicable.",
+      "tags": ["models", "chips", "display"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProviderModelChips",
+      "type": "function",
+      "name": "ProviderModelChips",
+      "filePath": "pages/providers/components/ProviderModelChips.tsx",
+      "summary": "React component rendering model name chips with overflow handling and alias display.",
+      "tags": ["models", "component", "chips"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProvidersPageHeader.tsx",
+      "type": "file",
+      "name": "ProvidersPageHeader.tsx",
+      "filePath": "pages/providers/components/ProvidersPageHeader.tsx",
+      "summary": "Page header showing the providers page title, description, and summary counts of total/enabled/disabled configurations.",
+      "tags": ["header", "page", "summary"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProvidersPageHeader",
+      "type": "function",
+      "name": "ProvidersPageHeader",
+      "filePath": "pages/providers/components/ProvidersPageHeader.tsx",
+      "summary": "React component rendering the providers page header with title, description, and config counts.",
+      "tags": ["header", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProvidersToolbar.tsx",
+      "type": "file",
+      "name": "ProvidersToolbar.tsx",
+      "filePath": "pages/providers/components/ProvidersToolbar.tsx",
+      "summary": "Toolbar with import JSON button, export dropdown (all/selected), select-all toggle, add new button, and refresh button. Built with Radix dropdown menu.",
+      "tags": ["toolbar", "import", "export", "actions"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProvidersToolbar",
+      "type": "function",
+      "name": "ProvidersToolbar",
+      "filePath": "pages/providers/components/ProvidersToolbar.tsx",
+      "summary": "React component rendering a toolbar with import/export, select, add, and refresh actions for the providers page.",
+      "tags": ["toolbar", "component", "actions"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderSummaryStrip.tsx",
+      "type": "file",
+      "name": "ProviderSummaryStrip.tsx",
+      "filePath": "pages/providers/components/ProviderSummaryStrip.tsx",
+      "summary": "Horizontal strip showing total, enabled, and disabled provider counts with colored indicator dots.",
+      "tags": ["summary", "counts", "strip"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProviderSummaryStrip",
+      "type": "function",
+      "name": "ProviderSummaryStrip",
+      "filePath": "pages/providers/components/ProviderSummaryStrip.tsx",
+      "summary": "React component rendering a compact summary bar with provider configuration counts.",
+      "tags": ["summary", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderTabsWithCounts.tsx",
+      "type": "file",
+      "name": "ProviderTabsWithCounts.tsx",
+      "filePath": "pages/providers/components/ProviderTabsWithCounts.tsx",
+      "summary": "Tab bar with provider icons (Gemini, Claude, Codex, OpenCode Go, Vertex, Bedrock, OpenAI, Ampcode) and count badges. Defines ProviderTabId type and icon mappings.",
+      "tags": ["tabs", "navigation", "icons", "counts"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProviderTabsWithCounts",
+      "type": "function",
+      "name": "ProviderTabsWithCounts",
+      "filePath": "pages/providers/components/ProviderTabsWithCounts.tsx",
+      "summary": "React component rendering a tab list with provider icons and numeric count badges.",
+      "tags": ["tabs", "component", "navigation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/components/ProviderWorkspace.tsx",
+      "type": "file",
+      "name": "ProviderWorkspace.tsx",
+      "filePath": "pages/providers/components/ProviderWorkspace.tsx",
+      "summary": "Generic workspace layout wrapper with a header (title, description, count, actions) and a content area. Used as a common container for provider tab content.",
+      "tags": ["layout", "workspace", "container"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ProviderWorkspace",
+      "type": "function",
+      "name": "ProviderWorkspace",
+      "filePath": "pages/providers/components/ProviderWorkspace.tsx",
+      "summary": "React component providing a reusable section layout with header and content area for provider pages.",
+      "tags": ["layout", "component"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/hooks/useOpenAIProviderEditor.ts",
+      "type": "file",
+      "name": "useOpenAIProviderEditor.ts",
+      "filePath": "pages/providers/hooks/useOpenAIProviderEditor.ts",
+      "summary": "Hook managing the OpenAI provider editor state and operations: opening editor, committing drafts, saving, deleting, toggling enable/disable, discovering models via API call, and applying discovered models.",
+      "tags": ["hook", "openai", "editor", "crud", "discovery"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useOpenAIProviderEditor",
+      "type": "function",
+      "name": "useOpenAIProviderEditor",
+      "filePath": "pages/providers/hooks/useOpenAIProviderEditor.ts",
+      "summary": "React hook providing OpenAI provider editing state management and CRUD operations.",
+      "tags": ["hook", "openai", "editor"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "type": "file",
+      "name": "useProviderKeyEditor.ts",
+      "filePath": "pages/providers/hooks/useProviderKeyEditor.ts",
+      "summary": "Hook managing provider key editing state for all simple provider types (Gemini, Claude, Codex, OpenCode Go, Vertex, Bedrock). Handles opening editor, committing validated drafts, saving to API, deleting, and enable/disable toggle via excluded models manipulation.",
+      "tags": ["hook", "key-editor", "crud", "providers"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:useProviderKeyEditor",
+      "type": "function",
+      "name": "useProviderKeyEditor",
+      "filePath": "pages/providers/hooks/useProviderKeyEditor.ts",
+      "summary": "React hook providing provider key editing state management and CRUD operations for all non-OpenAI provider types.",
+      "tags": ["hook", "key-editor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/providers/hooks/useProviderLatency.ts",
+      "type": "file",
+      "name": "useProviderLatency.ts",
+      "filePath": "pages/providers/hooks/useProviderLatency.ts",
+      "summary": "Hook for checking provider latency by making a GET request to the provider base URL through the management API. Tracks request state per key with abort support and formats latency values.",
+      "tags": ["hook", "latency", "monitoring"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useProviderLatency",
+      "type": "function",
+      "name": "useProviderLatency",
+      "filePath": "pages/providers/hooks/useProviderLatency.ts",
+      "summary": "React hook providing provider latency checking with per-key state tracking, abort support, and formatted output.",
+      "tags": ["hook", "latency"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:formatLatency",
+      "type": "function",
+      "name": "formatLatency",
+      "filePath": "pages/providers/hooks/useProviderLatency.ts",
+      "summary": "Formats milliseconds into human-readable latency string (ms/s/m/h).",
+      "tags": ["utility", "format", "latency"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/providers/hooks/useProviderUsageSummary.ts",
+      "type": "file",
+      "name": "useProviderUsageSummary.ts",
+      "filePath": "pages/providers/hooks/useProviderUsageSummary.ts",
+      "summary": "Hook that provides functions to compute usage statistics and status bar data for provider configurations. Ties usage stats by source ID to providers and OpenAI key entries, building 20-block status bar visualizations.",
+      "tags": ["hook", "usage", "stats", "status-bar"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useProviderUsageSummary",
+      "type": "function",
+      "name": "useProviderUsageSummary",
+      "filePath": "pages/providers/hooks/useProviderUsageSummary.ts",
+      "summary": "React hook providing statistics and status bar data for provider and key entry configurations.",
+      "tags": ["hook", "usage", "stats"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:pages/providers/index.ts",
+      "target": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "exports ProvidersPage"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/components/OpenAIProviderModal.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders OpenAIProviderModal"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/components/OpenAIProvidersTab.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders OpenAIProvidersTab"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/components/ProviderKeyModal.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders ProviderKeyModal"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/components/ProvidersToolbar.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "renders ProvidersToolbar"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/components/ProviderTabsWithCounts.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "renders ProviderTabsWithCounts"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/components/OpenCodeGoUsageCardSection.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "renders OpenCodeGoUsageCardSection"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/hooks/useOpenAIProviderEditor.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "uses useOpenAIProviderEditor"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "uses useProviderKeyEditor"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/hooks/useProviderLatency.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "uses useProviderLatency"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/hooks/useProviderUsageSummary.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "uses useProviderUsageSummary"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIProviderModal.tsx",
+      "target": "file:pages/providers/components/OpenAIProviderBasicSection.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders OpenAIProviderBasicSection"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIProviderModal.tsx",
+      "target": "file:pages/providers/components/OpenAIProviderModelsSection.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders OpenAIProviderModelsSection"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIProviderModelsSection.tsx",
+      "target": "file:pages/providers/components/OpenAIModelDiscoveryPanel.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "renders OpenAIModelDiscoveryPanel"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIProvidersTab.tsx",
+      "target": "file:pages/providers/components/ProviderMetricChip.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "renders ProviderMetricChip"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIProvidersTab.tsx",
+      "target": "file:pages/providers/components/ProviderModelChips.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "renders ProviderModelChips"
+    },
+    {
+      "source": "file:pages/providers/components/ProviderKeyModal.tsx",
+      "target": "file:pages/providers/components/ProviderKeyStatusBadges.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "renders ProviderKeyStatusBadges"
+    },
+    {
+      "source": "file:pages/providers/components/ProviderKeyModal.tsx",
+      "target": "file:pages/providers/components/ProviderKeyBasicTab.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders ProviderKeyBasicTab"
+    },
+    {
+      "source": "file:pages/providers/components/ProviderKeyModal.tsx",
+      "target": "file:pages/providers/components/ProviderKeyRequestTab.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders ProviderKeyRequestTab"
+    },
+    {
+      "source": "file:pages/providers/components/ProviderKeyModal.tsx",
+      "target": "file:pages/providers/components/ProviderKeyModelsTab.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders ProviderKeyModelsTab"
+    },
+    {
+      "source": "file:pages/providers/components/ProviderKeyRequestTab.tsx",
+      "target": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "uses ProviderKeyDraft type"
+    },
+    {
+      "source": "file:pages/providers/components/ProviderKeyModelsTab.tsx",
+      "target": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "uses ProviderKeyDraft type"
+    },
+    {
+      "source": "file:pages/providers/components/ProviderKeyBasicTab.tsx",
+      "target": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "uses ProviderKeyDraft type"
+    },
+    {
+      "source": "file:pages/providers/hooks/useProviderUsageSummary.ts",
+      "target": "file:pages/providers/hooks/useProviderLatency.ts",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "related monitoring hooks"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/components/ProviderAccessChips.tsx",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "same directory module"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:pages/providers/components/ProviderConnectionRows.tsx",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "same directory module"
+    },
+    {
+      "source": "file:pages/providers/components/OpenAIProviderBasicSection.tsx",
+      "target": "function:buildModelsEndpoint",
+      "type": "calls",
+      "weight": 0.6,
+      "label": "calls buildModelsEndpoint"
+    },
+    {
+      "source": "file:pages/providers/hooks/useOpenAIProviderEditor.ts",
+      "target": "function:buildOpenAIDraft",
+      "type": "calls",
+      "weight": 0.8,
+      "label": "calls buildOpenAIDraft"
+    },
+    {
+      "source": "file:pages/providers/hooks/useOpenAIProviderEditor.ts",
+      "target": "function:commitModelEntries",
+      "type": "calls",
+      "weight": 0.8,
+      "label": "calls commitModelEntries"
+    },
+    {
+      "source": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "target": "function:buildProviderKeyDraft",
+      "type": "calls",
+      "weight": 0.8,
+      "label": "calls buildProviderKeyDraft"
+    },
+    {
+      "source": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "target": "function:commitModelEntries",
+      "type": "calls",
+      "weight": 0.8,
+      "label": "calls commitModelEntries"
+    },
+    {
+      "source": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "target": "function:excludedModelsFromText",
+      "type": "calls",
+      "weight": 0.7,
+      "label": "calls excludedModelsFromText"
+    },
+    {
+      "source": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "target": "function:hasDisableAllModelsRule",
+      "type": "calls",
+      "weight": 0.7,
+      "label": "calls hasDisableAllModelsRule"
+    },
+    {
+      "source": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "target": "function:withDisableAllModelsRule",
+      "type": "calls",
+      "weight": 0.7,
+      "label": "calls withDisableAllModelsRule"
+    },
+    {
+      "source": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "target": "function:withoutDisableAllModelsRule",
+      "type": "calls",
+      "weight": 0.7,
+      "label": "calls withoutDisableAllModelsRule"
+    },
+    {
+      "source": "file:pages/providers/hooks/useProviderLatency.ts",
+      "target": "file:packages/api-client/src/client/client.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "uses apiClient"
+    },
+    {
+      "source": "file:pages/providers/components/ProvidersPageContent.tsx",
+      "target": "file:features/model-availability/modelAvailability.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "invalidates model availability cache"
+    },
+    {
+      "source": "file:pages/providers/hooks/useOpenAIProviderEditor.ts",
+      "target": "file:features/model-availability/modelAvailability.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "invalidates model availability"
+    },
+    {
+      "source": "file:pages/providers/hooks/useProviderKeyEditor.ts",
+      "target": "file:features/model-availability/modelAvailability.ts",
+      "type": "imports",
+      "weight": 0.6,
+      "label": "invalidates model availability"
+    },
+    {
+      "source": "file:pages/providers/components/ProviderTabsWithCounts.tsx",
+      "target": "file:packages/assets/src/vendor-icons/ProviderLogos.tsx",
+      "type": "depends_on",
+      "weight": 0.4,
+      "label": "uses provider icon SVGs"
+    }
+  ]
+}

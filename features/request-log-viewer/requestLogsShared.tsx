@@ -1,5 +1,14 @@
 import { useTranslation } from "react-i18next";
 import type { UsageLogItem } from "@code-proxy/api-client/endpoints/usage";
+import {
+  formatFixedNumber,
+  formatUsageMetricCost,
+  formatUsageMetricNumber,
+  formatUsageMetricTooltipCost,
+  formatUsageMetricTooltipNumber,
+  isUsageMetricCompact,
+  type UsageMetricVariant,
+} from "@code-proxy/domain";
 import { parseUsageTimestampMs } from "@features/monitor-widgets/monitor-utils";
 import { Tabs, TabsList, TabsTrigger } from "@code-proxy/ui";
 import { HoverTooltip, OverflowTooltip } from "@code-proxy/ui";
@@ -19,6 +28,7 @@ export type RequestLogsRow = {
   maskedApiKey: string;
   model: string;
   failed: boolean;
+  streaming: boolean;
   latencyText: string;
   firstTokenText: string;
   inputTokens: number;
@@ -47,7 +57,7 @@ const computeOutputTokensPerSecond = (row: RequestLogsRow): number | null => {
   const totalSeconds = parseLatencyTextToSeconds(row.latencyText);
   if (totalSeconds === null || totalSeconds <= 0) return null;
 
-  const firstSeconds = parseLatencyTextToSeconds(row.firstTokenText) ?? 0;
+  const firstSeconds = row.streaming ? (parseLatencyTextToSeconds(row.firstTokenText) ?? 0) : 0;
   const generationSeconds = Math.max(0, totalSeconds - firstSeconds);
   if (generationSeconds <= 0) return null;
 
@@ -60,6 +70,11 @@ const formatTokensPerSecond = (value: number | null): string => {
   if (value >= 100) return `${Math.round(value)} t/s`;
   if (value >= 10) return `${value.toFixed(1)} t/s`;
   return `${value.toFixed(2)} t/s`;
+};
+
+const hasRequestLogMetricText = (value: string): boolean => {
+  const trimmed = String(value || "").trim();
+  return trimmed !== "" && trimmed !== "--";
 };
 
 const resolveLatencyToneClasses = (latencyText: string): string => {
@@ -89,13 +104,71 @@ function RequestLogMetricChip({
   return (
     <span
       className={[
-        "inline-flex items-center rounded-full border px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums whitespace-nowrap",
+        "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] whitespace-nowrap",
         className,
       ].join(" ")}
       aria-label={ariaLabel}
     >
-      {value}
+      <span className="font-mono font-semibold tabular-nums">{value}</span>
     </span>
+  );
+}
+
+function RequestLogModeChip({ label, streaming }: { label: string; streaming: boolean }) {
+  return (
+    <span
+      className={
+        streaming
+          ? "inline-flex shrink-0 items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-600 dark:border-sky-500/25 dark:bg-sky-500/15 dark:text-sky-300"
+          : "inline-flex shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-500 dark:border-white/10 dark:bg-neutral-900 dark:text-white/55"
+      }
+    >
+      {label}
+    </span>
+  );
+}
+
+export function RequestLogUsageMetricValue({
+  value,
+  variant = "number",
+  compact = false,
+  className,
+}: {
+  value: number;
+  variant?: UsageMetricVariant;
+  /**
+   * When true, renders the value in compact form (e.g. "23.8K", "$12.35K")
+   * with a hover tooltip carrying the full precision value. Defaults to false
+   * so the request-logs table always shows the complete numeric value.
+   */
+  compact?: boolean;
+  className?: string;
+}) {
+  const useCompact = compact && isUsageMetricCompact(value, variant);
+  const display =
+    variant === "currency"
+      ? useCompact
+        ? formatUsageMetricCost(value)
+        : formatUsageMetricTooltipCost(value)
+      : useCompact
+        ? formatUsageMetricNumber(value)
+        : formatFixedNumber(value, { fractionDigits: 0 });
+  const tooltip =
+    variant === "currency"
+      ? formatUsageMetricTooltipCost(value)
+      : formatUsageMetricTooltipNumber(value);
+
+  return (
+    <HoverTooltip
+      content={tooltip}
+      disabled={!useCompact}
+      placement="top"
+      className={useCompact ? "cursor-help" : undefined}
+    >
+      <span className={["block min-w-0 truncate", className].filter(Boolean).join(" ")}>
+        {display}
+      </span>
+    </HoverTooltip>
   );
 }
 
@@ -163,6 +236,7 @@ export const toRequestLogsRow = (item: UsageLogItem): RequestLogsRow => {
     maskedApiKey: maskRequestLogApiKey(item.api_key),
     model: item.model,
     failed: item.failed,
+    streaming: item.streaming === true,
     latencyText: formatRequestLogLatencyMs(item.latency_ms),
     firstTokenText: formatOptionalRequestLogLatencyMs(item.first_token_ms),
     inputTokens: item.input_tokens,
@@ -313,38 +387,53 @@ export function buildRequestLogsColumns(
     },
     {
       key: "latency",
-      label: t("request_logs.col_duration"),
-      width: "w-44",
+      label: t("request_logs.col_response_metrics"),
+      width: "w-64",
+      minWidthPx: 240,
       headerClassName: "text-center",
-      cellClassName: "text-center text-xs tabular-nums text-slate-700 dark:text-slate-200 pr-6",
+      cellClassName: "text-center text-xs tabular-nums text-slate-700 dark:text-slate-200",
       render: (row) => {
         const tps = computeOutputTokensPerSecond(row);
         const tpsText = formatTokensPerSecond(tps);
-        const tooltip =
-          `${t("request_logs.col_duration")}: ${row.latencyText}\n` +
-          `${t("request_logs.col_first_token")}: ${row.firstTokenText}\n` +
-          `${t("request_logs.tokens_per_second")}: ${tpsText}`;
+        const hasLatency = hasRequestLogMetricText(row.latencyText);
+        const hasFirstToken = hasRequestLogMetricText(row.firstTokenText);
+        const hasTps = hasRequestLogMetricText(tpsText);
+        const tooltipLines = [
+          hasLatency ? `${t("request_logs.col_duration")}: ${row.latencyText}` : null,
+          hasFirstToken ? `${t("request_logs.col_first_token")}: ${row.firstTokenText}` : null,
+          hasTps ? `${t("request_logs.tokens_per_second")}: ${tpsText}` : null,
+        ].filter((line): line is string => Boolean(line));
 
         return (
-          <HoverTooltip content={tooltip} placement="bottom">
-            <div className="inline-flex max-w-full items-center justify-center gap-1.5 whitespace-nowrap">
-              <RequestLogMetricChip
-                ariaLabel={`${t("request_logs.col_duration")}: ${row.latencyText}`}
-                value={row.latencyText}
-                className={resolveLatencyToneClasses(row.latencyText)}
-              />
-              <RequestLogMetricChip
-                ariaLabel={`${t("request_logs.col_first_token")}: ${row.firstTokenText}`}
-                value={row.firstTokenText}
-                className={
-                  row.firstTokenText === "--"
-                    ? "border-slate-200 bg-slate-50 text-slate-500 dark:border-neutral-800 dark:bg-neutral-950/45 dark:text-white/55"
-                    : "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200"
+          <HoverTooltip
+            content={tooltipLines.join("\n")}
+            disabled={tooltipLines.length === 0}
+            placement="bottom"
+            className="!flex min-w-0 max-w-full justify-center"
+          >
+            <div className="flex min-w-0 max-w-full flex-nowrap items-center justify-center gap-1.5">
+              {hasLatency ? (
+                <RequestLogMetricChip
+                  ariaLabel={`${t("request_logs.col_duration")}: ${row.latencyText}`}
+                  value={row.latencyText}
+                  className={resolveLatencyToneClasses(row.latencyText)}
+                />
+              ) : null}
+              {hasFirstToken ? (
+                <RequestLogMetricChip
+                  ariaLabel={`${t("request_logs.col_first_token")}: ${row.firstTokenText}`}
+                  value={row.firstTokenText}
+                  className="border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200"
+                />
+              ) : null}
+              <RequestLogModeChip
+                streaming={row.streaming}
+                label={
+                  row.streaming
+                    ? t("request_logs.mode_streaming")
+                    : t("request_logs.mode_non_streaming")
                 }
               />
-              <span className="font-mono text-[11px] tabular-nums text-slate-400 dark:text-white/35 whitespace-nowrap">
-                {tpsText}
-              </span>
             </div>
           </HoverTooltip>
         );
@@ -365,14 +454,13 @@ export function buildRequestLogsColumns(
             className="inline-block ml-auto cursor-pointer rounded px-1.5 py-0.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30"
             title={t("request_logs.view_input")}
           >
-            <span className="truncate text-sky-600 dark:text-sky-400 underline decoration-sky-300/50 dark:decoration-sky-500/40 underline-offset-2">
-              {row.inputTokens.toLocaleString()}
-            </span>
+            <RequestLogUsageMetricValue
+              value={row.inputTokens}
+              className="text-sky-600 dark:text-sky-400 underline decoration-sky-300/50 dark:decoration-sky-500/40 underline-offset-2"
+            />
           </button>
         ) : (
-          <OverflowTooltip content={row.inputTokens.toLocaleString()} className="block min-w-0">
-            <span className="block min-w-0 truncate">{row.inputTokens.toLocaleString()}</span>
-          </OverflowTooltip>
+          <RequestLogUsageMetricValue value={row.inputTokens} />
         ),
     },
     {
@@ -382,13 +470,14 @@ export function buildRequestLogsColumns(
       headerClassName: "text-center",
       cellClassName: "text-center font-mono text-xs tabular-nums",
       render: (row) => (
-        <OverflowTooltip content={row.cachedTokens.toLocaleString()} className="block min-w-0">
-          <span
-            className={`block min-w-0 truncate ${row.cachedTokens > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-white/30"}`}
-          >
-            {row.cachedTokens > 0 ? row.cachedTokens.toLocaleString() : "0"}
-          </span>
-        </OverflowTooltip>
+        <RequestLogUsageMetricValue
+          value={row.cachedTokens}
+          className={
+            row.cachedTokens > 0
+              ? "font-semibold text-amber-600 dark:text-amber-400"
+              : "text-slate-400 dark:text-white/30"
+          }
+        />
       ),
     },
     {
@@ -406,14 +495,13 @@ export function buildRequestLogsColumns(
             className="inline-block ml-auto cursor-pointer rounded px-1.5 py-0.5 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
             title={t("request_logs.view_output")}
           >
-            <span className="truncate text-emerald-600 dark:text-emerald-400 underline decoration-emerald-300/50 dark:decoration-emerald-500/40 underline-offset-2">
-              {row.outputTokens.toLocaleString()}
-            </span>
+            <RequestLogUsageMetricValue
+              value={row.outputTokens}
+              className="text-emerald-600 dark:text-emerald-400 underline decoration-emerald-300/50 dark:decoration-emerald-500/40 underline-offset-2"
+            />
           </button>
         ) : (
-          <OverflowTooltip content={row.outputTokens.toLocaleString()} className="block min-w-0">
-            <span className="block min-w-0 truncate">{row.outputTokens.toLocaleString()}</span>
-          </OverflowTooltip>
+          <RequestLogUsageMetricValue value={row.outputTokens} />
         ),
     },
     {
@@ -422,11 +510,7 @@ export function buildRequestLogsColumns(
       width: "w-28",
       headerClassName: "text-center",
       cellClassName: "text-center font-mono text-xs tabular-nums text-slate-900 dark:text-white",
-      render: (row) => (
-        <OverflowTooltip content={row.totalTokens.toLocaleString()} className="block min-w-0">
-          <span className="block min-w-0 truncate">{row.totalTokens.toLocaleString()}</span>
-        </OverflowTooltip>
-      ),
+      render: (row) => <RequestLogUsageMetricValue value={row.totalTokens} />,
     },
     {
       key: "cost",
@@ -435,11 +519,7 @@ export function buildRequestLogsColumns(
       headerClassName: "text-center",
       cellClassName:
         "text-center font-mono text-xs tabular-nums text-emerald-700 dark:text-emerald-400",
-      render: (row) => (
-        <OverflowTooltip content={`$${row.cost.toFixed(6)}`} className="block min-w-0">
-          <span className="block min-w-0 truncate">${row.cost.toFixed(4)}</span>
-        </OverflowTooltip>
-      ),
+      render: (row) => <RequestLogUsageMetricValue value={row.cost} variant="currency" />,
     },
     {
       key: "apiKeyName",
@@ -511,8 +591,7 @@ export function RequestLogsPaginationBar({
         nextPage: t("request_logs.next_page"),
         lastPage: t("request_logs.last_page"),
         rowsPerPage: t("request_logs.rows_per_page"),
-        pageInfo: ({ start, end, total }) =>
-          t("request_logs.page_info", { start, end, total }),
+        pageInfo: ({ start, end, total }) => t("request_logs.page_info", { start, end, total }),
       }}
     />
   );

@@ -1,0 +1,162 @@
+{
+  "nodes": [
+    {
+      "id": "file:.github/workflows/deploy.yml",
+      "type": "file",
+      "name": "deploy.yml",
+      "filePath": ".github/workflows/deploy.yml",
+      "summary": "GitHub Actions workflow that deploys the frontend bundle to a production server via SSH/SCP on push to the dev branch. Cleans old static files, uploads dist/, writes a version marker, and verifies the deployment by checking for key files and routes.",
+      "tags": ["ci-cd", "deployment", "frontend", "ssh", "infra"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:.github/workflows/pr-test-build.yml",
+      "type": "file",
+      "name": "pr-test-build.yml",
+      "filePath": ".github/workflows/pr-test-build.yml",
+      "summary": "GitHub Actions workflow that runs linting, unit tests, production build, and bundle diff analysis on pull requests targeting dev or main branches. Uses Bun with caching for faster installs.",
+      "tags": ["ci-cd", "testing", "linting", "pull-request", "infra"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:.github/workflows/rebuild-clirelay.yml",
+      "type": "file",
+      "name": "rebuild-clirelay.yml",
+      "filePath": ".github/workflows/rebuild-clirelay.yml",
+      "summary": "GitHub Actions workflow that dispatches a workflow on the external CliRelay repository (kittors/CliRelay) to trigger a Docker image rebuild when codeProxy changes on main or dev branches.",
+      "tags": ["ci-cd", "docker", "workflow-dispatch", "cross-repo", "infra"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.github/workflows/release.yml",
+      "type": "file",
+      "name": "release.yml",
+      "filePath": ".github/workflows/release.yml",
+      "summary": "GitHub Actions workflow that builds the frontend, packages it into panel-dist.zip, and creates a GitHub release with release notes when a version tag (v*) is pushed.",
+      "tags": ["ci-cd", "release", "frontend", "github-releases", "infra"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "job:deploy:build-and-deploy",
+      "type": "job",
+      "name": "build-and-deploy",
+      "filePath": ".github/workflows/deploy.yml",
+      "summary": "Main deployment job that checks out code, installs deps with Bun, computes UI version from git SHA, builds, and deploys via SCP to the server.",
+      "tags": ["ci-cd", "deployment"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "job:pr-test:test-build",
+      "type": "job",
+      "name": "test-build",
+      "filePath": ".github/workflows/pr-test-build.yml",
+      "summary": "CI job that runs lint, test:ci, build, and bundle:diff on PRs targeting dev/main.",
+      "tags": ["ci-cd", "testing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "job:rebuild-clirelay:dispatch",
+      "type": "job",
+      "name": "dispatch",
+      "filePath": ".github/workflows/rebuild-clirelay.yml",
+      "summary": "Single-step job that triggers the CliRelay docker-publish workflow on the external repository using gh CLI.",
+      "tags": ["ci-cd", "cross-repo"],
+      "complexity": "simple"
+    },
+    {
+      "id": "job:release:release",
+      "type": "job",
+      "name": "release",
+      "filePath": ".github/workflows/release.yml",
+      "summary": "Release job that builds the frontend, packages dist into a zip, and creates a GitHub release with release notes.",
+      "tags": ["ci-cd", "release"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:.github/workflows/deploy.yml",
+      "target": "job:deploy:build-and-deploy",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines job"
+    },
+    {
+      "source": "file:.github/workflows/pr-test-build.yml",
+      "target": "job:pr-test:test-build",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines job"
+    },
+    {
+      "source": "file:.github/workflows/rebuild-clirelay.yml",
+      "target": "job:rebuild-clirelay:dispatch",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines job"
+    },
+    {
+      "source": "file:.github/workflows/release.yml",
+      "target": "job:release:release",
+      "type": "contains",
+      "weight": 1.0,
+      "label": "defines job"
+    },
+    {
+      "source": "file:.github/workflows/deploy.yml",
+      "target": "file:.github/workflows/pr-test-build.yml",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "deployment gated by PR checks"
+    },
+    {
+      "source": "file:.github/workflows/release.yml",
+      "target": "file:.github/workflows/pr-test-build.yml",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "release gated by PR checks"
+    },
+    {
+      "source": "file:.github/workflows/deploy.yml",
+      "target": "file:.github/workflows/rebuild-clirelay.yml",
+      "type": "depends_on",
+      "weight": 0.3,
+      "label": "deploy co-triggered with CliRelay rebuild"
+    },
+    {
+      "source": "file:.github/workflows/deploy.yml",
+      "target": "file:.github/workflows/release.yml",
+      "type": "depends_on",
+      "weight": 0.4,
+      "label": "shared build and versioning logic"
+    },
+    {
+      "source": "file:.github/workflows/deploy.yml",
+      "target": "file:.github/workflows/deploy.yml",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "self-contained deployment pipeline"
+    },
+    {
+      "source": "file:.github/workflows/deploy.yml",
+      "target": "file:.github/workflows/deploy.yml",
+      "type": "configures",
+      "weight": 0.7,
+      "label": "configures SSH/SCP deployment targets"
+    },
+    {
+      "source": "file:.github/workflows/pr-test-build.yml",
+      "target": "file:.github/workflows/deploy.yml",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "PR checks must pass before deploy"
+    },
+    {
+      "source": "file:.github/workflows/pr-test-build.yml",
+      "target": "file:.github/workflows/release.yml",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "PR checks must pass before release"
+    }
+  ]
+}

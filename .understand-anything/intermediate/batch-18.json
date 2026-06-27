@@ -1,0 +1,572 @@
+{
+  "nodes": [
+    {
+      "id": "file:pages/api-key-lookup/index.ts",
+      "type": "file",
+      "name": "ApiKeyLookup barrel",
+      "filePath": "pages/api-key-lookup/index.ts",
+      "summary": "Re-exports ApiKeyLookupPage and apiKeyLookupRoute",
+      "tags": ["barrel", "re-export"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/route.tsx",
+      "type": "file",
+      "name": "ApiKeyLookup route",
+      "filePath": "pages/api-key-lookup/route.tsx",
+      "summary": "Lazy-loaded route definition for /apikey-lookup path without auth or layout",
+      "tags": ["route", "page"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/types.ts",
+      "type": "file",
+      "name": "ApiKeyLookup types",
+      "filePath": "pages/api-key-lookup/types.ts",
+      "summary": "TypeScript interfaces for public log items, log rows, chart data responses, and table columns",
+      "tags": ["types", "interfaces"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/components/LookupSearchSection.tsx",
+      "type": "file",
+      "name": "LookupSearchSection",
+      "filePath": "pages/api-key-lookup/components/LookupSearchSection.tsx",
+      "summary": "Renders a search form with API key password input and submit button for key lookup",
+      "tags": ["component", "form", "search"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-lookup/components/ModelsTabContent.tsx",
+      "type": "file",
+      "name": "ModelsTabContent",
+      "filePath": "pages/api-key-lookup/components/ModelsTabContent.tsx",
+      "summary": "Displays available models as clickable vendor-colored tags with search filtering, vendor stats bar, and copy-to-clipboard per model",
+      "tags": ["component", "models", "vendor-icons", "search"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/api-key-lookup/components/PublicLogsSection.tsx",
+      "type": "file",
+      "name": "PublicLogsSection",
+      "filePath": "pages/api-key-lookup/components/PublicLogsSection.tsx",
+      "summary": "Renders a public request logs table with status/model filters, pagination bar, and stats summary",
+      "tags": ["component", "logs", "table", "pagination"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/api-key-lookup/components/QuickImportTabContent.tsx",
+      "type": "file",
+      "name": "QuickImportTabContent",
+      "filePath": "pages/api-key-lookup/components/QuickImportTabContent.tsx",
+      "summary": "CC Switch quick import tab showing available import configs grouped by client type (Codex/Claude) with copy-to-clipboard and protocol-based navigation",
+      "tags": ["component", "cc-switch", "import", "integration"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/api-key-lookup/components/UsageTabSection.tsx",
+      "type": "file",
+      "name": "UsageTabSection",
+      "filePath": "pages/api-key-lookup/components/UsageTabSection.tsx",
+      "summary": "Displays usage statistics with KPI cards, model distribution pie/bar chart, and daily trend chart with interactive legend",
+      "tags": ["component", "charts", "stats", "usage"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/api-key-lookup/hooks/useApiKeyLookupCharts.ts",
+      "type": "file",
+      "name": "useApiKeyLookupCharts",
+      "filePath": "pages/api-key-lookup/hooks/useApiKeyLookupCharts.ts",
+      "summary": "React hook that transforms chart data from API into model distribution options, daily trend options, and legend state management",
+      "tags": ["hook", "charts", "data-transformation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/api-key-permissions/index.ts",
+      "type": "file",
+      "name": "ApiKeyPermissions barrel",
+      "filePath": "pages/api-key-permissions/index.ts",
+      "summary": "Re-exports ApiKeyPermissionsPage and apiKeyPermissionsRoute",
+      "tags": ["barrel", "re-export"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-permissions/route.tsx",
+      "type": "file",
+      "name": "ApiKeyPermissions route",
+      "filePath": "pages/api-key-permissions/route.tsx",
+      "summary": "Lazy-loaded route definition for /api-key-permissions with auth and dashboard layout, including redirect from legacy path",
+      "tags": ["route", "page"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-key-permissions/ApiKeyPermissionsPage.tsx",
+      "type": "file",
+      "name": "ApiKeyPermissionsPage",
+      "filePath": "pages/api-key-permissions/ApiKeyPermissionsPage.tsx",
+      "summary": "Full CRUD page for managing API key permission profiles with DataTable, create/edit modal with restrictions (models, channels, limits), and profile-to-entry binding",
+      "tags": ["page", "permissions", "crud", "profiles"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/api-key-permissions/__tests__/ApiKeyPermissionsPage.test.tsx",
+      "type": "file",
+      "name": "ApiKeyPermissionsPage tests",
+      "filePath": "pages/api-key-permissions/__tests__/ApiKeyPermissionsPage.test.tsx",
+      "summary": "Vitest tests for ApiKeyPermissionsPage with mocked API clients, covering CRUD operations and permission profile management",
+      "tags": ["test", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/api-keys/apiKeyPageUtils.tsx",
+      "type": "file",
+      "name": "ApiKey page utils",
+      "filePath": "pages/api-keys/apiKeyPageUtils.tsx",
+      "summary": "Utility functions for API keys page: vendor icon resolution, empty form creation, key generation, key masking, date formatting, limit formatting, and channel name reading",
+      "tags": ["utilities", "vendor-icons", "formatting"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/api-keys/ApiKeysPage.tsx",
+      "type": "file",
+      "name": "ApiKeysPage",
+      "filePath": "pages/api-keys/ApiKeysPage.tsx",
+      "summary": "Main API key management page with DataTable listing, create/edit/delete/toggle-disable operations, CC Switch import integration, and usage modal viewing",
+      "tags": ["page", "crud", "api-keys", "cc-switch", "usage"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/api-keys/components/ApiKeyColumns.tsx",
+      "type": "file",
+      "name": "ApiKeyColumns",
+      "filePath": "pages/api-keys/components/ApiKeyColumns.tsx",
+      "summary": "Defines DataTable column configuration for API key entries including status toggle, name, masked key, limits, restrictions, and action buttons",
+      "tags": ["component", "datatable", "columns"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/api-keys/components/ApiKeyFormFields.tsx",
+      "type": "file",
+      "name": "ApiKeyFormFields",
+      "filePath": "pages/api-keys/components/ApiKeyFormFields.tsx",
+      "summary": "Form fields for API key create/edit: name, key input with regenerate, and permission profile selector",
+      "tags": ["component", "form", "inputs"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-keys/components/ApiKeyFormModal.tsx",
+      "type": "file",
+      "name": "ApiKeyFormModal",
+      "filePath": "pages/api-keys/components/ApiKeyFormModal.tsx",
+      "summary": "Modal wrapper for ApiKeyFormFields with save/cancel footer for creating or editing API keys",
+      "tags": ["component", "modal", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-keys/components/ApiKeyUsageModal.tsx",
+      "type": "file",
+      "name": "ApiKeyUsageModal",
+      "filePath": "pages/api-keys/components/ApiKeyUsageModal.tsx",
+      "summary": "Full-screen modal displaying API key usage logs with time range, channel/group/model/status filters, paginated table, and refresh button",
+      "tags": ["component", "modal", "usage-logs", "filters"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/api-keys/components/CcSwitchImportCardList.tsx",
+      "type": "file",
+      "name": "CcSwitchImportCardList",
+      "filePath": "pages/api-keys/components/CcSwitchImportCardList.tsx",
+      "summary": "Modal listing CC Switch import configs as selectable cards with copy-link action, grouped by client type",
+      "tags": ["component", "cc-switch", "modal", "import"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/api-keys/components/DeleteApiKeyModal.tsx",
+      "type": "file",
+      "name": "DeleteApiKeyModal",
+      "filePath": "pages/api-keys/components/DeleteApiKeyModal.tsx",
+      "summary": "Confirmation modal for deleting API keys with optional delete-logs checkbox",
+      "tags": ["component", "modal", "delete-confirmation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-keys/hooks/useApiKeyUsageView.ts",
+      "type": "file",
+      "name": "useApiKeyUsageView",
+      "filePath": "pages/api-keys/hooks/useApiKeyUsageView.ts",
+      "summary": "React hook managing API key usage log viewing state: pagination, filters (time range, channel, model, status), data fetching, and channel group normalization",
+      "tags": ["hook", "usage-logs", "pagination", "filters"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/api-keys/__tests__/ApiKeysPage.test.tsx",
+      "type": "file",
+      "name": "ApiKeysPage tests",
+      "filePath": "pages/api-keys/__tests__/ApiKeysPage.test.tsx",
+      "summary": "Vitest tests for ApiKeysPage (961 lines) with mocked API endpoints",
+      "tags": ["test", "vitest"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/api-keys/__tests__/RestrictionMultiSelect.test.tsx",
+      "type": "file",
+      "name": "RestrictionMultiSelect tests",
+      "filePath": "pages/api-keys/__tests__/RestrictionMultiSelect.test.tsx",
+      "summary": "Vitest tests for the RestrictionMultiSelect component",
+      "tags": ["test", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-keys/components/__tests__/ApiKeyColumns.test.tsx",
+      "type": "file",
+      "name": "ApiKeyColumns tests",
+      "filePath": "pages/api-keys/components/__tests__/ApiKeyColumns.test.tsx",
+      "summary": "Vitest tests for DataTable column definitions of API key entries",
+      "tags": ["test", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:LookupSearchSection",
+      "type": "function",
+      "name": "LookupSearchSection",
+      "filePath": "pages/api-key-lookup/components/LookupSearchSection.tsx",
+      "summary": "React component rendering API key search form with password input and submit button",
+      "tags": ["component", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ModelsTabContent",
+      "type": "function",
+      "name": "ModelsTabContent",
+      "filePath": "pages/api-key-lookup/components/ModelsTabContent.tsx",
+      "summary": "React component displaying available models as vendor-colored clickable tags with search",
+      "tags": ["component", "models"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:buildLogColumns",
+      "type": "function",
+      "name": "buildLogColumns",
+      "filePath": "pages/api-key-lookup/components/PublicLogsSection.tsx",
+      "summary": "Builds table column definitions for public request logs including timestamp, model, status, latency, token counts, and cost",
+      "tags": ["utility", "table-columns"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:PublicLogsSection",
+      "type": "function",
+      "name": "PublicLogsSection",
+      "filePath": "pages/api-key-lookup/components/PublicLogsSection.tsx",
+      "summary": "React component rendering full public logs table with filters, pagination, and stats",
+      "tags": ["component", "logs"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:QuickImportTabContent",
+      "type": "function",
+      "name": "QuickImportTabContent",
+      "filePath": "pages/api-key-lookup/components/QuickImportTabContent.tsx",
+      "summary": "React component for CC Switch quick import tab with grouped import configs",
+      "tags": ["component", "import", "cc-switch"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:UsageTabSection",
+      "type": "function",
+      "name": "UsageTabSection",
+      "filePath": "pages/api-key-lookup/components/UsageTabSection.tsx",
+      "summary": "React component displaying usage KPI cards, model distribution chart, and daily trend chart",
+      "tags": ["component", "charts", "stats"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useApiKeyLookupCharts",
+      "type": "function",
+      "name": "useApiKeyLookupCharts",
+      "filePath": "pages/api-key-lookup/hooks/useApiKeyLookupCharts.ts",
+      "summary": "React hook transforming API chart data into EChart options and legend state",
+      "tags": ["hook", "charts"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ApiKeyPermissionsPage",
+      "type": "function",
+      "name": "ApiKeyPermissionsPage",
+      "filePath": "pages/api-key-permissions/ApiKeyPermissionsPage.tsx",
+      "summary": "Main page component for managing API key permission profiles with full CRUD",
+      "tags": ["page", "crud"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:VendorIcon",
+      "type": "function",
+      "name": "VendorIcon",
+      "filePath": "pages/api-keys/apiKeyPageUtils.tsx",
+      "summary": "Renders correct vendor SVG icon based on model ID prefix",
+      "tags": ["component", "icons"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ApiKeysPage",
+      "type": "function",
+      "name": "ApiKeysPage",
+      "filePath": "pages/api-keys/ApiKeysPage.tsx",
+      "summary": "Main API keys management page with CRUD, CC Switch import, and usage viewing",
+      "tags": ["page", "crud"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:createApiKeyColumns",
+      "type": "function",
+      "name": "createApiKeyColumns",
+      "filePath": "pages/api-keys/components/ApiKeyColumns.tsx",
+      "summary": "Creates DataTable column configuration array for API key entries",
+      "tags": ["utility", "columns"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useApiKeyUsageView",
+      "type": "function",
+      "name": "useApiKeyUsageView",
+      "filePath": "pages/api-keys/hooks/useApiKeyUsageView.ts",
+      "summary": "React hook managing usage log viewing state with filters and pagination",
+      "tags": ["hook", "usage-logs"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ApiKeyUsageModal",
+      "type": "function",
+      "name": "ApiKeyUsageModal",
+      "filePath": "pages/api-keys/components/ApiKeyUsageModal.tsx",
+      "summary": "Full-screen modal with usage log table and filters",
+      "tags": ["component", "modal"],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:pages/api-key-lookup/index.ts",
+      "target": "file:pages/api-key-lookup/route.tsx",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "re-exports"
+    },
+    {
+      "source": "file:pages/api-key-lookup/index.ts",
+      "target": "file:pages/api-key-permissions/ApiKeyPermissionsPage.tsx",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "references barrel"
+    },
+    {
+      "source": "file:pages/api-key-lookup/route.tsx",
+      "target": "file:pages/api-key-lookup/ApiKeyLookupPage.tsx",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "lazy-loads"
+    },
+    {
+      "source": "file:pages/api-key-lookup/components/LookupSearchSection.tsx",
+      "target": "file:pages/api-key-lookup/types.ts",
+      "type": "imports",
+      "weight": 0.3,
+      "label": "uses types"
+    },
+    {
+      "source": "file:pages/api-key-lookup/components/ModelsTabContent.tsx",
+      "target": "file:pages/api-key-lookup/types.ts",
+      "type": "imports",
+      "weight": 0.3,
+      "label": "uses types"
+    },
+    {
+      "source": "file:pages/api-key-lookup/components/PublicLogsSection.tsx",
+      "target": "file:pages/api-key-lookup/types.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports types"
+    },
+    {
+      "source": "file:pages/api-key-lookup/components/QuickImportTabContent.tsx",
+      "target": "file:pages/api-key-lookup/types.ts",
+      "type": "imports",
+      "weight": 0.3,
+      "label": "uses types"
+    },
+    {
+      "source": "file:pages/api-key-lookup/components/UsageTabSection.tsx",
+      "target": "file:pages/api-key-lookup/types.ts",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports types"
+    },
+    {
+      "source": "file:pages/api-key-lookup/hooks/useApiKeyLookupCharts.ts",
+      "target": "file:pages/api-key-lookup/types.ts",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports types"
+    },
+    {
+      "source": "file:pages/api-keys/ApiKeysPage.tsx",
+      "target": "file:pages/api-keys/apiKeyPageUtils.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports utils"
+    },
+    {
+      "source": "file:pages/api-keys/ApiKeysPage.tsx",
+      "target": "file:pages/api-keys/components/ApiKeyColumns.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports columns"
+    },
+    {
+      "source": "file:pages/api-keys/ApiKeysPage.tsx",
+      "target": "file:pages/api-keys/components/ApiKeyFormModal.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports form modal"
+    },
+    {
+      "source": "file:pages/api-keys/ApiKeysPage.tsx",
+      "target": "file:pages/api-keys/components/ApiKeyUsageModal.tsx",
+      "type": "imports",
+      "weight": 0.8,
+      "label": "imports usage modal"
+    },
+    {
+      "source": "file:pages/api-keys/ApiKeysPage.tsx",
+      "target": "file:pages/api-keys/components/CcSwitchImportCardList.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports CC switch card list"
+    },
+    {
+      "source": "file:pages/api-keys/ApiKeysPage.tsx",
+      "target": "file:pages/api-keys/components/DeleteApiKeyModal.tsx",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "imports delete modal"
+    },
+    {
+      "source": "file:pages/api-keys/ApiKeysPage.tsx",
+      "target": "file:pages/api-keys/hooks/useApiKeyUsageView.ts",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports usage view hook"
+    },
+    {
+      "source": "file:pages/api-keys/components/ApiKeyFormModal.tsx",
+      "target": "file:pages/api-keys/components/ApiKeyFormFields.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "renders form fields"
+    },
+    {
+      "source": "file:pages/api-keys/components/ApiKeyColumns.tsx",
+      "target": "file:pages/api-keys/apiKeyPageUtils.tsx",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "imports utils"
+    },
+    {
+      "source": "file:pages/api-keys/components/DeleteApiKeyModal.tsx",
+      "target": "file:pages/api-keys/apiKeyPageUtils.tsx",
+      "type": "imports",
+      "weight": 0.5,
+      "label": "imports maskApiKey"
+    },
+    {
+      "source": "file:pages/api-keys/components/ApiKeyUsageModal.tsx",
+      "target": "file:pages/api-keys/hooks/useApiKeyUsageView.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "uses hook types"
+    },
+    {
+      "source": "file:pages/api-key-permissions/ApiKeyPermissionsPage.tsx",
+      "target": "file:pages/api-key-permissions/index.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "label": "re-exported by barrel"
+    },
+    {
+      "source": "file:pages/api-key-permissions/ApiKeyPermissionsPage.tsx",
+      "target": "file:pages/api-keys/ApiKeysPage.tsx",
+      "type": "depends_on",
+      "weight": 0.4,
+      "label": "shares similar model"
+    },
+    {
+      "source": "file:pages/api-key-permissions/route.tsx",
+      "target": "file:pages/api-key-permissions/ApiKeyPermissionsPage.tsx",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "lazy-loads"
+    },
+    {
+      "source": "file:pages/api-key-permissions/__tests__/ApiKeyPermissionsPage.test.tsx",
+      "target": "file:pages/api-key-permissions/ApiKeyPermissionsPage.tsx",
+      "type": "tests",
+      "weight": 0.9,
+      "label": "tests"
+    },
+    {
+      "source": "file:pages/api-keys/__tests__/ApiKeysPage.test.tsx",
+      "target": "file:pages/api-keys/ApiKeysPage.tsx",
+      "type": "tests",
+      "weight": 0.9,
+      "label": "tests"
+    },
+    {
+      "source": "file:pages/api-keys/__tests__/RestrictionMultiSelect.test.tsx",
+      "target": "file:pages/api-keys/ApiKeysPage.tsx",
+      "type": "tests",
+      "weight": 0.7,
+      "label": "tests related component"
+    },
+    {
+      "source": "file:pages/api-keys/components/__tests__/ApiKeyColumns.test.tsx",
+      "target": "file:pages/api-keys/components/ApiKeyColumns.tsx",
+      "type": "tests",
+      "weight": 0.9,
+      "label": "tests"
+    },
+    {
+      "source": "file:pages/api-keys/apiKeyPageUtils.tsx",
+      "target": "file:pages/api-keys/ApiKeysPage.tsx",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "used by page"
+    },
+    {
+      "source": "file:pages/api-keys/components/ApiKeyUsageModal.tsx",
+      "target": "file:pages/api-keys/hooks/useApiKeyUsageView.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "uses returned state"
+    },
+    {
+      "source": "file:pages/api-key-lookup/components/QuickImportTabContent.tsx",
+      "target": "file:pages/api-key-lookup/types.ts",
+      "type": "imports",
+      "weight": 0.3,
+      "label": "uses types"
+    },
+    {
+      "source": "file:pages/api-key-lookup/hooks/useApiKeyLookupCharts.ts",
+      "target": "file:pages/api-key-lookup/components/UsageTabSection.tsx",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "provides data for section"
+    },
+    {
+      "source": "file:pages/api-key-permissions/ApiKeyPermissionsPage.tsx",
+      "target": "file:pages/api-keys/apiKeyPageUtils.tsx",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "shares formatting patterns"
+    }
+  ]
+}

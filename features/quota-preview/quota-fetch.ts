@@ -6,6 +6,7 @@ import {
   CLAUDE_REQUEST_HEADERS,
   CLAUDE_USAGE_URL,
   CODEX_REQUEST_HEADERS,
+  CODEX_RESET_CREDITS_CONSUME_URL,
   CODEX_USAGE_URL,
   DEFAULT_ANTIGRAVITY_PROJECT_ID,
   GEMINI_CLI_QUOTA_URL,
@@ -37,6 +38,7 @@ import {
   parseResetTimeToMs,
   resolveAuthProvider,
   resolveCodexChatgptAccountId,
+  resolveCodexResetCreditCount,
   resolveGeminiCliProjectId,
   type QuotaItem,
 } from "@features/quota-preview/quota-helpers";
@@ -45,6 +47,31 @@ export type QuotaProvider = "antigravity" | "claude" | "codex" | "gemini-cli" | 
 export type QuotaFetchResult = {
   items: QuotaItem[];
   planType?: string | null;
+  resetCreditCount?: number;
+};
+
+const createRedeemRequestId = (): string =>
+  globalThis.crypto?.randomUUID?.() ??
+  "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
+    (Number(c) ^ ((Math.random() * 16) >> (Number(c) / 4))).toString(16),
+  );
+
+const resolveAuthIndex = (file: AuthFileItem): string => {
+  const rawAuthIndex = file.auth_index ?? file.authIndex;
+  const authIndex = normalizeAuthIndexValue(rawAuthIndex);
+  if (!authIndex) throw new Error("missing_auth_index");
+  return authIndex;
+};
+
+const buildCodexRequestHeaders = (file: AuthFileItem): Record<string, string> => {
+  const accountId = resolveCodexChatgptAccountId(file);
+  const requestHeader: Record<string, string> = {
+    ...CODEX_REQUEST_HEADERS,
+  };
+  if (accountId) {
+    requestHeader["Chatgpt-Account-Id"] = accountId;
+  }
+  return requestHeader;
 };
 
 export const resolveQuotaProvider = (file: AuthFileItem): QuotaProvider | null => {
@@ -61,6 +88,19 @@ export const resolveQuotaProvider = (file: AuthFileItem): QuotaProvider | null =
 
 export const isQuotaSupportedAuthFile = (file: AuthFileItem): boolean =>
   resolveQuotaProvider(file) !== null;
+
+export const consumeCodexResetCredit = async (file: AuthFileItem): Promise<void> => {
+  const result = await apiCallApi.request({
+    authIndex: resolveAuthIndex(file),
+    method: "POST",
+    url: CODEX_RESET_CREDITS_CONSUME_URL,
+    header: buildCodexRequestHeaders(file),
+    data: JSON.stringify({ redeem_request_id: createRedeemRequestId() }),
+  });
+  if (result.statusCode < 200 || result.statusCode >= 300) {
+    throw new Error(getApiCallErrorMessage(result));
+  }
+};
 
 const resolveAntigravityProjectId = async (file: AuthFileItem): Promise<string> => {
   try {
@@ -98,9 +138,7 @@ export const fetchQuota = async (
   type: QuotaProvider,
   file: AuthFileItem,
 ): Promise<QuotaFetchResult> => {
-  const rawAuthIndex = (file as any)["auth_index"] ?? file.authIndex;
-  const authIndex = normalizeAuthIndexValue(rawAuthIndex);
-  if (!authIndex) throw new Error("missing_auth_index");
+  const authIndex = resolveAuthIndex(file);
 
   if (type === "antigravity") {
     const projectId = await resolveAntigravityProjectId(file);
@@ -129,18 +167,11 @@ export const fetchQuota = async (
   }
 
   if (type === "codex") {
-    const accountId = resolveCodexChatgptAccountId(file);
-    const requestHeader: Record<string, string> = {
-      ...CODEX_REQUEST_HEADERS,
-    };
-    if (accountId) {
-      requestHeader["Chatgpt-Account-Id"] = accountId;
-    }
     const result = await apiCallApi.request({
       authIndex,
       method: "GET",
       url: CODEX_USAGE_URL,
-      header: requestHeader,
+      header: buildCodexRequestHeaders(file),
     });
     if (result.statusCode < 200 || result.statusCode >= 300)
       throw new Error(getApiCallErrorMessage(result));
@@ -149,6 +180,7 @@ export const fetchQuota = async (
     return {
       items: buildCodexItems(payload),
       planType: normalizeStringValue(payload.plan_type ?? payload.planType)?.toLowerCase() ?? null,
+      resetCreditCount: resolveCodexResetCreditCount(payload),
     };
   }
 

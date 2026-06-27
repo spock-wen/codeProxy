@@ -7,8 +7,15 @@ import type {
   UsageLogItem,
   UsageLogsResponse,
 } from "@code-proxy/api-client/endpoints/usage";
+import {
+  formatUsageMetricNumber,
+  formatUsageMetricRate,
+  formatUsageMetricTooltipNumber,
+  isUsageMetricCompact,
+} from "@code-proxy/domain";
 import { Button } from "@code-proxy/ui";
 import { Checkbox } from "@code-proxy/ui";
+import { HoverTooltip } from "@code-proxy/ui";
 import { Modal } from "@code-proxy/ui";
 import { useToast } from "@code-proxy/ui";
 import { DataTable } from "@code-proxy/ui";
@@ -21,6 +28,7 @@ import {
   buildRequestLogKeyOptions,
   buildRequestLogsColumns,
   DEFAULT_REQUEST_LOG_PAGE_SIZE,
+  RequestLogUsageMetricValue,
   RequestLogsPaginationBar,
   RequestLogsTimeRangeSelector,
   toRequestLogsRow,
@@ -42,6 +50,26 @@ const DEFAULT_CLEAR_OPTIONS: ClearUsageLogsPayload = {
   clear_detail_content: true,
   clear_request_records: false,
 };
+
+function RequestLogsRecordsCount({ count }: { count: number }) {
+  const { t } = useTranslation();
+  const compact = isUsageMetricCompact(count);
+
+  return (
+    <HoverTooltip
+      content={formatUsageMetricTooltipNumber(count)}
+      disabled={!compact}
+      placement="top"
+      className={compact ? "cursor-help" : undefined}
+    >
+      <span>
+        {t("request_logs.records_count", {
+          count: formatUsageMetricNumber(count),
+        } as Record<string, string>)}
+      </span>
+    </HoverTooltip>
+  );
+}
 
 function normalizeFilterSelection<T extends string>(
   selected: MultiSelectFilterState<T>,
@@ -114,7 +142,6 @@ export function RequestLogsPage() {
   // Data state (page-based, no accumulation)
   const [rawItems, setRawItems] = useState<UsageLogItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
 
   // Pagination state
   const [totalCount, setTotalCount] = useState(0);
@@ -151,6 +178,7 @@ export function RequestLogsPage() {
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [clearingLogs, setClearingLogs] = useState(false);
   const [exportingSummary, setExportingSummary] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
   const [clearOptions, setClearOptions] = useState<ClearUsageLogsPayload>(DEFAULT_CLEAR_OPTIONS);
 
   const requestSeqRef = useRef(0);
@@ -407,6 +435,8 @@ export function RequestLogsPage() {
     }
   }, [timeRange, selectedApiKeys, notify, t]);
 
+
+
   const handleOpenClearDialog = useCallback(() => {
     setClearOptions(DEFAULT_CLEAR_OPTIONS);
     setConfirmClearOpen(true);
@@ -486,11 +516,7 @@ export function RequestLogsPage() {
             </h2>
             <div className="hidden min-[640px]:flex items-center gap-2 text-xs text-slate-500 dark:text-white/50">
               <span className="text-slate-300 dark:text-white/15">|</span>
-              <span>
-                {t("request_logs.records_count", {
-                  count: stats.total.toLocaleString(),
-                } as Record<string, string>)}
-              </span>
+              <RequestLogsRecordsCount count={stats.total} />
               <span className="text-slate-300 dark:text-white/15">|</span>
               <span>
                 {t("common.success_rate")}{" "}
@@ -502,26 +528,22 @@ export function RequestLogsPage() {
               <span>
                 {t("request_logs.col_total_token")}{" "}
                 <span className="font-mono tabular-nums text-slate-900 dark:text-white">
-                  {stats.total_tokens.toLocaleString()}
+                  <RequestLogUsageMetricValue value={stats.total_tokens} compact />
                 </span>
               </span>
               <span className="text-slate-300 dark:text-white/15">|</span>
               <span>
                 {t("request_logs.col_cost")}{" "}
                 <span className="font-mono tabular-nums text-emerald-700 dark:text-emerald-400">
-                  ${stats.total_cost.toFixed(4)}
+                  <RequestLogUsageMetricValue value={stats.total_cost} variant="currency" compact />
                 </span>
               </span>
               <span className="text-slate-300 dark:text-white/15">|</span>
               <span>
                 {t("request_logs.cache_rate")}{" "}
                 <span className="font-mono tabular-nums text-amber-600 dark:text-amber-400">
-                  {stats.cache_rate.toFixed(1)}%
+                  {formatUsageMetricRate(stats.cache_rate)}
                 </span>
-              </span>
-              <span className="text-slate-300 dark:text-white/15">|</span>
-              <span className="text-slate-400 dark:text-white/40">
-                {loading ? t("request_logs.refreshing") : lastUpdatedText}
               </span>
             </div>
           </div>

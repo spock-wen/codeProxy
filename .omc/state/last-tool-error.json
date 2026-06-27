@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"grep -n \\\"<<<<<<< HEAD\\\\|=======\\\\|>>>>>>>\\\" internal/api/routes/management_test.go internal/translator/openai/claude/openai_claude_request.go internal/translator/openai/claude/openai_clau...",
+  "error": "Exit code 2\ngrep: internal/api/routes/management_test.go: No such file or directory\ngrep: internal/translator/openai/claude/openai_claude_request.go: No such file or directory\ngrep: internal/translator/openai/claude/openai_claude_response.go: No such file or directory",
+  "timestamp": "2026-06-23T08:53:39.041Z",
+  "retry_count": 4
+}

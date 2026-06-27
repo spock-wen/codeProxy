@@ -72,6 +72,7 @@ type ModelMetadataLike = {
   id: string;
   owned_by?: string;
   source?: string;
+  enabled?: boolean;
 };
 
 const GENERIC_MODEL_CONFIG_OWNER_KEYS = new Set([
@@ -138,8 +139,9 @@ const modelMetadataMatchesOwnerKeys = (
   model: ModelMetadataLike,
   ownerKeys: ReadonlySet<string>,
 ): boolean =>
-  ownerKeys.has(normalizeModelOwnerKey(model.owned_by)) ||
-  ownerKeys.has(normalizeModelOwnerKey(model.source));
+  model.enabled !== false &&
+  (ownerKeys.has(normalizeModelOwnerKey(model.owned_by)) ||
+    ownerKeys.has(normalizeModelOwnerKey(model.source)));
 
 function pickClaudeRoleModel(role: CcSwitchClaudeModelRole, models: readonly string[]): string {
   const normalized = dedupeModels(models);
@@ -375,18 +377,19 @@ export function CcSwitchImportConfigModal({
     const modelOwnerKeys = new Set(
       (selectedGroupOption?.modelOwnerKeys ?? []).map(normalizeModelOwnerKey).filter(Boolean),
     );
-    const lookupParams = selectedGroup
-      ? { allowedChannelGroups: [selectedGroup] }
-      : { allowedChannels: lookupChannels };
+    const useResolvedChannels = lookupChannels.length > 0;
+    const lookupParams = useResolvedChannels
+      ? { allowedChannels: lookupChannels }
+      : { allowedChannelGroups: [selectedGroup] };
 
     setModelsLoading(true);
     modelsApi
       .listAvailableModels(lookupParams)
       .then(async (models) => {
         if (cancelled) return;
-        const availability = await loadConfiguredModelAvailability(
-          selectedGroup ? { allowedChannelGroups: [selectedGroup] } : undefined,
-        );
+        const availability = useResolvedChannels
+          ? await loadConfiguredModelAvailability()
+          : await loadConfiguredModelAvailability({ allowedChannelGroups: [selectedGroup] });
         if (cancelled) return;
         let visibleModels = filterByConfiguredModelAvailability(models, availability);
         const optionMap = new Map<string, string>();
@@ -397,13 +400,11 @@ export function CcSwitchImportConfigModal({
           if (!optionMap.has(key)) optionMap.set(key, normalized);
         };
         const needsModelConfigs = authoritativeModelOwnerKeys.size > 0 || modelOwnerKeys.size > 0;
-        let modelConfigs: ModelMetadataLike[] = [];
         if (needsModelConfigs) {
-          modelConfigs =
-            availability.metadataItems && availability.metadataItems.length > 0
-              ? availability.metadataItems
-              : await modelsApi.getModelConfigs("active").catch(() => []);
-          if (cancelled) return;
+          const modelConfigs: ModelMetadataLike[] = [
+            ...(availability.metadataItems ?? []),
+            ...availability.items,
+          ];
           if (modelOwnerKeys.size > 0 && authoritativeModelOwnerKeys.size === 0) {
             const allowedModelIds = new Set(
               modelConfigs

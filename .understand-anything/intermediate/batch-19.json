@@ -1,0 +1,797 @@
+{
+  "nodes": [
+    {
+      "id": "file:pages/api-keys/index.ts",
+      "type": "file",
+      "name": "pages/api-keys/index.ts",
+      "filePath": "pages/api-keys/index.ts",
+      "summary": "Barrel export file re-exporting ApiKeysPage component and apiKeysRoute from the api-keys page module.",
+      "tags": ["barrel", "export", "api-keys"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-keys/route.tsx",
+      "type": "file",
+      "name": "pages/api-keys/route.tsx",
+      "filePath": "pages/api-keys/route.tsx",
+      "summary": "Defines the lazy-loaded route configuration for the API Keys page at path '/api-keys' with dashboard layout and auth protection.",
+      "tags": ["route", "lazy-loading", "api-keys"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/api-keys/types.ts",
+      "type": "file",
+      "name": "pages/api-keys/types.ts",
+      "filePath": "pages/api-keys/types.ts",
+      "summary": "Defines the ApiKeyFormValues interface with fields for name, key, permissions, limits, allowed models/channels/groups, system prompt.",
+      "tags": ["types", "api-keys", "form"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:ApiKeyFormValues",
+      "type": "class",
+      "name": "ApiKeyFormValues",
+      "filePath": "pages/api-keys/types.ts",
+      "summary": "Interface for API key form values including name, key, permission profile, daily/total/spending/concurrency limits, RPM/TPM limits, allowed models/channels/groups, and system prompt.",
+      "tags": ["interface", "form", "api-keys"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:apiKeysRoute",
+      "type": "function",
+      "name": "apiKeysRoute",
+      "filePath": "pages/api-keys/route.tsx",
+      "summary": "Route configuration object with path '/api-keys', lazy-loaded ApiKeysPage element, auth required, dashboard layout, and nav label.",
+      "tags": ["route-config", "lazy"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/auth-files/AuthFilesPage.tsx",
+      "type": "file",
+      "name": "pages/auth-files/AuthFilesPage.tsx",
+      "filePath": "pages/auth-files/AuthFilesPage.tsx",
+      "summary": "Main Auth Files page component with tabs (files/excluded/alias), data loading, filtering, search, pagination, OAuth dialog, detail modals, tags editor, import models, group overview, and batch operations.",
+      "tags": ["page", "auth-files", "tabs", "filtering", "oauth"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:AuthFilesPage",
+      "type": "function",
+      "name": "AuthFilesPage",
+      "filePath": "pages/auth-files/AuthFilesPage.tsx",
+      "summary": "Main page component orchestrating auth file browsing with three tabs (files, excluded, alias), data/usage state, filtering by type/tag/status, search, pagination, OAuth login dialog, detail modal, tags modal, import models, group overview modal, and batch file operations.",
+      "tags": ["component", "page", "orchestrator"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/auth-files/components/AuthFileDetailModal.tsx",
+      "type": "file",
+      "name": "pages/auth-files/components/AuthFileDetailModal.tsx",
+      "filePath": "pages/auth-files/components/AuthFileDetailModal.tsx",
+      "summary": "Modal for viewing auth file details including usage trends (5h/week), fields editor (prefix, proxy, subscription), and models list with owner group mapping.",
+      "tags": ["modal", "detail", "usage-trend", "prefix-proxy", "models"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:AuthFileDetailModal",
+      "type": "function",
+      "name": "AuthFileDetailModal",
+      "filePath": "pages/auth-files/components/AuthFileDetailModal.tsx",
+      "summary": "Detail modal with three tabs: usage (trend chart with request/percentage data), fields (prefix/proxy/subscription editor), models (model list with owner group filtering). Supports trend window switching between 5h and week views.",
+      "tags": ["component", "modal", "detail-view"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/auth-files/components/AuthFilesAliasTab.tsx",
+      "type": "file",
+      "name": "pages/auth-files/components/AuthFilesAliasTab.tsx",
+      "filePath": "pages/auth-files/components/AuthFilesAliasTab.tsx",
+      "summary": "Tab component for managing channel aliases with add/save/delete operations, model import, and fork toggle per alias row.",
+      "tags": ["tab", "alias", "channel"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:AuthFilesAliasTab",
+      "type": "function",
+      "name": "AuthFilesAliasTab",
+      "filePath": "pages/auth-files/components/AuthFilesAliasTab.tsx",
+      "summary": "Tab UI for managing model alias mappings per channel. Supports adding/removing alias rows, importing models, and saving/deleting channel configurations.",
+      "tags": ["component", "alias", "management"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/components/AuthFilesExcludedTab.tsx",
+      "type": "file",
+      "name": "pages/auth-files/components/AuthFilesExcludedTab.tsx",
+      "filePath": "pages/auth-files/components/AuthFilesExcludedTab.tsx",
+      "summary": "Tab component for managing excluded models per provider with add/save/delete operations on provider-specific model exclusion lists.",
+      "tags": ["tab", "excluded-models", "provider"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:AuthFilesExcludedTab",
+      "type": "function",
+      "name": "AuthFilesExcludedTab",
+      "filePath": "pages/auth-files/components/AuthFilesExcludedTab.tsx",
+      "summary": "Tab UI for managing excluded models per provider. Supports adding new providers, saving/deleting exclusion lists, and editing model lists via textarea.",
+      "tags": ["component", "excluded", "provider"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "type": "file",
+      "name": "pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "filePath": "pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "summary": "Main files tab with DataTable, filtering controls (provider type, tags, status, search), model owner groups, file upload (file picker and JSON paste), batch selection, and pagination.",
+      "tags": ["tab", "file-list", "datatable", "upload", "filtering"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:AuthFilesFilesTab",
+      "type": "function",
+      "name": "AuthFilesFilesTab",
+      "filePath": "pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "summary": "Main files tab rendering file list with DataTable, provider/tag/status/search filters, model owner group selector, file upload via picker or JSON paste, batch selection actions, and pagination controls.",
+      "tags": ["component", "file-list", "datatable"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/auth-files/components/AuthFileTagsModal.tsx",
+      "type": "file",
+      "name": "pages/auth-files/components/AuthFileTagsModal.tsx",
+      "filePath": "pages/auth-files/components/AuthFileTagsModal.tsx",
+      "summary": "Modal for editing custom tags (up to 3) and selecting display tags from default/custom tag options for auth files.",
+      "tags": ["modal", "tags", "editing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:AuthFileTagsModal",
+      "type": "function",
+      "name": "AuthFileTagsModal",
+      "filePath": "pages/auth-files/components/AuthFileTagsModal.tsx",
+      "summary": "Modal component for managing auth file tags: add/remove custom tags (max 3) and toggle display tags from inherited/custom options.",
+      "tags": ["component", "modal", "tag-management"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/components/GroupOverviewModal.tsx",
+      "type": "file",
+      "name": "pages/auth-files/components/GroupOverviewModal.tsx",
+      "filePath": "pages/auth-files/components/GroupOverviewModal.tsx",
+      "summary": "Modal showing group performance overview with KPI cards (file count, total calls, average weekly %, quota samples) and an EChart visualization, filterable by provider group.",
+      "tags": ["modal", "group-overview", "kpi", "chart"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:GroupOverviewModal",
+      "type": "function",
+      "name": "GroupOverviewModal",
+      "filePath": "pages/auth-files/components/GroupOverviewModal.tsx",
+      "summary": "Modal displaying group-level performance metrics with KPI stat cards and EChart, filterable by provider group tabs.",
+      "tags": ["component", "modal", "analytics"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/components/ImportModelsModal.tsx",
+      "type": "file",
+      "name": "pages/auth-files/components/ImportModelsModal.tsx",
+      "filePath": "pages/auth-files/components/ImportModelsModal.tsx",
+      "summary": "Modal for importing models from a channel with search filtering, multi-select checkboxes, and apply/import actions.",
+      "tags": ["modal", "import", "models"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ImportModelsModal",
+      "type": "function",
+      "name": "ImportModelsModal",
+      "filePath": "pages/auth-files/components/ImportModelsModal.tsx",
+      "summary": "Modal to import models from a channel with search, multi-select checkboxes, and apply action.",
+      "tags": ["component", "modal", "import"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/helpers/authFilesTabUtils.ts",
+      "type": "file",
+      "name": "pages/auth-files/helpers/authFilesTabUtils.ts",
+      "filePath": "pages/auth-files/helpers/authFilesTabUtils.ts",
+      "summary": "Utility functions for auth files: filename sanitization, string field extraction from records, dedup key normalization, and Codex filename identity parsing.",
+      "tags": ["utils", "helpers", "sanitize", "parse"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/auth-files/hooks/useAuthFilesDataState.ts",
+      "type": "file",
+      "name": "pages/auth-files/hooks/useAuthFilesDataState.ts",
+      "filePath": "pages/auth-files/hooks/useAuthFilesDataState.ts",
+      "summary": "Hook managing auth files data state: loading files list and usage data from API, caching to localStorage, and providing refresh functions for files and usage data.",
+      "tags": ["hook", "data-state", "caching", "auth-files"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useAuthFilesDataState",
+      "type": "function",
+      "name": "useAuthFilesDataState",
+      "filePath": "pages/auth-files/hooks/useAuthFilesDataState.ts",
+      "summary": "React hook that manages auth files and usage data state with localStorage caching, API loading/refresh, and usage index computation.",
+      "tags": ["hook", "state-management"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/hooks/useAuthFilesDetailEditors.ts",
+      "type": "file",
+      "name": "pages/auth-files/hooks/useAuthFilesDetailEditors.ts",
+      "filePath": "pages/auth-files/hooks/useAuthFilesDetailEditors.ts",
+      "summary": "Hook providing detail modal state and operations: opening detail, loading models, refreshing usage trends, prefix/proxy editor state management, and channel name editor.",
+      "tags": ["hook", "detail-editor", "prefix-proxy", "channel"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:useAuthFilesDetailEditors",
+      "type": "function",
+      "name": "useAuthFilesDetailEditors",
+      "filePath": "pages/auth-files/hooks/useAuthFilesDetailEditors.ts",
+      "summary": "React hook managing detail modal state: trend data fetching, model loading with caching, prefix/proxy field editor state, and channel name editing with save operations.",
+      "tags": ["hook", "detail", "editor"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/auth-files/hooks/useAuthFilesFileActions.ts",
+      "type": "file",
+      "name": "pages/auth-files/hooks/useAuthFilesFileActions.ts",
+      "filePath": "pages/auth-files/hooks/useAuthFilesFileActions.ts",
+      "summary": "Hook providing file operations: download, upload with size validation, batch delete, enable/disable toggle, and tag saving with optimistic UI updates.",
+      "tags": ["hook", "file-actions", "upload", "delete", "tags"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useAuthFilesFileActions",
+      "type": "function",
+      "name": "useAuthFilesFileActions",
+      "filePath": "pages/auth-files/hooks/useAuthFilesFileActions.ts",
+      "summary": "React hook for auth file CRUD operations: download with confirmation, upload with size validation, batch delete, enable/disable status toggle, and tag saving with optimistic UI updates.",
+      "tags": ["hook", "file-crud", "optimistic-update"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/hooks/useAuthFilesFilesPresentation.tsx",
+      "type": "file",
+      "name": "pages/auth-files/hooks/useAuthFilesFilesPresentation.tsx",
+      "filePath": "pages/auth-files/hooks/useAuthFilesFilesPresentation.tsx",
+      "summary": "Hook providing presentation logic for the files list: quota/restriction/subscription badge rendering, file columns for DataTable, file view mode tabs, and quota bar visualization.",
+      "tags": ["hook", "presentation", "quota", "columns", "badges"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:useAuthFilesFilesPresentation",
+      "type": "function",
+      "name": "useAuthFilesFilesPresentation",
+      "filePath": "pages/auth-files/hooks/useAuthFilesFilesPresentation.tsx",
+      "summary": "React hook that provides rendering utilities and column definitions for the auth files DataTable, including quota bars, restriction/subscription badges, plan type labels, and view mode controls.",
+      "tags": ["hook", "presentation", "datatable-columns"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/auth-files/hooks/useAuthFilesGroupOverview.ts",
+      "type": "file",
+      "name": "pages/auth-files/hooks/useAuthFilesGroupOverview.ts",
+      "filePath": "pages/auth-files/hooks/useAuthFilesGroupOverview.ts",
+      "summary": "Hook computing group-level overview statistics (total calls, average five-hour/weekly percentages, quota samples), chart options for EChart, and refresh functions for overview/trend data.",
+      "tags": ["hook", "group-overview", "statistics", "chart"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useAuthFilesGroupOverview",
+      "type": "function",
+      "name": "useAuthFilesGroupOverview",
+      "filePath": "pages/auth-files/hooks/useAuthFilesGroupOverview.ts",
+      "summary": "React hook for computing group-level overview with KPI metrics, EChart options, and refresh functions for overview and trend data by provider group.",
+      "tags": ["hook", "analytics", "group-stats"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/hooks/useAuthFilesListState.ts",
+      "type": "file",
+      "name": "pages/auth-files/hooks/useAuthFilesListState.ts",
+      "filePath": "pages/auth-files/hooks/useAuthFilesListState.ts",
+      "summary": "Hook managing auth file list state: filtering by provider type/tag/status/search, pagination, file selection (page/filter level), and sort order.",
+      "tags": ["hook", "list-state", "filtering", "pagination", "selection"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useAuthFilesListState",
+      "type": "function",
+      "name": "useAuthFilesListState",
+      "filePath": "pages/auth-files/hooks/useAuthFilesListState.ts",
+      "summary": "React hook managing auth file list filtering (type/tag/status/search), pagination state, file selection (page/filter level), and filtered counts.",
+      "tags": ["hook", "list", "filter", "pagination"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/hooks/useAuthFilesModelOwnerGroups.ts",
+      "type": "file",
+      "name": "pages/auth-files/hooks/useAuthFilesModelOwnerGroups.ts",
+      "filePath": "pages/auth-files/hooks/useAuthFilesModelOwnerGroups.ts",
+      "summary": "Hook managing model owner groups: loading from API (model configs and owner presets), building group structures, and persisting group-to-owner mappings in localStorage.",
+      "tags": ["hook", "model-owner-groups", "caching"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:useAuthFilesModelOwnerGroups",
+      "type": "function",
+      "name": "useAuthFilesModelOwnerGroups",
+      "filePath": "pages/auth-files/hooks/useAuthFilesModelOwnerGroups.ts",
+      "summary": "React hook that loads model configs and owner presets, builds owner group structures, and persists auth-group to owner-value mappings in localStorage.",
+      "tags": ["hook", "owner-groups", "persistence"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/__tests__/auth-files-helpers.test.tsx",
+      "type": "file",
+      "name": "pages/auth-files/__tests__/auth-files-helpers.test.tsx",
+      "filePath": "pages/auth-files/__tests__/auth-files-helpers.test.tsx",
+      "summary": "Tests for auth files helpers: useAuthFilesListState, useAuthFilesDetailEditors, useAuthFilesOAuthConfig hooks and domain functions like resolveFileType, resolveAuthFileDisplayName, resolveAuthFileRestrictionBadges.",
+      "tags": ["test", "vitest", "hooks"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/__tests__/AuthFileDetailModal.test.tsx",
+      "type": "file",
+      "name": "pages/auth-files/__tests__/AuthFileDetailModal.test.tsx",
+      "filePath": "pages/auth-files/__tests__/AuthFileDetailModal.test.tsx",
+      "summary": "Tests for AuthFileDetailModal component covering usage trend tab, fields tab, models tab, and proxy field editing behavior.",
+      "tags": ["test", "vitest", "component"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/__tests__/AuthFilesPage.excluded.test.tsx",
+      "type": "file",
+      "name": "pages/auth-files/__tests__/AuthFilesPage.excluded.test.tsx",
+      "filePath": "pages/auth-files/__tests__/AuthFilesPage.excluded.test.tsx",
+      "summary": "Tests for the excluded models tab of AuthFilesPage covering add, edit, delete excluded provider functionality.",
+      "tags": ["test", "vitest", "excluded"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/__tests__/AuthFilesPage.files-table.test.tsx",
+      "type": "file",
+      "name": "pages/auth-files/__tests__/AuthFilesPage.files-table.test.tsx",
+      "filePath": "pages/auth-files/__tests__/AuthFilesPage.files-table.test.tsx",
+      "summary": "Comprehensive tests for the files table tab of AuthFilesPage covering file listing, filtering, search, pagination, upload, batch operations, detail modal, and tag editing.",
+      "tags": ["test", "vitest", "files-table"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/auth-files/__tests__/AuthFilesPage.oauth-dialog.test.tsx",
+      "type": "file",
+      "name": "pages/auth-files/__tests__/AuthFilesPage.oauth-dialog.test.tsx",
+      "filePath": "pages/auth-files/__tests__/AuthFilesPage.oauth-dialog.test.tsx",
+      "summary": "Tests for OAuth login dialog integration with AuthFilesPage covering OAuth flow and proxy field editing.",
+      "tags": ["test", "vitest", "oauth"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/auth-files/__tests__/AuthFilesPage.proxy-fields.test.tsx",
+      "type": "file",
+      "name": "pages/auth-files/__tests__/AuthFilesPage.proxy-fields.test.tsx",
+      "filePath": "pages/auth-files/__tests__/AuthFilesPage.proxy-fields.test.tsx",
+      "summary": "Tests for proxy field editing in the auth files page detail modal, covering prefix/proxy configuration UI interactions.",
+      "tags": ["test", "vitest", "proxy-fields"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:pages/api-keys/index.ts",
+      "target": "file:pages/api-keys/route.tsx",
+      "type": "exports",
+      "weight": 1.0,
+      "label": "re-exports apiKeysRoute"
+    },
+    {
+      "source": "file:pages/api-keys/index.ts",
+      "target": "pages/api-keys/ApiKeysPage",
+      "type": "exports",
+      "weight": 1.0,
+      "label": "re-exports ApiKeysPage"
+    },
+    {
+      "source": "file:pages/api-keys/route.tsx",
+      "target": "pages/api-keys/ApiKeysPage",
+      "type": "imports",
+      "weight": 0.9,
+      "label": "lazy-imports ApiKeysPage"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/components/AuthFileDetailModal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "renders AuthFileDetailModal"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/components/AuthFilesExcludedTab.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "renders AuthFilesExcludedTab"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/components/AuthFilesAliasTab.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "renders AuthFilesAliasTab"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "renders AuthFilesFilesTab"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/components/AuthFileTagsModal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "renders AuthFileTagsModal"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/components/ImportModelsModal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "renders ImportModelsModal"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/components/GroupOverviewModal.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "renders GroupOverviewModal"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesDataState.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "uses useAuthFilesDataState"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesDetailEditors.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "uses useAuthFilesDetailEditors"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesFileActions.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "uses useAuthFilesFileActions"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesFilesPresentation.tsx",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "uses useAuthFilesFilesPresentation"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesListState.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "uses useAuthFilesListState"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesModelOwnerGroups.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "uses useAuthFilesModelOwnerGroups"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesGroupOverview.ts",
+      "type": "imports",
+      "weight": 1.0,
+      "label": "uses useAuthFilesGroupOverview"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesOAuthConfig.ts",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "uses hook from adjacent batch"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesQuotaState.ts",
+      "type": "depends_on",
+      "weight": 1.0,
+      "label": "uses hook from adjacent batch"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports domain helpers"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports API client types"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:features/quota-preview/quota-fetch.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports resolveQuotaProvider"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFileDetailModal.tsx",
+      "target": "file:features/proxy-pool/index.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports ProxyPoolSelect and useProxyPoolChecks"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFileDetailModal.tsx",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports domain helpers"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports domain functions"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "target": "file:features/quota-preview/quota-fetch.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports quota provider"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "target": "file:features/quota-preview/quota-helpers.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports quota helpers"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFileTagsModal.tsx",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "imports tag helper functions"
+    },
+    {
+      "source": "file:pages/auth-files/components/GroupOverviewModal.tsx",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports group overview types"
+    },
+    {
+      "source": "file:pages/auth-files/components/ImportModelsModal.tsx",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "imports AuthFileModelItem type"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesDataState.ts",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "imports cache and normalization helpers"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesDataState.ts",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports authFilesApi and usageApi"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesDetailEditors.ts",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "imports domain helpers"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesDetailEditors.ts",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports API client"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesFileActions.ts",
+      "target": "file:features/model-availability/index.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "imports invalidateConfiguredModelAvailability"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesFileActions.ts",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports file size constants and helpers"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesFileActions.ts",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports authFilesApi"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesFilesPresentation.tsx",
+      "target": "file:features/provider-latency/index.ts",
+      "type": "depends_on",
+      "weight": 0.6,
+      "label": "imports ProviderStatusBar and formatLatency"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesFilesPresentation.tsx",
+      "target": "file:features/quota-preview/quota-fetch.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports resolveQuotaProvider"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesFilesPresentation.tsx",
+      "target": "file:features/quota-preview/quota-helpers.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports quota helpers"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesFilesPresentation.tsx",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.9,
+      "label": "imports domain functions for file presentation"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesGroupOverview.ts",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports domain types and helpers"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesGroupOverview.ts",
+      "target": "file:features/quota-preview/quota-fetch.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports QuotaProvider type"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesGroupOverview.ts",
+      "target": "file:features/quota-preview/quota-helpers.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports quota types"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesListState.ts",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports filtering and sorting helpers"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesModelOwnerGroups.ts",
+      "target": "file:packages/domain/src/auth-files/authFiles.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports model owner types and helpers"
+    },
+    {
+      "source": "file:pages/auth-files/hooks/useAuthFilesModelOwnerGroups.ts",
+      "target": "file:packages/api-client/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.8,
+      "label": "imports modelsApi"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "target": "file:pages/auth-files/helpers/authFilesTabUtils.ts",
+      "type": "contains",
+      "weight": 0.5,
+      "label": "duplicates utilities inline (same functions redefined)"
+    },
+    {
+      "source": "file:pages/auth-files/__tests__/auth-files-helpers.test.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesListState.ts",
+      "type": "tests",
+      "weight": 1.0,
+      "label": "tests useAuthFilesListState"
+    },
+    {
+      "source": "file:pages/auth-files/__tests__/auth-files-helpers.test.tsx",
+      "target": "file:pages/auth-files/hooks/useAuthFilesDetailEditors.ts",
+      "type": "tests",
+      "weight": 1.0,
+      "label": "tests useAuthFilesDetailEditors"
+    },
+    {
+      "source": "file:pages/auth-files/__tests__/AuthFileDetailModal.test.tsx",
+      "target": "file:pages/auth-files/components/AuthFileDetailModal.tsx",
+      "type": "tests",
+      "weight": 1.0,
+      "label": "tests AuthFileDetailModal"
+    },
+    {
+      "source": "file:pages/auth-files/__tests__/AuthFilesPage.excluded.test.tsx",
+      "target": "file:pages/auth-files/AuthFilesPage.tsx",
+      "type": "tests",
+      "weight": 1.0,
+      "label": "tests excluded tab"
+    },
+    {
+      "source": "file:pages/auth-files/__tests__/AuthFilesPage.files-table.test.tsx",
+      "target": "file:pages/auth-files/AuthFilesPage.tsx",
+      "type": "tests",
+      "weight": 1.0,
+      "label": "tests files table tab"
+    },
+    {
+      "source": "file:pages/auth-files/__tests__/AuthFilesPage.oauth-dialog.test.tsx",
+      "target": "file:pages/auth-files/AuthFilesPage.tsx",
+      "type": "tests",
+      "weight": 1.0,
+      "label": "tests OAuth dialog"
+    },
+    {
+      "source": "file:pages/auth-files/__tests__/AuthFilesPage.proxy-fields.test.tsx",
+      "target": "file:pages/auth-files/AuthFilesPage.tsx",
+      "type": "tests",
+      "weight": 1.0,
+      "label": "tests proxy fields"
+    },
+    {
+      "source": "file:pages/auth-files/AuthFilesPage.tsx",
+      "target": "file:features/oauth-login/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports OAuthLoginDialog"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports UI components"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFileDetailModal.tsx",
+      "target": "file:packages/ui/src/index.ts",
+      "type": "depends_on",
+      "weight": 0.7,
+      "label": "imports UI components"
+    },
+    {
+      "source": "file:pages/auth-files/components/AuthFilesFilesTab.tsx",
+      "target": "file:features/api-key-restrictions/index.ts",
+      "type": "depends_on",
+      "weight": 0.5,
+      "label": "imports restriction components"
+    }
+  ]
+}
