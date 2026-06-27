@@ -3080,7 +3080,8 @@
     "clear_name_filter": "清空名称筛选",
     "clear_key_filter": "清空密钥筛选",
     "clear_channel_group_filter": "清空渠道分组筛选",
-    "reset_filters": "重置筛选"
+    "reset_filters": "重置筛选",
+    "entry_not_found": "条目未找到，可能已被修改或删除。"
   },
   "api_key_permissions_page": {
     "title": "API Key 权限配置",

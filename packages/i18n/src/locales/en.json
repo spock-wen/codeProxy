@@ -2811,7 +2811,8 @@
     "clear_name_filter": "Clear name filter",
     "clear_key_filter": "Clear key filter",
     "clear_channel_group_filter": "Clear channel group filter",
-    "reset_filters": "Reset filters"
+    "reset_filters": "Reset filters",
+    "entry_not_found": "Entry not found. It may have been modified or deleted."
   },
   "api_key_permissions_page": {
     "title": "API Key Permissions",

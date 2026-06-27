@@ -69,8 +69,7 @@ function useStaleSelection(
     if (options.length === 0) return null;
     const allowed = new Set(options.map((o) => o.value));
     const filtered = selected.filter((v) => allowed.has(v));
-    if (filtered.length === allowed.size) return null;
-    return filtered.length > 0 ? filtered : null;
+    return filtered.length > 0 ? filtered : [];
   }, [selected, options]);
 }
 
@@ -88,8 +87,8 @@ export function ApiKeysPage() {
   const [selectedChannelGroups, setSelectedChannelGroups] = useState<string[] | null>(null);
 
   const [showCreate, setShowCreate] = useState(false);
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [editEntryKey, setEditEntryKey] = useState<string | null>(null);
+  const [deleteEntryKey, setDeleteEntryKey] = useState<string | null>(null);
   const [deleteLogsOnDelete, setDeleteLogsOnDelete] = useState(true);
   const [ccSwitchImportEntry, setCcSwitchImportEntry] = useState<ApiKeyEntry | null>(null);
   const [ccSwitchImportConfigs, setCcSwitchImportConfigs] = useState<
@@ -286,7 +285,7 @@ export function ApiKeysPage() {
   const effectiveChannelGroups = useStaleSelection(selectedChannelGroups, channelGroupOptions);
 
   const hasActiveFilters =
-    selectedNames !== null || selectedKeys !== null || selectedChannelGroups !== null;
+    effectiveNames !== null || effectiveKeys !== null || effectiveChannelGroups !== null;
 
   const resetFilters = useCallback(() => {
     setSelectedNames(null);
@@ -304,8 +303,8 @@ export function ApiKeysPage() {
       if (effectiveKeys && !effectiveKeys.includes(entry.key)) return false;
       if (effectiveChannelGroups) {
         const entryGroups = entry["allowed-channel-groups"] || [];
-        if (entryGroups.length === 0) return false;
-        if (!effectiveChannelGroups.some((g) => entryGroups.includes(g))) return false;
+        if (entryGroups.length > 0 && !effectiveChannelGroups.some((g) => entryGroups.includes(g)))
+          return false;
       }
       return true;
     });
@@ -399,6 +398,7 @@ export function ApiKeysPage() {
   const handleOpenEdit = (index: number) => {
     if (index < 0 || index >= entries.length) return;
     const entry = entries[index];
+    setEditEntryKey(entry.key);
     const next = {
       name: entry.name || "",
       key: entry.key,
@@ -416,16 +416,21 @@ export function ApiKeysPage() {
       systemPrompt: entry["system-prompt"] || "",
     };
     setForm(next);
-    setEditIndex(index);
   };
 
   const handleEdit = async () => {
-    if (editIndex === null) return;
+    if (editEntryKey === null) return;
+    const editIdx = entries.findIndex((e) => e.key === editEntryKey);
+    if (editIdx === -1) {
+      notify({ type: "error", message: t("api_keys_page.entry_not_found") });
+      setEditEntryKey(null);
+      return;
+    }
     if (!form.name.trim()) {
       notify({ type: "error", message: t("api_keys_page.name_required") });
       return;
     }
-    const originalKey = entries[editIndex].key;
+    const originalKey = entries[editIdx].key;
     const newKey = form.key.trim();
     if (!newKey) {
       notify({ type: "error", message: t("api_keys_page.key_empty") });
@@ -434,24 +439,24 @@ export function ApiKeysPage() {
     setSaving(true);
     try {
       await apiKeyEntriesApi.update({
-        id: entries[editIndex].id,
-        index: editIndex,
+        id: entries[editIdx].id,
+        index: editIdx,
         value: {
           ...(newKey !== originalKey ? { key: newKey } : {}),
           name: form.name.trim(),
           ...(form.permissionProfileId === CUSTOM_PERMISSION_PROFILE_ID
             ? {
-                "permission-profile-id": entries[editIndex]["permission-profile-id"] ?? "",
-                "daily-limit": entries[editIndex]["daily-limit"] ?? 0,
-                "total-quota": entries[editIndex]["total-quota"] ?? 0,
-                "spending-limit": entries[editIndex]["spending-limit"] ?? 0,
-                "concurrency-limit": entries[editIndex]["concurrency-limit"] ?? 0,
-                "rpm-limit": entries[editIndex]["rpm-limit"] ?? 0,
-                "tpm-limit": entries[editIndex]["tpm-limit"] ?? 0,
-                "allowed-models": entries[editIndex]["allowed-models"] ?? [],
-                "allowed-channels": entries[editIndex]["allowed-channels"] ?? [],
-                "allowed-channel-groups": entries[editIndex]["allowed-channel-groups"] ?? [],
-                "system-prompt": entries[editIndex]["system-prompt"] ?? "",
+                "permission-profile-id": entries[editIdx]["permission-profile-id"] ?? "",
+                "daily-limit": entries[editIdx]["daily-limit"] ?? 0,
+                "total-quota": entries[editIdx]["total-quota"] ?? 0,
+                "spending-limit": entries[editIdx]["spending-limit"] ?? 0,
+                "concurrency-limit": entries[editIdx]["concurrency-limit"] ?? 0,
+                "rpm-limit": entries[editIdx]["rpm-limit"] ?? 0,
+                "tpm-limit": entries[editIdx]["tpm-limit"] ?? 0,
+                "allowed-models": entries[editIdx]["allowed-models"] ?? [],
+                "allowed-channels": entries[editIdx]["allowed-channels"] ?? [],
+                "allowed-channel-groups": entries[editIdx]["allowed-channel-groups"] ?? [],
+                "system-prompt": entries[editIdx]["system-prompt"] ?? "",
               }
             : applyApiKeyPermissionProfile(
                 {} as ApiKeyEntry,
@@ -460,7 +465,7 @@ export function ApiKeysPage() {
         },
       });
       notify({ type: "success", message: t("api_keys_page.updated_success") });
-      setEditIndex(null);
+      setEditEntryKey(null);
       await loadEntries();
     } catch (err: unknown) {
       notify({
@@ -475,12 +480,18 @@ export function ApiKeysPage() {
   /* ─── delete ─── */
 
   const handleDelete = async () => {
-    if (deleteIndex === null) return;
+    if (deleteEntryKey === null) return;
+    const deleteIdx = entries.findIndex((e) => e.key === deleteEntryKey);
+    if (deleteIdx === -1) {
+      notify({ type: "error", message: t("api_keys_page.entry_not_found") });
+      setDeleteEntryKey(null);
+      return;
+    }
     setSaving(true);
     try {
       const response = (await apiKeyEntriesApi.delete({
-        id: entries[deleteIndex]?.id,
-        index: deleteIndex,
+        id: entries[deleteIdx]?.id,
+        index: deleteIdx,
         deleteLogs: deleteLogsOnDelete,
       })) as { logs_deleted?: number } | undefined;
       const logsDeleted =
@@ -492,7 +503,7 @@ export function ApiKeysPage() {
             ? t("api_keys_page.deleted_success_with_logs", { count: logsDeleted })
             : t("api_keys_page.deleted_success"),
       });
-      setDeleteIndex(null);
+      setDeleteEntryKey(null);
       setDeleteLogsOnDelete(true);
       await loadEntries();
     } catch (err: unknown) {
@@ -508,7 +519,7 @@ export function ApiKeysPage() {
   const handleOpenDelete = (index: number) => {
     if (index < 0 || index >= entries.length) return;
     setDeleteLogsOnDelete(true);
-    setDeleteIndex(index);
+    setDeleteEntryKey(entries[index].key);
   };
 
   /* ─── copy ─── */
@@ -674,15 +685,15 @@ export function ApiKeysPage() {
           <>
             <ApiKeysFilters
               nameOptions={nameOptions}
-              selectedNames={selectedNames}
+              selectedNames={effectiveNames}
               onNamesChange={(v) => setSelectedNames(normalizeFilterSelection(v, nameOptions))}
               onNamesClear={clearNamesFilter}
               keyOptions={keyOptions}
-              selectedKeys={selectedKeys}
+              selectedKeys={effectiveKeys}
               onKeysChange={(v) => setSelectedKeys(normalizeFilterSelection(v, keyOptions))}
               onKeysClear={clearKeysFilter}
               channelGroupOptions={channelGroupOptions}
-              selectedChannelGroups={selectedChannelGroups}
+              selectedChannelGroups={effectiveChannelGroups}
               onChannelGroupsChange={(v) =>
                 setSelectedChannelGroups(normalizeFilterSelection(v, channelGroupOptions))
               }
@@ -722,26 +733,26 @@ export function ApiKeysPage() {
 
       <ApiKeyFormModal
         t={t}
-        open={editIndex !== null}
+        open={editEntryKey !== null}
         editMode
         saving={saving}
         form={form}
         setForm={setForm}
         permissionProfileOptions={permissionProfileOptions}
-        onClose={() => setEditIndex(null)}
+        onClose={() => setEditEntryKey(null)}
         onSubmit={handleEdit}
         regenerateKey={() => setForm((prev) => ({ ...prev, key: generateApiKey() }))}
       />
 
       <DeleteApiKeyModal
         t={t}
-        entry={deleteIndex === null ? null : (entries[deleteIndex] ?? null)}
-        open={deleteIndex !== null}
+        entry={deleteEntryKey === null ? null : (entries.find((e) => e.key === deleteEntryKey) ?? null)}
+        open={deleteEntryKey !== null}
         saving={saving}
         deleteLogsOnDelete={deleteLogsOnDelete}
         onDeleteLogsChange={setDeleteLogsOnDelete}
         onClose={() => {
-          setDeleteIndex(null);
+          setDeleteEntryKey(null);
           setDeleteLogsOnDelete(true);
         }}
         onConfirm={handleDelete}
