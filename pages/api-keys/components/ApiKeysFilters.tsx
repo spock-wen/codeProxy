@@ -66,8 +66,8 @@ export function ApiKeysFilters({
     },
     {
       placeholderKey: "api_keys_page.filter_key_placeholder",
-      searchPlaceholderKey: "request_logs.search_keys",
-      clearLabelKey: "request_logs.clear_key_filter",
+      searchPlaceholderKey: "api_keys_page.search_keys",
+      clearLabelKey: "api_keys_page.clear_key_filter",
       options: keyOptions,
       value: selectedKeys,
       onChange: onKeysChange,

@@ -3075,7 +3075,10 @@
     "filter_key_placeholder": "筛选密钥",
     "filter_channel_group_placeholder": "筛选渠道分组",
     "search_names": "搜索名称...",
+    "search_keys": "搜索密钥...",
+    "search_channel_groups": "搜索渠道分组...",
     "clear_name_filter": "清空名称筛选",
+    "clear_key_filter": "清空密钥筛选",
     "clear_channel_group_filter": "清空渠道分组筛选",
     "reset_filters": "重置筛选"
   },

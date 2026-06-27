@@ -2806,7 +2806,10 @@
     "filter_key_placeholder": "Filter keys",
     "filter_channel_group_placeholder": "Filter channel groups",
     "search_names": "Search names...",
+    "search_keys": "Search keys...",
+    "search_channel_groups": "Search channel groups...",
     "clear_name_filter": "Clear name filter",
+    "clear_key_filter": "Clear key filter",
     "clear_channel_group_filter": "Clear channel group filter",
     "reset_filters": "Reset filters"
   },

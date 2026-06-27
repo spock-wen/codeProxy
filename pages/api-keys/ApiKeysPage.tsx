@@ -253,8 +253,8 @@ export function ApiKeysPage() {
     entries.forEach((e) => names.add(e.name || ""));
     return Array.from(names)
       .sort((a, b) => {
-        if (!a) return 1;
-        if (!b) return -1;
+        if (a === "" && b !== "") return 1;
+        if (a !== "" && b === "") return -1;
         return a.localeCompare(b);
       })
       .map((n) => ({
