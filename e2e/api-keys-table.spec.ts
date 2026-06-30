@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const API_KEYS_COLUMN_WIDTH_STORAGE_KEY = "codeProxy.dataTable.columnWidths.v1.api-keys";
+const STICKY_EDGE_SHADOW_WIDTH = 28;
 
 type SetAuthedOptions = {
   columnWidths?: Record<string, number>;
@@ -399,6 +400,7 @@ test("API Keys: fixed start boundary follows the name column while resizing", as
       startRailRight: startRailRect.right,
       startBoundaryLeft: startBoundaryRect.left,
       startBoundaryRight: startBoundaryRect.right,
+      startBoundaryWidth: startBoundaryRect.width,
       previewCenter: previewRect.left + previewRect.width / 2,
       previewDisplay: getComputedStyle(previewLine).display,
     };
@@ -415,8 +417,16 @@ test("API Keys: fixed start boundary follows the name column while resizing", as
   expect(state.nameCellRight).toBeLessThanOrEqual(state.previewCenter + 2);
   expect(state.startRailRight).toBeGreaterThanOrEqual(state.nameCellRight - 1);
   expect(state.startRailRight).toBeLessThanOrEqual(state.nameCellRight + 1);
-  expect(state.startBoundaryLeft).toBeGreaterThanOrEqual(state.nameCellRight - 2);
-  expect(state.startBoundaryRight).toBeLessThanOrEqual(state.nameCellRight + 1);
+  expect(state.startBoundaryLeft).toBeGreaterThanOrEqual(state.nameCellRight - 1);
+  expect(state.startBoundaryLeft).toBeLessThanOrEqual(state.nameCellRight + 1);
+  expect(state.startBoundaryRight).toBeGreaterThanOrEqual(
+    state.nameCellRight + STICKY_EDGE_SHADOW_WIDTH - 1,
+  );
+  expect(state.startBoundaryRight).toBeLessThanOrEqual(
+    state.nameCellRight + STICKY_EDGE_SHADOW_WIDTH + 1,
+  );
+  expect(state.startBoundaryWidth).toBeGreaterThanOrEqual(STICKY_EDGE_SHADOW_WIDTH - 1);
+  expect(state.startBoundaryWidth).toBeLessThanOrEqual(STICKY_EDGE_SHADOW_WIDTH + 1);
 });
 
 test("API Keys: fixed columns do not cover the created time at the right edge", async ({
@@ -468,11 +478,15 @@ test("API Keys: fixed columns do not cover the created time at the right edge", 
       startBoundaryLeft: number;
       startBoundaryRight: number;
       startBoundaryBottom: number;
+      startBoundaryWidth: string;
+      startBoundaryOpacity: string;
       endRailRight: number;
       endRailBottom: number;
       endBoundaryLeft: number;
       endBoundaryRight: number;
       endBoundaryBottom: number;
+      endBoundaryWidth: string;
+      endBoundaryOpacity: string;
       fixedRailBottom: number;
       selectHeaderTopLeftRadius: number;
       selectHeaderBottomLeftRadius: number;
@@ -564,11 +578,15 @@ test("API Keys: fixed columns do not cover the created time at the right edge", 
         startBoundaryLeft: startBoundaryRect.left,
         startBoundaryRight: startBoundaryRect.right,
         startBoundaryBottom: startBoundaryRect.bottom,
+        startBoundaryWidth: startBoundary.style.width,
+        startBoundaryOpacity: startBoundary.style.opacity,
         endRailRight: endRailRect.right,
         endRailBottom: endRailRect.bottom,
         endBoundaryLeft: endBoundaryRect.left,
         endBoundaryRight: endBoundaryRect.right,
         endBoundaryBottom: endBoundaryRect.bottom,
+        endBoundaryWidth: endBoundary.style.width,
+        endBoundaryOpacity: endBoundary.style.opacity,
         fixedRailBottom: containerRect.bottom - horizontalScrollbarInset,
         selectHeaderTopLeftRadius: Number.parseFloat(selectHeaderStyle.borderTopLeftRadius),
         selectHeaderBottomLeftRadius: Number.parseFloat(selectHeaderStyle.borderBottomLeftRadius),
@@ -592,12 +610,24 @@ test("API Keys: fixed columns do not cover the created time at the right edge", 
     expect(state.startRailLeft).toBeLessThanOrEqual(state.containerLeft + 1);
     expect(state.endRailRight).toBeGreaterThanOrEqual(state.containerRight - 1);
     expect(state.endRailRight).toBeLessThanOrEqual(state.containerRight + 1);
-    expect(state.startBoundaryLeft).toBeGreaterThanOrEqual(expectedHeaderNameRight - 2);
-    expect(state.startBoundaryRight).toBeLessThanOrEqual(expectedHeaderNameRight + 1);
-    expect(state.endBoundaryLeft).toBeGreaterThanOrEqual(state.actionsLeft - 1);
-    expect(state.endBoundaryLeft).toBeLessThanOrEqual(state.actionsLeft + 1);
-    expect(state.endBoundaryRight).toBeGreaterThanOrEqual(state.actionsLeft);
-    expect(state.endBoundaryRight).toBeLessThanOrEqual(state.actionsLeft + 2);
+    expect(state.startBoundaryLeft).toBeGreaterThanOrEqual(expectedHeaderNameRight - 1);
+    expect(state.startBoundaryLeft).toBeLessThanOrEqual(expectedHeaderNameRight + 1);
+    expect(state.startBoundaryRight).toBeGreaterThanOrEqual(
+      expectedHeaderNameRight + STICKY_EDGE_SHADOW_WIDTH - 1,
+    );
+    expect(state.startBoundaryRight).toBeLessThanOrEqual(
+      expectedHeaderNameRight + STICKY_EDGE_SHADOW_WIDTH + 1,
+    );
+    expect(state.startBoundaryWidth).toBe(`${STICKY_EDGE_SHADOW_WIDTH}px`);
+    expect(state.endBoundaryLeft).toBeGreaterThanOrEqual(
+      state.actionsLeft - STICKY_EDGE_SHADOW_WIDTH - 1,
+    );
+    expect(state.endBoundaryLeft).toBeLessThanOrEqual(
+      state.actionsLeft - STICKY_EDGE_SHADOW_WIDTH + 1,
+    );
+    expect(state.endBoundaryRight).toBeGreaterThanOrEqual(state.actionsLeft - 1);
+    expect(state.endBoundaryRight).toBeLessThanOrEqual(state.actionsLeft + 1);
+    expect(state.endBoundaryWidth).toBe(`${STICKY_EDGE_SHADOW_WIDTH}px`);
     expect(state.selectHeaderLeft).toBeGreaterThanOrEqual(state.containerLeft - 1);
     expect(state.selectHeaderLeft).toBeLessThanOrEqual(state.containerLeft + 1);
     expect(state.nameHeaderLeft).toBeGreaterThanOrEqual(expectedHeaderNameLeft - 1);
@@ -627,6 +657,12 @@ test("API Keys: fixed columns do not cover the created time at the right edge", 
   }
 
   const maxScrollState = states.at(-1);
+  expect(states[0]?.startBoundaryOpacity).toBe("0");
+  expect(states[0]?.endBoundaryOpacity).toBe("1");
+  expect(states[1]?.startBoundaryOpacity).toBe("1");
+  expect(states[1]?.endBoundaryOpacity).toBe("1");
+  expect(maxScrollState?.startBoundaryOpacity).toBe("1");
+  expect(maxScrollState?.endBoundaryOpacity).toBe("0");
   expect(maxScrollState?.scrollLeft).toBe(maxScrollState?.maxScrollLeft);
   expect(maxScrollState?.createdAtRight).toBeLessThanOrEqual(
     (maxScrollState?.actionsLeft ?? 0) + 1,
@@ -740,7 +776,9 @@ test("API Keys: fixed columns stay pinned while dragging the horizontal scrollba
       startRailBorderRightWidth: startRailStyle.borderRightWidth,
       endRailBorderLeftWidth: endRailStyle.borderLeftWidth,
       startBoundaryWidth: startBoundaryStyle.width,
+      startBoundaryOpacity: startBoundary.style.opacity,
       endBoundaryWidth: endBoundaryStyle.width,
+      endBoundaryOpacity: endBoundary.style.opacity,
       nameHeaderBorderRightWidth: nameHeaderStyle.borderRightWidth,
       actionsHeaderBorderLeftWidth: actionsHeaderStyle.borderLeftWidth,
       nameCellBorderRightWidth: nameCellStyle.borderRightWidth,
@@ -761,24 +799,36 @@ test("API Keys: fixed columns stay pinned while dragging the horizontal scrollba
   expect(state.startRailLeft).toBeLessThanOrEqual(state.containerLeft + 1);
   expect(state.endRailRight).toBeGreaterThanOrEqual(state.containerRight - 1);
   expect(state.endRailRight).toBeLessThanOrEqual(state.containerRight + 1);
-  expect(state.startBoundaryLeft).toBeGreaterThanOrEqual(state.nameCellRight - 2);
-  expect(state.startBoundaryRight).toBeLessThanOrEqual(state.nameCellRight + 1);
-  expect(state.endBoundaryLeft).toBeGreaterThanOrEqual(state.actionsCellLeft - 1);
-  expect(state.endBoundaryLeft).toBeLessThanOrEqual(state.actionsCellLeft + 1);
-  expect(state.endBoundaryRight).toBeGreaterThanOrEqual(state.actionsCellLeft);
-  expect(state.endBoundaryRight).toBeLessThanOrEqual(state.actionsCellLeft + 2);
+  expect(state.startBoundaryLeft).toBeGreaterThanOrEqual(state.nameCellRight - 1);
+  expect(state.startBoundaryLeft).toBeLessThanOrEqual(state.nameCellRight + 1);
+  expect(state.startBoundaryRight).toBeGreaterThanOrEqual(
+    state.nameCellRight + STICKY_EDGE_SHADOW_WIDTH - 1,
+  );
+  expect(state.startBoundaryRight).toBeLessThanOrEqual(
+    state.nameCellRight + STICKY_EDGE_SHADOW_WIDTH + 1,
+  );
+  expect(state.endBoundaryLeft).toBeGreaterThanOrEqual(
+    state.actionsCellLeft - STICKY_EDGE_SHADOW_WIDTH - 1,
+  );
+  expect(state.endBoundaryLeft).toBeLessThanOrEqual(
+    state.actionsCellLeft - STICKY_EDGE_SHADOW_WIDTH + 1,
+  );
+  expect(state.endBoundaryRight).toBeGreaterThanOrEqual(state.actionsCellLeft - 1);
+  expect(state.endBoundaryRight).toBeLessThanOrEqual(state.actionsCellLeft + 1);
   expect(state.startRailZIndex).toBe("0");
   expect(state.endRailZIndex).toBe("0");
   expect(state.startRailTransform).toBe("none");
   expect(state.endRailTransform).toBe("none");
   expect(state.startRailBorderRightWidth).toBe("0px");
   expect(state.endRailBorderLeftWidth).toBe("0px");
-  expect(state.startBoundaryWidth).toBe("1px");
-  expect(state.endBoundaryWidth).toBe("1px");
-  expect(state.nameHeaderBorderRightWidth).toBe("1px");
-  expect(state.actionsHeaderBorderLeftWidth).toBe("1px");
-  expect(state.nameCellBorderRightWidth).toBe("1px");
-  expect(state.actionsCellBorderLeftWidth).toBe("1px");
+  expect(state.startBoundaryWidth).toBe(`${STICKY_EDGE_SHADOW_WIDTH}px`);
+  expect(state.endBoundaryWidth).toBe(`${STICKY_EDGE_SHADOW_WIDTH}px`);
+  expect(state.startBoundaryOpacity).toBe("1");
+  expect(state.endBoundaryOpacity).toBe("1");
+  expect(state.nameHeaderBorderRightWidth).toBe("0px");
+  expect(state.actionsHeaderBorderLeftWidth).toBe("0px");
+  expect(state.nameCellBorderRightWidth).toBe("0px");
+  expect(state.actionsCellBorderLeftWidth).toBe("0px");
   expect(state.selectHeaderLeft).toBeGreaterThanOrEqual(state.containerLeft - 1);
   expect(state.selectHeaderLeft).toBeLessThanOrEqual(state.containerLeft + 1);
   expect(state.nameHeaderLeft).toBeGreaterThanOrEqual(expectedNameLeft - 1);

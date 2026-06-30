@@ -214,6 +214,17 @@ describe("ApiKeyColumns", () => {
     expect(`${actionsColumn?.headerClassName} ${actionsColumn?.cellClassName}`).not.toMatch(
       /\bmd:(?:left|right)-/,
     );
+    const fixedColumnClassNames = [
+      selectColumn?.headerClassName,
+      selectColumn?.cellClassName,
+      nameColumn?.headerClassName,
+      nameColumn?.cellClassName,
+      actionsColumn?.headerClassName,
+      actionsColumn?.cellClassName,
+    ].join(" ");
+    expect(fixedColumnClassNames).not.toMatch(/\bmd:border-[lr]\b/);
+    expect(fixedColumnClassNames).not.toContain("md:border-slate-200");
+    expect(fixedColumnClassNames).not.toContain("md:dark:border-neutral-800");
     expect(selectColumn?.headerClassName).not.toMatch(/(^|\s)sticky(\s|$)/);
     expect(nameColumn?.cellClassName).not.toMatch(/(^|\s)sticky(\s|$)/);
     expect(actionsColumn?.cellClassName).not.toMatch(/(^|\s)sticky(\s|$)/);

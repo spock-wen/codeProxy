@@ -117,6 +117,14 @@ const COLUMN_RESIZE_DEBUG_STORAGE_KEY = "codeProxy.dataTable.debugResize";
 const DEFAULT_MIN_COLUMN_WIDTH = 72;
 const DEFAULT_MAX_COLUMN_WIDTH = 640;
 const COLUMN_RESIZE_PREVIEW_LINE_WIDTH = 2;
+const STICKY_EDGE_SHADOW_WIDTH = 28;
+
+function getStickyEdgeShadowOpacity(metrics: ScrollMetrics, edge: "start" | "end") {
+  const maxScrollLeft = Math.max(0, metrics.scrollWidth - metrics.clientWidth);
+  if (maxScrollLeft <= 1) return 0;
+  if (edge === "start") return metrics.scrollLeft > 1 ? 1 : 0;
+  return metrics.scrollLeft < maxScrollLeft - 1 ? 1 : 0;
+}
 const NON_RESIZABLE_COLUMN_KEYS = new Set(["select", "action", "actions"]);
 const TAILWIND_SPACING_UNIT_PX = 4;
 
@@ -838,6 +846,25 @@ export function DataTable<T>({
     [],
   );
 
+  const syncStickyEdgeShadows = useCallback(
+    (metrics: ScrollMetrics) => {
+      if (naturalFlow) return;
+      const root = rootRef.current;
+      if (!root) return;
+
+      const startBoundary = root.querySelector<HTMLElement>("[data-vt-sticky-start-boundary]");
+      if (startBoundary) {
+        startBoundary.style.opacity = String(getStickyEdgeShadowOpacity(metrics, "start"));
+      }
+
+      const endBoundary = root.querySelector<HTMLElement>("[data-vt-sticky-end-boundary]");
+      if (endBoundary) {
+        endBoundary.style.opacity = String(getStickyEdgeShadowOpacity(metrics, "end"));
+      }
+    },
+    [naturalFlow],
+  );
+
   const updateScrollMetrics = useCallback(
     (options?: { forceState?: boolean }) => {
       const el = containerRef.current;
@@ -858,6 +885,7 @@ export function DataTable<T>({
       };
 
       syncScrollbarThumbs(next);
+      syncStickyEdgeShadows(next);
       scrollMetricsRef.current = next;
 
       setScrollMetrics((prev) => {
@@ -881,7 +909,7 @@ export function DataTable<T>({
         return next;
       });
     },
-    [syncScrollbarThumbs],
+    [syncScrollbarThumbs, syncStickyEdgeShadows],
   );
 
   const scheduleScrollMetricsUpdate = useCallback(() => {
@@ -1239,10 +1267,20 @@ export function DataTable<T>({
       }
 
       const startBoundary = root.querySelector<HTMLElement>("[data-vt-sticky-start-boundary]");
-      if (startBoundary) startBoundary.style.left = `${Math.max(0, startWidth - 1)}px`;
+      if (startBoundary) {
+        startBoundary.style.left = `${Math.max(0, startWidth)}px`;
+        startBoundary.style.width = `${STICKY_EDGE_SHADOW_WIDTH}px`;
+      }
 
       const endBoundary = root.querySelector<HTMLElement>("[data-vt-sticky-end-boundary]");
-      if (endBoundary) endBoundary.style.left = `${Math.max(0, clientWidth - endWidth)}px`;
+      if (endBoundary) {
+        endBoundary.style.left = `${Math.max(
+          0,
+          clientWidth - endWidth - STICKY_EDGE_SHADOW_WIDTH,
+        )}px`;
+        endBoundary.style.width = `${STICKY_EDGE_SHADOW_WIDTH}px`;
+      }
+      syncStickyEdgeShadows(scrollMetricsRef.current);
 
       const placements = resolveStickyColumnPlacements(columns, widths);
       root.querySelectorAll<HTMLElement>("[data-vt-column-key]").forEach((element) => {
@@ -1259,7 +1297,7 @@ export function DataTable<T>({
         }
       });
     },
-    [naturalFlow],
+    [naturalFlow, syncStickyEdgeShadows],
   );
 
   const applyPendingColumnResize = useCallback(() => {
@@ -2082,8 +2120,13 @@ export function DataTable<T>({
     scrollMetrics.clientHeight - headerHeight - stickyRailBottomInset,
   );
   const stickyBoundaryHeight = Math.max(0, scrollMetrics.clientHeight - stickyRailBottomInset);
-  const stickyStartBoundaryLeft = Math.max(0, stickyStartRailWidth - 1);
-  const stickyEndBoundaryLeft = Math.max(0, scrollMetrics.clientWidth - stickyEndRailWidth);
+  const stickyStartShadowOpacity = getStickyEdgeShadowOpacity(scrollMetrics, "start");
+  const stickyEndShadowOpacity = getStickyEdgeShadowOpacity(scrollMetrics, "end");
+  const stickyStartBoundaryLeft = Math.max(0, stickyStartRailWidth);
+  const stickyEndBoundaryLeft = Math.max(
+    0,
+    scrollMetrics.clientWidth - stickyEndRailWidth - STICKY_EDGE_SHADOW_WIDTH,
+  );
   const stickyEndRailLeft = Math.max(0, scrollMetrics.clientWidth - stickyEndRailWidth);
 
   const resolveColumnStyle = useCallback(
@@ -2523,10 +2566,12 @@ export function DataTable<T>({
         <div
           data-vt-sticky-start-boundary
           aria-hidden="true"
-          className="pointer-events-none absolute top-0 z-[35] hidden w-px bg-slate-200 md:block dark:bg-neutral-800"
+          className="pointer-events-none absolute top-0 z-[75] hidden bg-gradient-to-r from-slate-950/[0.07] to-transparent transition-opacity duration-150 md:block dark:from-black/35"
           style={{
             left: stickyStartBoundaryLeft,
+            width: STICKY_EDGE_SHADOW_WIDTH,
             height: stickyBoundaryHeight,
+            opacity: stickyStartShadowOpacity,
           }}
         />
       ) : null}
@@ -2534,10 +2579,12 @@ export function DataTable<T>({
         <div
           data-vt-sticky-end-boundary
           aria-hidden="true"
-          className="pointer-events-none absolute top-0 z-[35] hidden w-px bg-slate-200 md:block dark:bg-neutral-800"
+          className="pointer-events-none absolute top-0 z-[75] hidden bg-gradient-to-l from-slate-950/[0.07] to-transparent transition-opacity duration-150 md:block dark:from-black/35"
           style={{
             left: stickyEndBoundaryLeft,
+            width: STICKY_EDGE_SHADOW_WIDTH,
             height: stickyBoundaryHeight,
+            opacity: stickyEndShadowOpacity,
           }}
         />
       ) : null}
