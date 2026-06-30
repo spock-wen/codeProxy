@@ -26,6 +26,8 @@ export function ErrorLogsTab({
 }) {
   return (
     <Card
+      className="md:flex md:min-h-0 md:flex-1 md:flex-col md:overflow-hidden"
+      bodyClassName="md:flex md:min-h-0 md:flex-1 md:flex-col"
       title={t("logs_page.error_logs_title")}
       description={t("logs_page.error_fetch_desc")}
       actions={
@@ -41,8 +43,8 @@ export function ErrorLogsTab({
         </div>
       }
     >
-      <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+      <div className="space-y-4 md:flex md:min-h-0 md:flex-1 md:flex-col md:space-y-0 md:gap-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:shrink-0 dark:border-neutral-800 dark:bg-neutral-950/60">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -74,7 +76,7 @@ export function ErrorLogsTab({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex md:min-h-0 md:flex-1 md:flex-col dark:border-neutral-800 dark:bg-neutral-950/60">
           <p className="text-sm font-semibold text-slate-900 dark:text-white">
             {t("logs_page.error_log_files")}
           </p>
@@ -82,7 +84,7 @@ export function ErrorLogsTab({
             {t("logs_page.error_log_list_desc")}
           </p>
 
-          <div className="mt-4">
+          <div className="mt-4 md:min-h-0 md:flex-1 md:overflow-y-auto">
             {errorLogsLoading ? (
               <div className="text-sm text-slate-600 dark:text-white/65">
                 {t("logs_page.loading")}

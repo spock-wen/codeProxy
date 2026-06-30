@@ -223,7 +223,7 @@ export function SystemPage({
   const apiKeyLookupUrl = `${window.location.origin}/manage/apikey-lookup`;
 
   return (
-    <div className="min-w-0 space-y-6 overflow-x-hidden">
+    <div className="min-w-0 space-y-6 overflow-x-hidden md:flex md:h-[calc(100dvh-112px)] md:min-h-0 md:flex-col md:space-y-0 md:gap-6">
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -287,7 +287,11 @@ export function SystemPage({
       />
 
       {/* ── Model List ── */}
-      <Card padding="none" className="overflow-hidden" bodyClassName="mt-0">
+      <Card
+        padding="none"
+        className="overflow-hidden md:flex md:min-h-0 md:flex-1 md:flex-col"
+        bodyClassName="mt-0 md:flex md:min-h-0 md:flex-1 md:flex-col"
+      >
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5 dark:border-neutral-800">
           <div className="flex items-center gap-2.5">
@@ -351,7 +355,7 @@ export function SystemPage({
         )}
 
         {/* Model tags */}
-        <div className="max-h-[480px] overflow-y-auto px-5 py-4">
+        <div className="max-h-[480px] overflow-y-auto px-5 py-4 md:max-h-none md:min-h-0 md:flex-1">
           {modelsLoading && models.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-sm text-slate-500 dark:text-white/50">
               <RefreshCw size={14} className="animate-spin mr-2" />
