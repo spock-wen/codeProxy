@@ -129,7 +129,7 @@ function toLogRow(item: PublicLogItem): LogRow {
     outputTokens: item.output_tokens,
     totalTokens: item.total_tokens,
     cost: item.cost ?? 0,
-    hasContent: item.has_content,
+    hasContent: false, // 公开查询不显示请求详情
   };
 }
 
