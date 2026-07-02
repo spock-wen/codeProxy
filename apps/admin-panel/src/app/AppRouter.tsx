@@ -3,22 +3,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "@app/providers/AuthProvider";
 import { ProtectedRoute } from "@/app/guards/ProtectedRoute";
 import { DashboardLayout } from "@app/layout/DashboardLayout";
-import { PageLoader, ThemeProvider, ToastProvider } from "@code-proxy/ui";
+import { ThemeProvider, ToastProvider } from "@code-proxy/ui";
 import { AutoUpdatePrompt } from "@app/update/AutoUpdatePrompt";
-import { dismissAppLoader, hasAppLoader } from "@/app/bootstrap/dismissAppLoader";
+import { dismissAppLoader } from "@/app/bootstrap/dismissAppLoader";
 import { pageRoutes } from "@pages/registry";
 
-interface RouteWithMeta {
-  path: string;
-  element: React.ReactElement;
-  auth: boolean;
-  layout: string;
-  nav: { labelKey: string } | null;
-  redirects?: Array<{ from: string; to: string }>;
-  hasWildcard?: boolean;
-}
-
-const RouteFallback = () => (hasAppLoader() ? null : <PageLoader variant="initial" />);
+const RouteFallback = () => null;
 
 function InitialRouteReady({ children }: { children: React.ReactElement }) {
   useEffect(() => {
@@ -47,7 +37,7 @@ const readyRoute = (element: React.ReactElement) => (
 );
 
 export function AppRouter() {
-  const routes = pageRoutes as RouteWithMeta[];
+  const routes = pageRoutes;
   const publicRoutes = routes.filter((r) => !r.auth);
   const loginRoute = publicRoutes.find((r) => r.path === "/login");
   const standalonePublicRoutes = publicRoutes.filter((r) => r.path !== "/login");

@@ -53,7 +53,9 @@ describe("AppRouter", () => {
 
     expect(mainSource).toContain("dismissAppLoader(true)");
     expect(manageEntrySource).toContain("dismissAppLoader(true)");
-    expect(routerSource).toContain("hasAppLoader() ? null");
+    expect(routerSource).toContain("const RouteFallback = () => null");
+    expect(routerSource).not.toContain("PageLoader");
+    expect(routerSource).not.toContain('variant="initial"');
     expect(routerSource).not.toContain('variant="inline"');
     expect(protectedRouteSource).toContain("if (hasAppLoader()) return null");
   });
