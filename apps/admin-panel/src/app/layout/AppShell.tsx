@@ -1,5 +1,6 @@
 import {
   createContext,
+  type MouseEvent,
   type PropsWithChildren,
   use,
   useCallback,
@@ -30,6 +31,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { LanguageSelector, PageBackground, ThemeToggleButton } from "@code-proxy/ui";
+import { preloadPageRoute } from "@pages/registry";
 
 interface ShellContextState {
   state: {
@@ -103,6 +105,15 @@ const getPageTitleKey = (pathname: string): string => {
   return "shell.page_home";
 };
 
+const shouldUseNativeNavigation = (event: MouseEvent<HTMLAnchorElement>) =>
+  event.defaultPrevented ||
+  event.button !== 0 ||
+  event.metaKey ||
+  event.altKey ||
+  event.ctrlKey ||
+  event.shiftKey ||
+  Boolean(event.currentTarget.target && event.currentTarget.target !== "_self");
+
 function ShellFrame({ children }: PropsWithChildren) {
   return <PageBackground variant="app">{children}</PageBackground>;
 }
@@ -128,6 +139,7 @@ function ShellSidebar({
   const [progressDone, setProgressDone] = useState(false);
   const progressStartedAt = useRef(0);
   const progressTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const navigationRequestId = useRef(0);
 
   const clearProgressTimers = useCallback(() => {
     progressTimers.current.forEach(clearTimeout);
@@ -149,38 +161,59 @@ function ShellSidebar({
   const isMobile = mode === "mobile";
   const accountLogoutLabel = t("shell.logout_button");
 
-  const handleNavClick = useCallback(
-    (to: string) => {
-      // Immediately mark as pending so highlight is instant
-      if (to !== location.pathname) {
-        clearProgressTimers();
-        progressStartedAt.current = Date.now();
-        setProgressDone(false);
-        setPendingTo(to);
-      }
-      onNavigate?.();
-    },
-    [clearProgressTimers, location.pathname, onNavigate],
-  );
+  const warmPageRoute = useCallback((to: string) => {
+    void preloadPageRoute(to).catch(() => undefined);
+  }, []);
 
-  useEffect(() => {
-    if (pendingTo !== location.pathname) return;
-    const delay = Math.max(0, ROUTE_PROGRESS_MIN_MS - (Date.now() - progressStartedAt.current));
-    const finishTimer = setTimeout(() => {
-      setProgressDone(true);
-      progressTimers.current.push(
-        setTimeout(() => {
+  const handleNavClick = useCallback(
+    (event: MouseEvent<HTMLAnchorElement>, to: string) => {
+      if (shouldUseNativeNavigation(event)) return;
+
+      if (to === location.pathname) {
+        onNavigate?.();
+        return;
+      }
+
+      event.preventDefault();
+      onNavigate?.();
+
+      const requestId = navigationRequestId.current + 1;
+      navigationRequestId.current = requestId;
+      clearProgressTimers();
+      progressStartedAt.current = Date.now();
+      setProgressDone(false);
+      setPendingTo(to);
+
+      const minimumProgress = new Promise<void>((resolve) => {
+        const delay = Math.max(0, ROUTE_PROGRESS_MIN_MS - (Date.now() - progressStartedAt.current));
+        const timer = setTimeout(resolve, delay);
+        progressTimers.current.push(timer);
+      });
+
+      void Promise.all([preloadPageRoute(to).catch(() => undefined), minimumProgress]).then(() => {
+        if (navigationRequestId.current !== requestId) return;
+        setProgressDone(true);
+
+        const navigateTimer = setTimeout(() => {
+          if (navigationRequestId.current !== requestId) return;
+          navigate(to, { viewTransition: true });
           setPendingTo("");
           setProgressDone(false);
           progressTimers.current = [];
-        }, ROUTE_PROGRESS_HIDE_MS),
-      );
-    }, delay);
-    progressTimers.current.push(finishTimer);
-    return () => clearTimeout(finishTimer);
-  }, [location.pathname, pendingTo]);
+        }, ROUTE_PROGRESS_HIDE_MS);
+        progressTimers.current.push(navigateTimer);
+      });
+    },
+    [clearProgressTimers, location.pathname, navigate, onNavigate],
+  );
 
-  useEffect(() => clearProgressTimers, [clearProgressTimers]);
+  useEffect(
+    () => () => {
+      navigationRequestId.current += 1;
+      clearProgressTimers();
+    },
+    [clearProgressTimers],
+  );
 
   return (
     <>
@@ -230,7 +263,9 @@ function ShellSidebar({
                 key={item.to}
                 to={item.to}
                 viewTransition
-                onClick={() => handleNavClick(item.to)}
+                onClick={(event) => handleNavClick(event, item.to)}
+                onMouseEnter={() => warmPageRoute(item.to)}
+                onFocus={() => warmPageRoute(item.to)}
                 className={
                   "flex min-w-0 items-center gap-3 rounded-[14px] px-3.5 py-2.5 text-[13px] transition-colors duration-200 ease-out whitespace-nowrap " +
                   (active
