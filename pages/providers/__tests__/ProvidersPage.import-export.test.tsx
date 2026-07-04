@@ -167,14 +167,16 @@ describe("ProvidersPage import/export", () => {
     expect(importButton).toBeEnabled();
     await waitFor(() => expect(refreshButton).toBeDisabled());
     expect(refreshButton.querySelector("svg")).toHaveClass("animate-spin");
-    expect(screen.getByText(/Loading/i)).toBeInTheDocument();
+    expect(screen.getByText("Codex Main")).toBeInTheDocument();
+    expect(screen.queryByTestId("providers-list-skeleton")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument();
 
     resolveRefresh?.([]);
     await waitFor(() => expect(mocks.getCodexConfigs).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument());
+    expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument();
   });
 
-  test("shows page loading when switching to an unloaded provider tab", async () => {
+  test("shows skeleton cards when switching to an unloaded provider tab", async () => {
     const user = userEvent.setup();
     let resolveSwitch: ((configs: any[]) => void) | undefined;
     mocks.getCodexConfigs.mockImplementationOnce(
@@ -198,7 +200,8 @@ describe("ProvidersPage import/export", () => {
 
     await waitFor(() => expect(refreshButton).toBeDisabled());
     expect(refreshButton.querySelector("svg")).toHaveClass("animate-spin");
-    expect(screen.getByText(/Loading/i)).toBeInTheDocument();
+    expect(screen.getByTestId("providers-list-skeleton")).toBeInTheDocument();
+    expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument();
 
     resolveSwitch?.([
       {
@@ -207,7 +210,9 @@ describe("ProvidersPage import/export", () => {
       },
     ]);
     expect(await screen.findByText("Codex Main")).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByTestId("providers-list-skeleton")).not.toBeInTheDocument(),
+    );
   });
 
   test("does not refresh when clicking the active provider tab again", async () => {

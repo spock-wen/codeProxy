@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import type { ProviderSimpleConfig } from "@code-proxy/api-client";
 import { ProvidersPage } from "@pages/providers/ProvidersPage";
 import { ThemeProvider } from "@code-proxy/ui";
 import { ToastProvider } from "@code-proxy/ui";
@@ -170,6 +171,78 @@ describe("ProvidersPage openai tab", () => {
     expect(within(codexTab).getByText("2")).toBeInTheDocument();
     expect(within(openCodeGoTab).getByText("1")).toBeInTheDocument();
     expect(within(geminiTab).queryByText("0")).not.toBeInTheDocument();
+  });
+
+  test("shows skeleton cards instead of the card loading overlay before the first empty result", async () => {
+    localStorage.setItem("providers-page:tab", "gemini");
+    let resolveGemini: (value: ProviderSimpleConfig[]) => void = () => {};
+    mocks.getGeminiKeys.mockImplementationOnce(
+      () =>
+        new Promise<ProviderSimpleConfig[]>((resolve) => {
+          resolveGemini = resolve;
+        }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/ai-providers"]}>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+            </Routes>
+          </ToastProvider>
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByTestId("providers-list-skeleton")).toBeInTheDocument();
+    expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
+
+    resolveGemini([]);
+    expect(await screen.findByText("No configuration")).toBeInTheDocument();
+  });
+
+  test("keeps existing provider cards visible during toolbar refresh", async () => {
+    const user = userEvent.setup();
+    const geminiProvider: ProviderSimpleConfig = {
+      name: "Gemini Main",
+      apiKey: "sk-gemini-main",
+    };
+    localStorage.setItem("providers-page:tab", "gemini");
+    mocks.getGeminiKeys.mockImplementationOnce(async () => [geminiProvider]);
+
+    render(
+      <MemoryRouter initialEntries={["/ai-providers"]}>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+            </Routes>
+          </ToastProvider>
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Gemini Main")).toBeInTheDocument();
+
+    let resolveRefresh: (value: ProviderSimpleConfig[]) => void = () => {};
+    mocks.getGeminiKeys.mockImplementationOnce(
+      () =>
+        new Promise<ProviderSimpleConfig[]>((resolve) => {
+          resolveRefresh = resolve;
+        }),
+    );
+
+    await user.click(screen.getByRole("button", { name: /Refresh|刷新/ }));
+
+    expect(screen.getByText("Gemini Main")).toBeInTheDocument();
+    expect(screen.queryByTestId("providers-list-skeleton")).not.toBeInTheDocument();
+    expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
+
+    resolveRefresh([geminiProvider]);
+    await waitFor(() => {
+      expect(mocks.getGeminiKeys).toHaveBeenCalledTimes(2);
+    });
   });
 
   test("renders openai provider card with masked key and aggregated status", async () => {
