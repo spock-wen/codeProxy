@@ -59,11 +59,16 @@ export async function fetchPublicLogs(params: {
 export async function fetchPublicChartData(params: {
   apiKey: string;
   days?: number;
+  signal?: AbortSignal;
 }): Promise<ChartDataResponse> {
-  return publicApiClient.post<ChartDataResponse>("/usage/chart-data", {
-    api_key: params.apiKey,
-    days: params.days,
-  });
+  return publicApiClient.post<ChartDataResponse>(
+    "/usage/chart-data",
+    {
+      api_key: params.apiKey,
+      days: params.days,
+    },
+    { signal: params.signal },
+  );
 }
 
 export async function fetchPublicLogContent(params: {
