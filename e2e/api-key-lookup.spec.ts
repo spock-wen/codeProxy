@@ -175,14 +175,27 @@ test("API Key Lookup: Heatmap tooltip stays inside the heatmap card when hoverin
     .locator("xpath=ancestor::section[1]");
   await expect(heatmapCard).toBeVisible();
 
-  await page.locator(`[aria-label^="${date}: 382 "]`).hover();
+  const heatmapGrid = page
+    .locator('[aria-label="Request Heatmap"], [aria-label="请求热力图"]')
+    .first();
+  const hoveredCell = page.locator(`[aria-label^="${date}: 382 "]`);
+
+  await hoveredCell.hover();
   const tooltip = page.getByRole("tooltip");
   await expect(tooltip).toBeVisible();
 
-  const positions = await Promise.all([heatmapCard.boundingBox(), tooltip.boundingBox()]);
-  const [cardBox, tooltipBox] = positions;
+  const positions = await Promise.all([
+    heatmapCard.boundingBox(),
+    heatmapGrid.boundingBox(),
+    hoveredCell.boundingBox(),
+    tooltip.boundingBox(),
+  ]);
+  const [cardBox, gridBox, cellBox, tooltipBox] = positions;
   expect(cardBox).not.toBeNull();
+  expect(gridBox).not.toBeNull();
+  expect(cellBox).not.toBeNull();
   expect(tooltipBox).not.toBeNull();
+  expect(cellBox!.y).toBeGreaterThanOrEqual(gridBox!.y);
   expect(tooltipBox!.y).toBeGreaterThanOrEqual(cardBox!.y);
 });
 

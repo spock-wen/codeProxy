@@ -137,7 +137,7 @@ function CalendarHeatmap({
     <div className="space-y-3">
       <div className="overflow-x-auto pb-1">
         <div
-          className="mx-auto grid w-max grid-flow-col grid-rows-7 gap-1"
+          className="mx-auto grid w-max grid-flow-col grid-rows-7 gap-1 py-1"
           style={{ gridAutoColumns: "0.75rem" }}
           aria-label={t("apikey_lookup.calendar_heatmap")}
         >
