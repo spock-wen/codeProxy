@@ -2610,7 +2610,7 @@ export function DataTable<T>({
             <div
               ref={verticalThumbRef}
               role="presentation"
-              className="pointer-events-auto absolute right-0 w-[3px] cursor-pointer rounded-full bg-[#F9F9F9] transition-[width] duration-150 ease-out hover:w-1.5 active:w-1.5 group-hover/scrollbar:w-1.5"
+              className="pointer-events-auto absolute right-0 w-1.5 cursor-pointer rounded-full bg-[#C7C7C7] transition-[width] duration-150 ease-out hover:w-2 active:w-2 group-hover/scrollbar:w-2"
               style={{ top: vThumb.top, height: vThumb.height }}
               onPointerDown={(e) => handleThumbPointerDown("y", e)}
               onPointerMove={handleThumbPointerMove}
@@ -2629,7 +2629,7 @@ export function DataTable<T>({
           <div
             ref={horizontalThumbRef}
             role="presentation"
-            className="pointer-events-auto absolute bottom-0 h-[3px] cursor-pointer rounded-full bg-[#F9F9F9] transition-[height] duration-150 ease-out hover:h-1.5 active:h-1.5 group-hover/scrollbar:h-1.5"
+            className="pointer-events-auto absolute bottom-0 h-1.5 cursor-pointer rounded-full bg-[#C7C7C7] transition-[height] duration-150 ease-out hover:h-2 active:h-2 group-hover/scrollbar:h-2"
             style={{ left: hThumb.left, width: hThumb.width }}
             onPointerDown={(e) => handleThumbPointerDown("x", e)}
             onPointerMove={handleThumbPointerMove}
