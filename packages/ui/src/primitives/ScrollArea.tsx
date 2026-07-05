@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type HTMLAttributes,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type PropsWithChildren,
 } from "react";
@@ -33,6 +34,7 @@ export function ScrollArea({
   children,
   className,
   viewportClassName,
+  viewportStyle,
   contentClassName,
   scrollbarVisibility = "hover",
   scrollbarTrackInset = 8,
@@ -40,6 +42,7 @@ export function ScrollArea({
 }: PropsWithChildren<
   {
     viewportClassName?: string;
+    viewportStyle?: CSSProperties;
     contentClassName?: string;
     scrollbarVisibility?: ScrollbarVisibility;
     scrollbarTrackInset?: number;
@@ -172,6 +175,7 @@ export function ScrollArea({
         data-scroll-area-viewport
         data-scrollbar-visibility={scrollbarVisibility}
         onScroll={handleScroll}
+        style={viewportStyle}
         className={cn(
           "h-full min-h-0 table-scrollbar overflow-auto overscroll-contain",
           viewportClassName,
