@@ -19,7 +19,10 @@ import { HoverTooltip } from "@code-proxy/ui";
 import { Modal } from "@code-proxy/ui";
 import { useToast } from "@code-proxy/ui";
 import { DataTable } from "@code-proxy/ui";
-import { ErrorDetailModal, LogContentModal } from "@features/log-content-viewer";
+import {
+  ErrorDetailModal,
+  LogContentModal,
+} from "@features/log-content-viewer";
 import { ModelTag } from "@features/model-tags";
 import { RequestLogsFilters } from "./RequestLogsFilters";
 import type { SearchableCheckboxMultiSelectOption } from "@code-proxy/ui";
@@ -27,15 +30,19 @@ import {
   buildRequestLogKeyOptions,
   buildRequestLogsColumns,
   DEFAULT_REQUEST_LOG_PAGE_SIZE,
+  hasActiveFilterSelection,
+  normalizeFilterSelection,
   RequestLogUsageMetricValue,
   RequestLogsPaginationBar,
   RequestLogsTimeRangeSelector,
+  toFilterParam,
   toRequestLogsRow,
+  toStatusFilterValues,
+  type MultiSelectFilterState,
+  type StatusFilterValue,
   type RequestLogsRow as LogRow,
   type TimeRange,
 } from "@features/request-log-viewer";
-type StatusFilterValue = "success" | "failed";
-type MultiSelectFilterState<T extends string = string> = T[] | null;
 
 const DEFAULT_LOG_STATS = {
   total: 0,
@@ -51,7 +58,8 @@ const DEFAULT_CLEAR_OPTIONS: ClearUsageLogsPayload = {
 };
 
 const isRequestCancelled = (err: unknown, signal?: AbortSignal) =>
-  signal?.aborted || (err instanceof Error && err.message === "Request was cancelled");
+  signal?.aborted ||
+  (err instanceof Error && err.message === "Request was cancelled");
 
 function RequestLogsRecordsCount({ count }: { count: number }) {
   const { t } = useTranslation();
@@ -73,38 +81,6 @@ function RequestLogsRecordsCount({ count }: { count: number }) {
   );
 }
 
-function normalizeFilterSelection<T extends string>(
-  selected: MultiSelectFilterState<T>,
-  allowedValues: T[],
-): MultiSelectFilterState<T> {
-  if (selected === null) return null;
-  if (allowedValues.length === 0) return [];
-  const allowed = new Set(allowedValues);
-  const normalized = selected.filter(
-    (item, index) => allowed.has(item) && selected.indexOf(item) === index,
-  );
-  if (normalized.length === allowedValues.length) return null;
-  return normalized;
-}
-
-function toFilterParam<T extends string>(
-  selected: MultiSelectFilterState<T>,
-  allowedValues: T[],
-): { values?: T[]; matchesNone: boolean } {
-  const normalized = normalizeFilterSelection(selected, allowedValues);
-  if (normalized === null) return { values: undefined, matchesNone: false };
-  if (normalized.length === 0) return { values: undefined, matchesNone: true };
-  return { values: normalized, matchesNone: false };
-}
-
-function hasActiveFilterSelection<T extends string>(
-  selected: MultiSelectFilterState<T>,
-  allowedValues: T[],
-): boolean {
-  const normalized = normalizeFilterSelection(selected, allowedValues);
-  return normalized !== null;
-}
-
 // ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
@@ -115,14 +91,21 @@ export function RequestLogsPage() {
 
   // Content modal state
   const [contentModalOpen, setContentModalOpen] = useState(false);
-  const [contentModalLogId, setContentModalLogId] = useState<number | null>(null);
-  const [contentModalTab, setContentModalTab] = useState<"input" | "output">("input");
+  const [contentModalLogId, setContentModalLogId] = useState<number | null>(
+    null,
+  );
+  const [contentModalTab, setContentModalTab] = useState<"input" | "output">(
+    "input",
+  );
 
-  const handleContentClick = useCallback((logId: number, tab: "input" | "output") => {
-    setContentModalLogId(logId);
-    setContentModalTab(tab);
-    setContentModalOpen(true);
-  }, []);
+  const handleContentClick = useCallback(
+    (logId: number, tab: "input" | "output") => {
+      setContentModalLogId(logId);
+      setContentModalTab(tab);
+      setContentModalOpen(true);
+    },
+    [],
+  );
 
   // Error modal state
   const [errorModalOpen, setErrorModalOpen] = useState(false);
@@ -174,14 +157,19 @@ export function RequestLogsPage() {
 
   // Multi-value filters
   const [timeRange, setTimeRange] = useState<TimeRange>(7);
-  const [selectedApiKeys, setSelectedApiKeys] = useState<MultiSelectFilterState<string>>(null);
-  const [selectedModels, setSelectedModels] = useState<MultiSelectFilterState<string>>(null);
-  const [selectedChannels, setSelectedChannels] = useState<MultiSelectFilterState<string>>(null);
+  const [selectedApiKeys, setSelectedApiKeys] =
+    useState<MultiSelectFilterState<string>>(null);
+  const [selectedModels, setSelectedModels] =
+    useState<MultiSelectFilterState<string>>(null);
+  const [selectedChannels, setSelectedChannels] =
+    useState<MultiSelectFilterState<string>>(null);
   const [selectedStatuses, setSelectedStatuses] =
     useState<MultiSelectFilterState<StatusFilterValue>>(null);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [clearingLogs, setClearingLogs] = useState(false);
-  const [clearOptions, setClearOptions] = useState<ClearUsageLogsPayload>(DEFAULT_CLEAR_OPTIONS);
+  const [clearOptions, setClearOptions] = useState<ClearUsageLogsPayload>(
+    DEFAULT_CLEAR_OPTIONS,
+  );
 
   const requestSeqRef = useRef(0);
   const requestAbortRef = useRef<AbortController | null>(null);
@@ -234,7 +222,10 @@ export function RequestLogsPage() {
     }));
   }, [filterOptions.statuses, t]);
 
-  const apiKeyFilterValues = useMemo(() => keyOptions.map((option) => option.value), [keyOptions]);
+  const apiKeyFilterValues = useMemo(
+    () => keyOptions.map((option) => option.value),
+    [keyOptions],
+  );
   const modelFilterValues = useMemo(
     () => modelOptions.map((option) => option.value),
     [modelOptions],
@@ -244,7 +235,7 @@ export function RequestLogsPage() {
     [channelOptions],
   );
   const statusFilterValues = useMemo<StatusFilterValue[]>(
-    () => statusOptions.map((option) => option.value as StatusFilterValue),
+    () => toStatusFilterValues(statusOptions.map((option) => option.value)),
     [statusOptions],
   );
 
@@ -360,12 +351,19 @@ export function RequestLogsPage() {
           ...resp.stats,
         });
       } catch (err) {
-        if (seq !== requestSeqRef.current || isRequestCancelled(err, controller.signal)) return;
-        const message = err instanceof Error ? err.message : t("request_logs.refresh_failed");
+        if (
+          seq !== requestSeqRef.current ||
+          isRequestCancelled(err, controller.signal)
+        )
+          return;
+        const message =
+          err instanceof Error ? err.message : t("request_logs.refresh_failed");
         notify({ type: "error", message });
       } finally {
-        if (requestAbortRef.current === controller) requestAbortRef.current = null;
-        if (seq === requestSeqRef.current && !controller.signal.aborted) setLoading(false);
+        if (requestAbortRef.current === controller)
+          requestAbortRef.current = null;
+        if (seq === requestSeqRef.current && !controller.signal.aborted)
+          setLoading(false);
       }
     },
     [
@@ -407,7 +405,13 @@ export function RequestLogsPage() {
   // Fetch page 1 when filters change
   useEffect(() => {
     fetchLogs(1, pageSize);
-  }, [timeRange, selectedApiKeys, selectedModels, selectedChannels, selectedStatuses]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    timeRange,
+    selectedApiKeys,
+    selectedModels,
+    selectedChannels,
+    selectedStatuses,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOpenClearDialog = useCallback(() => {
     setClearOptions(DEFAULT_CLEAR_OPTIONS);
@@ -466,7 +470,9 @@ export function RequestLogsPage() {
       setConfirmClearOpen(false);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : t("request_logs.clear_database_logs_failed");
+        err instanceof Error
+          ? err.message
+          : t("request_logs.clear_database_logs_failed");
       notify({ type: "error", message });
     } finally {
       setClearingLogs(false);
@@ -483,7 +489,11 @@ export function RequestLogsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-3">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
-              <ScrollText size={18} className="text-slate-900 dark:text-white" aria-hidden="true" />
+              <ScrollText
+                size={18}
+                className="text-slate-900 dark:text-white"
+                aria-hidden="true"
+              />
               {t("request_logs.heading")}
             </h2>
             <div className="hidden min-[640px]:flex items-center gap-2 text-xs text-slate-500 dark:text-white/50">
@@ -500,14 +510,21 @@ export function RequestLogsPage() {
               <span>
                 {t("request_logs.col_total_token")}{" "}
                 <span className="font-mono tabular-nums text-slate-900 dark:text-white">
-                  <RequestLogUsageMetricValue value={stats.total_tokens} compact />
+                  <RequestLogUsageMetricValue
+                    value={stats.total_tokens}
+                    compact
+                  />
                 </span>
               </span>
               <span className="text-slate-300 dark:text-white/15">|</span>
               <span>
                 {t("request_logs.col_cost")}{" "}
                 <span className="font-mono tabular-nums text-emerald-700 dark:text-emerald-400">
-                  <RequestLogUsageMetricValue value={stats.total_cost} variant="currency" compact />
+                  <RequestLogUsageMetricValue
+                    value={stats.total_cost}
+                    variant="currency"
+                    compact
+                  />
                 </span>
               </span>
               <span className="text-slate-300 dark:text-white/15">|</span>
@@ -520,7 +537,10 @@ export function RequestLogsPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <RequestLogsTimeRangeSelector value={timeRange} onChange={setTimeRange} />
+            <RequestLogsTimeRangeSelector
+              value={timeRange}
+              onChange={setTimeRange}
+            />
             <button
               type="button"
               onClick={handleOpenClearDialog}
@@ -542,7 +562,11 @@ export function RequestLogsPage() {
             >
               <RefreshCw
                 size={14}
-                className={loading ? "motion-reduce:animate-none motion-safe:animate-spin" : ""}
+                className={
+                  loading
+                    ? "motion-reduce:animate-none motion-safe:animate-spin"
+                    : ""
+                }
                 aria-hidden="true"
               />
             </button>

@@ -34,6 +34,8 @@ export interface PublicLogsResponse {
   };
   filters: {
     models: string[];
+    channels: string[];
+    statuses: string[];
   };
 }
 

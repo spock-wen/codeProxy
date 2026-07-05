@@ -9,8 +9,10 @@ import { Button } from "@code-proxy/ui";
 import { Modal } from "@code-proxy/ui";
 import { Select, type SelectOption } from "@code-proxy/ui";
 import { TextInput } from "@code-proxy/ui";
+import type { SearchableCheckboxMultiSelectOption } from "@code-proxy/ui";
 import type { TimeRange } from "@features/monitor-widgets/monitor-constants";
 import { LogContentModal } from "@features/log-content-viewer";
+import { ModelTag } from "@features/model-tags";
 import {
   fetchAvailableModels,
   fetchPublicChartData,
@@ -18,7 +20,10 @@ import {
   fetchPublicLogs,
 } from "./api";
 import { LookupEmptyState } from "./components/LookupEmptyState";
-import { LookupResultsToolbar, type ApiKeyLookupTab } from "./components/LookupResultsToolbar";
+import {
+  LookupResultsToolbar,
+  type ApiKeyLookupTab,
+} from "./components/LookupResultsToolbar";
 import { ModelsTabContent } from "./components/ModelsTabContent";
 import { PublicLogsSection } from "./components/PublicLogsSection";
 import { QuickImportTabContent } from "./components/QuickImportTabContent";
@@ -29,8 +34,13 @@ import {
   buildRequestLogsColumns,
   formatOptionalRequestLogLatencyMs,
   formatRequestLogLatencyMs,
+  normalizeFilterSelection,
+  toFilterParam,
+  toStatusFilterValues,
   maskRequestLogApiKey,
+  type MultiSelectFilterState,
   type RequestLogsRow,
+  type StatusFilterValue,
 } from "@features/request-log-viewer";
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -43,7 +53,10 @@ const LOGOUT_SELECT_VALUE = "__api-key-lookup-logout__";
 
 const readStoredLookupKey = (): string => {
   try {
-    return window.sessionStorage.getItem(LOOKUP_LAST_API_KEY_STORAGE_KEY)?.trim() ?? "";
+    return (
+      window.sessionStorage.getItem(LOOKUP_LAST_API_KEY_STORAGE_KEY)?.trim() ??
+      ""
+    );
   } catch {
     return "";
   }
@@ -87,13 +100,17 @@ const readStoredChartCache = (cacheKey: string): ChartDataResponse | null => {
   }
 };
 
-const writeStoredChartCache = (cacheKey: string, data: ChartDataResponse): void => {
+const writeStoredChartCache = (
+  cacheKey: string,
+  data: ChartDataResponse,
+): void => {
   try {
     const raw = window.sessionStorage.getItem(LOOKUP_CHART_CACHE_STORAGE_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : {};
     const entries = isRecord(parsed)
-      ? Object.entries(parsed).filter((entry): entry is [string, ChartDataResponse] =>
-          isChartDataResponse(entry[1]),
+      ? Object.entries(parsed).filter(
+          (entry): entry is [string, ChartDataResponse] =>
+            isChartDataResponse(entry[1]),
         )
       : [];
     const next: Record<string, ChartDataResponse> = {};
@@ -102,7 +119,10 @@ const writeStoredChartCache = (cacheKey: string, data: ChartDataResponse): void 
     for (const [key, value] of [...keptEntries, cacheEntry].slice(-8)) {
       next[key] = value;
     }
-    window.sessionStorage.setItem(LOOKUP_CHART_CACHE_STORAGE_KEY, JSON.stringify(next));
+    window.sessionStorage.setItem(
+      LOOKUP_CHART_CACHE_STORAGE_KEY,
+      JSON.stringify(next),
+    );
   } catch {
     // ignore storage failures
   }
@@ -120,7 +140,8 @@ const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === "string");
 
 const sameStringArray = (left: string[], right: string[]): boolean =>
-  left.length === right.length && left.every((value, index) => value === right[index]);
+  left.length === right.length &&
+  left.every((value, index) => value === right[index]);
 
 const readStoredModelsCache = (cacheKey: string): string[] | null => {
   try {
@@ -146,10 +167,16 @@ const writeStoredModelsCache = (cacheKey: string, models: string[]): void => {
       : [];
     const next: Record<string, string[]> = {};
     const keptEntries = entries.filter(([key]) => key !== cacheKey);
-    for (const [key, value] of [...keptEntries, [cacheKey, models] as const].slice(-8)) {
+    for (const [key, value] of [
+      ...keptEntries,
+      [cacheKey, models] as const,
+    ].slice(-8)) {
       next[key] = value;
     }
-    window.sessionStorage.setItem(LOOKUP_MODELS_CACHE_STORAGE_KEY, JSON.stringify(next));
+    window.sessionStorage.setItem(
+      LOOKUP_MODELS_CACHE_STORAGE_KEY,
+      JSON.stringify(next),
+    );
   } catch {
     // ignore storage failures
   }
@@ -207,7 +234,11 @@ const localizeLookupError = (
 const readLegacyLookupKeyFromUrl = (): string => {
   try {
     const url = new URL(window.location.href);
-    return (url.searchParams.get("api_key") || url.searchParams.get("key") || "").trim();
+    return (
+      url.searchParams.get("api_key") ||
+      url.searchParams.get("key") ||
+      ""
+    ).trim();
   } catch {
     return "";
   }
@@ -257,7 +288,10 @@ export function ApiKeyLookupPage() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  const initialLookupKey = useMemo(() => readLegacyLookupKeyFromUrl() || readStoredLookupKey(), []);
+  const initialLookupKey = useMemo(
+    () => readLegacyLookupKeyFromUrl() || readStoredLookupKey(),
+    [],
+  );
   const [apiKeyInput, setApiKeyInput] = useState(initialLookupKey);
   const [queriedKey, setQueriedKey] = useState(initialLookupKey);
   const [apiKeyName, setApiKeyName] = useState("");
@@ -265,14 +299,21 @@ export function ApiKeyLookupPage() {
 
   // ── Content modal state ──
   const [contentModalOpen, setContentModalOpen] = useState(false);
-  const [contentModalLogId, setContentModalLogId] = useState<number | null>(null);
-  const [contentModalTab, setContentModalTab] = useState<"input" | "output">("input");
+  const [contentModalLogId, setContentModalLogId] = useState<number | null>(
+    null,
+  );
+  const [contentModalTab, setContentModalTab] = useState<"input" | "output">(
+    "input",
+  );
 
-  const handleContentClick = useCallback((logId: number, tab: "input" | "output") => {
-    setContentModalLogId(logId);
-    setContentModalTab(tab);
-    setContentModalOpen(true);
-  }, []);
+  const handleContentClick = useCallback(
+    (logId: number, tab: "input" | "output") => {
+      setContentModalLogId(logId);
+      setContentModalTab(tab);
+      setContentModalOpen(true);
+    },
+    [],
+  );
 
   const logColumns = useMemo(
     () =>
@@ -281,27 +322,6 @@ export function ApiKeyLookupPage() {
       ),
     [t, handleContentClick],
   );
-  const statusOptions = useMemo(
-    () => [
-      {
-        value: "",
-        label: t("apikey_lookup.all_status"),
-        searchText: "all status",
-      },
-      {
-        value: "success",
-        label: t("request_logs.status_success"),
-        searchText: "success",
-      },
-      {
-        value: "failed",
-        label: t("request_logs.status_failed"),
-        searchText: "failed",
-      },
-    ],
-    [t],
-  );
-
   // ── Tab state ──
   const [activeTab, setActiveTab] = useState<ApiKeyLookupTab>("usage");
   const [quickImportReloadToken, setQuickImportReloadToken] = useState(0);
@@ -331,8 +351,12 @@ export function ApiKeyLookupPage() {
 
   // ── Filters ──
   const [timeRange, setTimeRange] = useState<TimeRange>(7);
-  const [modelQuery, setModelQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [selectedModels, setSelectedModels] =
+    useState<MultiSelectFilterState<string>>(null);
+  const [selectedChannels, setSelectedChannels] =
+    useState<MultiSelectFilterState<string>>(null);
+  const [selectedStatuses, setSelectedStatuses] =
+    useState<MultiSelectFilterState<StatusFilterValue>>(null);
 
   // ── Backend stats + filter options ──
   const [stats, setStats] = useState<{
@@ -341,7 +365,92 @@ export function ApiKeyLookupPage() {
     total_tokens: number;
     total_cost: number;
   }>({ total: 0, success_rate: 0, total_tokens: 0, total_cost: 0 });
-  const [modelOptions, setModelOptions] = useState<string[]>([]);
+  const [filterOptions, setFilterOptions] = useState<{
+    models: string[];
+    channels: string[];
+    statuses: string[];
+  }>({ models: [], channels: [], statuses: ["success", "failed"] });
+
+  const modelOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
+    return filterOptions.models.map((model) => ({
+      value: model,
+      label: <ModelTag id={model} size="sm" />,
+      searchText: model,
+    }));
+  }, [filterOptions.models]);
+
+  const channelOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
+    return filterOptions.channels.map((channel) => ({
+      value: channel,
+      label: channel,
+      searchText: channel,
+    }));
+  }, [filterOptions.channels]);
+
+  const statusOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
+    const statuses =
+      filterOptions.statuses.length > 0
+        ? filterOptions.statuses
+        : ["success", "failed"];
+    return statuses.map((status) => ({
+      value: status,
+      label:
+        status === "success"
+          ? t("request_logs.status_success")
+          : status === "failed"
+            ? t("request_logs.status_failed")
+            : status,
+      searchText: status,
+    }));
+  }, [filterOptions.statuses, t]);
+
+  const modelFilterValues = useMemo(
+    () => modelOptions.map((option) => option.value),
+    [modelOptions],
+  );
+  const channelFilterValues = useMemo(
+    () => channelOptions.map((option) => option.value),
+    [channelOptions],
+  );
+  const statusFilterValues = useMemo<StatusFilterValue[]>(
+    () => toStatusFilterValues(statusOptions.map((option) => option.value)),
+    [statusOptions],
+  );
+
+  const modelFilterParam = useMemo(
+    () => toFilterParam(selectedModels, modelFilterValues),
+    [modelFilterValues, selectedModels],
+  );
+  const channelFilterParam = useMemo(
+    () => toFilterParam(selectedChannels, channelFilterValues),
+    [channelFilterValues, selectedChannels],
+  );
+  const statusFilterParam = useMemo(
+    () => toFilterParam(selectedStatuses, statusFilterValues),
+    [selectedStatuses, statusFilterValues],
+  );
+
+  const handleModelsChange = useCallback(
+    (value: string[]) => {
+      setSelectedModels(normalizeFilterSelection(value, modelFilterValues));
+    },
+    [modelFilterValues],
+  );
+  const handleChannelsChange = useCallback(
+    (value: string[]) => {
+      setSelectedChannels(normalizeFilterSelection(value, channelFilterValues));
+    },
+    [channelFilterValues],
+  );
+  const handleStatusesChange = useCallback(
+    (value: StatusFilterValue[]) => {
+      setSelectedStatuses(normalizeFilterSelection(value, statusFilterValues));
+    },
+    [statusFilterValues],
+  );
+  const clearModelFilter = useCallback(() => setSelectedModels(null), []);
+  const clearChannelFilter = useCallback(() => setSelectedChannels(null), []);
+  const clearStatusFilter = useCallback(() => setSelectedStatuses(null), []);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const fetchIdRef = useRef(0);
@@ -373,8 +482,12 @@ export function ApiKeyLookupPage() {
           page,
           size: size ?? pageSize,
           days: timeRange,
-          model: modelQuery || undefined,
-          status: statusFilter || undefined,
+          models: modelFilterParam.values,
+          channels: channelFilterParam.values,
+          statuses: statusFilterParam.values,
+          modelsEmpty: modelFilterParam.matchesNone,
+          channelsEmpty: channelFilterParam.matchesNone,
+          statusesEmpty: statusFilterParam.matchesNone,
           signal: controller.signal,
         });
 
@@ -391,7 +504,11 @@ export function ApiKeyLookupPage() {
             total_cost: 0,
           },
         );
-        setModelOptions(resp.filters?.models ?? []);
+        setFilterOptions({
+          models: resp.filters?.models ?? [],
+          channels: resp.filters?.channels ?? [],
+          statuses: resp.filters?.statuses ?? ["success", "failed"],
+        });
         setLastUpdatedAt(Date.now());
         setQueriedKey(key.trim());
         setApiKeyName(resp.api_key_name?.trim() ?? "");
@@ -401,7 +518,11 @@ export function ApiKeyLookupPage() {
         if (err instanceof DOMException && err.name === "AbortError") return;
         if (myFetchId !== fetchIdRef.current) return;
 
-        const message = localizeLookupError(t, err, "apikey_lookup.query_failed");
+        const message = localizeLookupError(
+          t,
+          err,
+          "apikey_lookup.query_failed",
+        );
         setError(message);
         setRawItems([]);
         setTotalCount(0);
@@ -413,7 +534,14 @@ export function ApiKeyLookupPage() {
         }
       }
     },
-    [t, timeRange, modelQuery, statusFilter, pageSize],
+    [
+      channelFilterParam,
+      modelFilterParam,
+      pageSize,
+      statusFilterParam,
+      t,
+      timeRange,
+    ],
   );
 
   // ================================================================
@@ -452,7 +580,8 @@ export function ApiKeyLookupPage() {
           days,
           signal: controller.signal,
         });
-        if (myFetchId !== chartFetchIdRef.current || controller.signal.aborted) return;
+        if (myFetchId !== chartFetchIdRef.current || controller.signal.aborted)
+          return;
 
         chartCacheRef.current[cacheKey] = data;
         writeStoredChartCache(cacheKey, data);
@@ -463,7 +592,8 @@ export function ApiKeyLookupPage() {
         writeStoredLookupKey(trimmedKey);
         setLoginModalOpen(false);
       } catch (err) {
-        if (controller.signal.aborted || myFetchId !== chartFetchIdRef.current) return;
+        if (controller.signal.aborted || myFetchId !== chartFetchIdRef.current)
+          return;
         if (!cached) {
           setError(localizeLookupError(t, err, "apikey_lookup.query_failed"));
         }
@@ -471,7 +601,10 @@ export function ApiKeyLookupPage() {
         if (chartAbortControllerRef.current === controller) {
           chartAbortControllerRef.current = null;
         }
-        if (myFetchId === chartFetchIdRef.current && !controller.signal.aborted) {
+        if (
+          myFetchId === chartFetchIdRef.current &&
+          !controller.signal.aborted
+        ) {
           setChartLoading(false);
         }
       }
@@ -483,7 +616,10 @@ export function ApiKeyLookupPage() {
   //  Derived rows for VirtualTable
   // ================================================================
 
-  const rows = useMemo<RequestLogsRow[]>(() => rawItems.map((item) => toLogRow(item)), [rawItems]);
+  const rows = useMemo<RequestLogsRow[]>(
+    () => rawItems.map((item) => toLogRow(item)),
+    [rawItems],
+  );
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
@@ -515,7 +651,7 @@ export function ApiKeyLookupPage() {
         fetchLogs(queriedKey, 1);
       }
     }
-  }, [timeRange, modelQuery, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [timeRange, selectedModels, selectedChannels, selectedStatuses]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Models fetching ──
   const fetchModelsFn = useCallback(
@@ -525,10 +661,13 @@ export function ApiKeyLookupPage() {
 
       const cached = options?.force
         ? null
-        : modelsCacheRef.current[trimmedKey] || readStoredModelsCache(trimmedKey);
+        : modelsCacheRef.current[trimmedKey] ||
+          readStoredModelsCache(trimmedKey);
       if (cached) {
         modelsCacheRef.current[trimmedKey] = cached;
-        setAvailableModels((prev) => (sameStringArray(prev, cached) ? prev : cached));
+        setAvailableModels((prev) =>
+          sameStringArray(prev, cached) ? prev : cached,
+        );
       }
 
       setModelsLoading(true);
@@ -540,7 +679,9 @@ export function ApiKeyLookupPage() {
         setAvailableModels((prev) => (sameStringArray(prev, ids) ? prev : ids));
       } catch (err: unknown) {
         if (!cached) {
-          setModelsError(localizeLookupError(t, err, "apikey_lookup.load_models_failed"));
+          setModelsError(
+            localizeLookupError(t, err, "apikey_lookup.load_models_failed"),
+          );
         }
       } finally {
         setModelsLoading(false);
@@ -586,8 +727,14 @@ export function ApiKeyLookupPage() {
       event?.preventDefault();
       const val = apiKeyInput.trim();
       if (val) {
-        setModelQuery("");
-        setStatusFilter("");
+        setSelectedModels(null);
+        setSelectedChannels(null);
+        setSelectedStatuses(null);
+        setFilterOptions({
+          models: [],
+          channels: [],
+          statuses: ["success", "failed"],
+        });
         setRawItems([]);
         setCurrentPage(1);
         setApiKeyName("");
@@ -607,7 +754,15 @@ export function ApiKeyLookupPage() {
         }
       }
     },
-    [apiKeyInput, queriedKey, activeTab, timeRange, fetchLogs, fetchChartDataFn, fetchModelsFn],
+    [
+      apiKeyInput,
+      queriedKey,
+      activeTab,
+      timeRange,
+      fetchLogs,
+      fetchChartDataFn,
+      fetchModelsFn,
+    ],
   );
 
   const handleApiKeyInputChange = useCallback((value: string) => {
@@ -636,9 +791,14 @@ export function ApiKeyLookupPage() {
     setCurrentPage(1);
     setLastUpdatedAt(null);
     setStats({ total: 0, success_rate: 0, total_tokens: 0, total_cost: 0 });
-    setModelOptions([]);
-    setModelQuery("");
-    setStatusFilter("");
+    setFilterOptions({
+      models: [],
+      channels: [],
+      statuses: ["success", "failed"],
+    });
+    setSelectedModels(null);
+    setSelectedChannels(null);
+    setSelectedStatuses(null);
 
     setQueriedKey("");
     setApiKeyName("");
@@ -662,7 +822,14 @@ export function ApiKeyLookupPage() {
         fetchLogs(queriedKey, 1);
       }
     }
-  }, [queriedKey, activeTab, timeRange, fetchLogs, fetchChartDataFn, fetchModelsFn]);
+  }, [
+    queriedKey,
+    activeTab,
+    timeRange,
+    fetchLogs,
+    fetchChartDataFn,
+    fetchModelsFn,
+  ]);
 
   // Strip legacy sensitive query params from the URL on mount.
   useEffect(() => {
@@ -708,19 +875,6 @@ export function ApiKeyLookupPage() {
     t,
   });
 
-  // ── Model filter options for SearchableSelect ──
-  const modelFilterOptions = useMemo(
-    () => [
-      {
-        value: "",
-        label: t("apikey_lookup.all_models"),
-        searchText: "all models",
-      },
-      ...modelOptions.map((m) => ({ value: m, label: m, searchText: m })),
-    ],
-    [modelOptions, t],
-  );
-
   const lastUpdatedText = useMemo(() => {
     if (!lastUpdatedAt) return "";
     const d = new Date(lastUpdatedAt);
@@ -728,7 +882,8 @@ export function ApiKeyLookupPage() {
     return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }, [lastUpdatedAt]);
 
-  const displayName = apiKeyName || (queriedKey ? t("apikey_lookup.unnamed_key") : "");
+  const displayName =
+    apiKeyName || (queriedKey ? t("apikey_lookup.unnamed_key") : "");
   const keyMenuOptions = useMemo<SelectOption[]>(
     () => [
       {
@@ -826,7 +981,9 @@ export function ApiKeyLookupPage() {
                 setModelMetric={setModelMetric}
                 heatmapSeries={heatmapSeries}
                 modelDistributionData={modelDistributionData}
-                modelDistributionOption={modelDistributionOption as Record<string, unknown>}
+                modelDistributionOption={
+                  modelDistributionOption as Record<string, unknown>
+                }
                 modelDistributionLegend={modelDistributionLegend}
                 dailySeries={dailySeries}
                 dailyTrendOption={dailyTrendOption as Record<string, unknown>}
@@ -839,13 +996,18 @@ export function ApiKeyLookupPage() {
             {activeTab === "logs" ? (
               <PublicLogsSection
                 t={t}
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
-                statusOptions={statusOptions}
                 modelOptions={modelOptions}
-                modelQuery={modelQuery}
-                setModelQuery={setModelQuery}
-                modelFilterOptions={modelFilterOptions}
+                channelOptions={channelOptions}
+                statusOptions={statusOptions}
+                selectedModels={selectedModels}
+                selectedChannels={selectedChannels}
+                selectedStatuses={selectedStatuses}
+                onModelsChange={handleModelsChange}
+                onChannelsChange={handleChannelsChange}
+                onStatusesChange={handleStatusesChange}
+                onModelsClear={clearModelFilter}
+                onChannelsClear={clearChannelFilter}
+                onStatusesClear={clearStatusFilter}
                 stats={stats}
                 lastUpdatedText={lastUpdatedText}
                 loading={loading}
@@ -874,7 +1036,10 @@ export function ApiKeyLookupPage() {
 
             {activeTab === "quickImport" ? (
               <Reveal>
-                <QuickImportTabContent apiKey={queriedKey} reloadToken={quickImportReloadToken} />
+                <QuickImportTabContent
+                  apiKey={queriedKey}
+                  reloadToken={quickImportReloadToken}
+                />
               </Reveal>
             ) : null}
           </>
@@ -930,7 +1095,11 @@ export function ApiKeyLookupPage() {
           </Button>
         }
       >
-        <form id="apikey-login-form" onSubmit={handleSubmit} className="space-y-2">
+        <form
+          id="apikey-login-form"
+          onSubmit={handleSubmit}
+          className="space-y-2"
+        >
           <label
             htmlFor="apikey-login-input"
             className="block text-sm font-medium text-slate-700 dark:text-white/80"
@@ -946,9 +1115,13 @@ export function ApiKeyLookupPage() {
             autoComplete="off"
             spellCheck={false}
             autoFocus
-            startAdornment={<Search size={16} className="text-slate-400 dark:text-white/40" />}
+            startAdornment={
+              <Search size={16} className="text-slate-400 dark:text-white/40" />
+            }
           />
-          {error ? <p className="text-sm text-rose-600 dark:text-rose-300">{error}</p> : null}
+          {error ? (
+            <p className="text-sm text-rose-600 dark:text-rose-300">{error}</p>
+          ) : null}
         </form>
       </Modal>
     </div>

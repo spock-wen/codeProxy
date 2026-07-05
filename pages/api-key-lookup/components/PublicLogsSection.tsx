@@ -1,19 +1,30 @@
 import { Filter } from "lucide-react";
 import { Card } from "@code-proxy/ui";
 import { Reveal } from "@code-proxy/ui";
-import { SearchableSelect } from "@code-proxy/ui";
 import { DataTable, type DataTableColumn } from "@code-proxy/ui";
-import { RequestLogsPaginationBar, type RequestLogsRow } from "@features/request-log-viewer";
+import type { SearchableCheckboxMultiSelectOption } from "@code-proxy/ui";
+import {
+  RequestLogFacetFilters,
+  RequestLogsPaginationBar,
+  type MultiSelectFilterState,
+  type RequestLogsRow,
+  type StatusFilterValue,
+} from "@features/request-log-viewer";
 
 export function PublicLogsSection({
   t,
-  statusFilter,
-  setStatusFilter,
   statusOptions,
   modelOptions,
-  modelQuery,
-  setModelQuery,
-  modelFilterOptions,
+  channelOptions,
+  selectedModels,
+  selectedChannels,
+  selectedStatuses,
+  onModelsChange,
+  onChannelsChange,
+  onStatusesChange,
+  onModelsClear,
+  onChannelsClear,
+  onStatusesClear,
   stats,
   lastUpdatedText,
   loading,
@@ -27,14 +38,24 @@ export function PublicLogsSection({
   onPageSizeChange,
 }: {
   t: (key: string, options?: Record<string, unknown>) => string;
-  statusFilter: string;
-  setStatusFilter: (value: string) => void;
-  statusOptions: Array<{ value: string; label: string; searchText: string }>;
-  modelOptions: string[];
-  modelQuery: string;
-  setModelQuery: (value: string) => void;
-  modelFilterOptions: Array<{ value: string; label: string; searchText: string }>;
-  stats: { total: number; success_rate: number; total_tokens: number; total_cost: number };
+  modelOptions: SearchableCheckboxMultiSelectOption[];
+  channelOptions: SearchableCheckboxMultiSelectOption[];
+  statusOptions: SearchableCheckboxMultiSelectOption[];
+  selectedModels: MultiSelectFilterState<string>;
+  selectedChannels: MultiSelectFilterState<string>;
+  selectedStatuses: MultiSelectFilterState<StatusFilterValue>;
+  onModelsChange: (value: string[]) => void;
+  onChannelsChange: (value: string[]) => void;
+  onStatusesChange: (value: StatusFilterValue[]) => void;
+  onModelsClear: () => void;
+  onChannelsClear: () => void;
+  onStatusesClear: () => void;
+  stats: {
+    total: number;
+    success_rate: number;
+    total_tokens: number;
+    total_cost: number;
+  };
   lastUpdatedText: string;
   loading: boolean;
   logColumns: DataTableColumn<RequestLogsRow>[];
@@ -52,24 +73,20 @@ export function PublicLogsSection({
         <div className="border-b border-slate-100 px-3 py-3 sm:px-5 dark:border-neutral-800/60">
           <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
             <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-2">
-              <SearchableSelect
-                value={statusFilter}
-                onChange={setStatusFilter}
-                options={statusOptions}
-                placeholder={t("apikey_lookup.all_status")}
-                aria-label={t("apikey_lookup.status_filter")}
-                className="w-full sm:w-auto"
+              <RequestLogFacetFilters
+                modelOptions={modelOptions}
+                channelOptions={channelOptions}
+                statusOptions={statusOptions}
+                selectedModels={selectedModels}
+                selectedChannels={selectedChannels}
+                selectedStatuses={selectedStatuses}
+                onModelsChange={onModelsChange}
+                onChannelsChange={onChannelsChange}
+                onStatusesChange={onStatusesChange}
+                onModelsClear={onModelsClear}
+                onChannelsClear={onChannelsClear}
+                onStatusesClear={onStatusesClear}
               />
-              {modelOptions.length > 0 ? (
-                <SearchableSelect
-                  value={modelQuery}
-                  onChange={setModelQuery}
-                  options={modelFilterOptions}
-                  placeholder={t("request_logs.all_models_placeholder")}
-                  aria-label={t("apikey_lookup.model_filter")}
-                  className="w-full sm:w-auto"
-                />
-              ) : null}
             </div>
 
             <div className="hidden sm:block sm:flex-1" />
@@ -83,10 +100,15 @@ export function PublicLogsSection({
               </span>
               <span className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap sm:justify-start">
                 {t("common.success_rate")}
-                <span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
+                <span className="font-mono tabular-nums">
+                  {stats.success_rate.toFixed(1)}%
+                </span>
               </span>
               <span className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
-                <span className="text-slate-300 dark:text-white/10" aria-hidden="true">
+                <span
+                  className="text-slate-300 dark:text-white/10"
+                  aria-hidden="true"
+                >
                   ·
                 </span>
                 {t("apikey_lookup.token")}
@@ -96,7 +118,10 @@ export function PublicLogsSection({
               </span>
               {lastUpdatedText ? (
                 <span className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
-                  <span className="text-slate-300 dark:text-white/10" aria-hidden="true">
+                  <span
+                    className="text-slate-300 dark:text-white/10"
+                    aria-hidden="true"
+                  >
                     ·
                   </span>
                   <span className="text-slate-400 dark:text-white/40">
