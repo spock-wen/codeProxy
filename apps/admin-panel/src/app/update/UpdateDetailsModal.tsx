@@ -86,6 +86,8 @@ const UPDATE_PROGRESS_MESSAGE_KEYS: Record<string, string> = {
     "auto_update.progress_message_starting_runtime",
   "starting postgresql/redis before sqlite migration":
     "auto_update.progress_message_starting_runtime",
+  "checking runtime data migration before service restart":
+    "auto_update.progress_message_checking_runtime_data",
   "checking legacy sqlite migration before service restart":
     "auto_update.progress_message_checking_sqlite",
   "migrating legacy sqlite data before restarting service":
@@ -107,6 +109,8 @@ const UPDATE_PROGRESS_MESSAGE_KEYS: Record<string, string> = {
   "legacy sqlite migration complete; preparing service restart":
     "auto_update.progress_message_sqlite_complete",
   "legacy sqlite migration check finished before service restart":
+    "auto_update.progress_message_finishing_migration",
+  "runtime data migration check finished before service restart":
     "auto_update.progress_message_finishing_migration",
   "finishing sqlite migration before service restart":
     "auto_update.progress_message_finishing_migration",
@@ -228,7 +232,7 @@ const MIGRATION_PHASE_LABEL_KEYS: Record<string, string> = {
 
 const MIGRATION_PROGRESS_MESSAGE_KEYS: Record<string, string> = {
   starting_runtime: "auto_update.progress_message_starting_runtime",
-  checking: "auto_update.progress_message_checking_sqlite",
+  checking: "auto_update.progress_message_checking_runtime_data",
   preparing: "auto_update.progress_message_preparing_sqlite_import",
   inventory: "auto_update.progress_message_sqlite_inventory",
   dry_run: "auto_update.progress_message_postgres_dry_run",

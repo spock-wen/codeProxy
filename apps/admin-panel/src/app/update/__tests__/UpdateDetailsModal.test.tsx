@@ -123,6 +123,37 @@ describe("UpdateDetailsModal", () => {
     ).toBeNull();
   });
 
+  test("shows generic runtime data check before SQLite is detected", async () => {
+    render(
+      <UpdateDetailsModal
+        open
+        candidate={candidate}
+        updateTarget={candidate}
+        updating
+        progress={{
+          status: "running",
+          stage: "migrating",
+          message: "checking runtime data migration before service restart",
+          progress_percent: 40,
+          migration: {
+            phase: "checking",
+            target_database: "PostgreSQL",
+          },
+        }}
+        onApply={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "Checking runtime data migration before restarting the service.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Data migration check")).toBeInTheDocument();
+    expect(screen.queryByText(/legacy SQLite data/)).toBeNull();
+  });
+
   test("shows skipped SQLite migration as a check instead of active migration", async () => {
     render(
       <UpdateDetailsModal
