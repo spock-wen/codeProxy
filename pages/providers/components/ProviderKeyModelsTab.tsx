@@ -82,7 +82,18 @@ export function ProviderKeyModelsTab({
   editKeyEnabledToggle,
 }: ProviderKeyModelsTabProps) {
   const { t } = useTranslation();
-  const isModelAccessProvider = isOpenCodeGo || isCline;
+  const isOllamaCloud = editKeyType === "ollama-cloud";
+  const isModelAccessProvider = isOpenCodeGo || isCline || isOllamaCloud;
+  const modelAccessTitle = isCline
+    ? t("providers.cline_models_title")
+    : isOllamaCloud
+      ? t("providers.ollama_cloud_models_title")
+      : t("providers.opencode_go_models_title");
+  const modelAccessHint = isCline
+    ? t("providers.cline_models_hint")
+    : isOllamaCloud
+      ? t("providers.ollama_cloud_models_hint")
+      : t("providers.opencode_go_models_hint");
   const clineRows = useMemo<ClineModelRow[]>(() => {
     if (!isCline) return [];
     return filteredOpenCodeModels.map((model) => {
@@ -144,14 +155,10 @@ export function ProviderKeyModelsTab({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                {isCline
-                  ? t("providers.cline_models_title")
-                  : t("providers.opencode_go_models_title")}
+                {modelAccessTitle}
               </p>
               <p className="mt-1 text-xs text-slate-500 dark:text-white/55">
-                {isCline
-                  ? t("providers.cline_models_hint")
-                  : t("providers.opencode_go_models_hint")}
+                {modelAccessHint}
               </p>
             </div>
             <Button

@@ -175,7 +175,7 @@ export function useProviderKeyEditor({
       : undefined;
     const isOpenCodeGo = editKeyType === "opencode-go";
     const isCline = editKeyType === "cline";
-    const usesDynamicModelCatalog = isOpenCodeGo || isCline;
+    const usesDynamicModelCatalog = isOpenCodeGo || isCline || editKeyType === "ollama-cloud";
     const excludedModels = rawExcludedModels;
 
     const requireAlias = editKeyType === "vertex";

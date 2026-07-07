@@ -2712,6 +2712,8 @@
     "opencode_go_models_hint": "模型从官方 OpenCode Go /models 端点自动获取。勾选表示允许使用，取消勾选会写入屏蔽列表。",
     "cline_models_title": "ClinePass 模型权限",
     "cline_models_hint": "模型从 relay 内置的 ClinePass 定义加载。勾选表示允许使用，取消勾选会写入屏蔽列表。",
+    "ollama_cloud_models_title": "Ollama Cloud 模型权限",
+    "ollama_cloud_models_hint": "模型从 relay 内置的 Ollama Cloud 定义加载。勾选表示允许使用，取消勾选会写入屏蔽列表。",
     "cline_real_model_id": "ClinePass 真实模型 ID",
     "cline_public_model_name": "对外模型名",
     "model_enabled": "是否启用",

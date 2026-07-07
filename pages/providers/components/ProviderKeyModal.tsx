@@ -93,7 +93,7 @@ export function ProviderKeyModal({
   const isOpenCodeGo = editKeyType === "opencode-go";
   const isCline = editKeyType === "cline";
   const isOllamaCloud = editKeyType === "ollama-cloud";
-  const isModelAccessProvider = isOpenCodeGo || isCline;
+  const isModelAccessProvider = isOpenCodeGo || isCline || isOllamaCloud;
   const showModelsTab = true;
 
   const [modelConfigs, setModelConfigs] = useState<{ id: string; owned_by: string }[]>([]);
@@ -174,8 +174,8 @@ export function ProviderKeyModal({
     setOpenCodeModelsLoading(true);
     setOpenCodeModelsError(null);
     try {
-      if (isCline) {
-        const items = await authFilesApi.getModelDefinitions("cline");
+      if (isCline || isOllamaCloud) {
+        const items = await authFilesApi.getModelDefinitions(isCline ? "cline" : "ollama-cloud");
         setOpenCodeModels(
           normalizeDiscoveredModels({ data: items.map((item) => ({ ...item, object: "model" })) }),
         );
@@ -196,7 +196,7 @@ export function ProviderKeyModal({
     } finally {
       setOpenCodeModelsLoading(false);
     }
-  }, [isCline, isModelAccessProvider, t]);
+  }, [isCline, isModelAccessProvider, isOllamaCloud, t]);
 
   useEffect(() => {
     if (!open || !isModelAccessProvider) return;
