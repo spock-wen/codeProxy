@@ -98,6 +98,56 @@ describe("provider import/export helpers", () => {
     ]);
   });
 
+  test("preserves Ollama Cloud provider fields without per-key model fields", () => {
+    const text = createProviderExportText("ollama-cloud", [
+      {
+        apiKey: " ollama-key ",
+        name: "Ollama Cloud",
+        baseUrl: "https://ollama.com",
+        models: [{ name: "gpt-oss:120b" }],
+        excludedModels: [" gpt-oss:20b ", "*"],
+      },
+    ] satisfies ProviderSimpleConfig[]);
+
+    expect(JSON.parse(text)).toEqual({
+      provider: "ollama-cloud",
+      version: 1,
+      items: [
+        {
+          "api-key": "ollama-key",
+          "base-url": "https://ollama.com",
+          "excluded-models": ["*", "gpt-oss:20b"],
+          name: "Ollama Cloud",
+        },
+      ],
+    });
+
+    const preview = prepareProviderImport(
+      "ollama-cloud",
+      JSON.stringify({
+        provider: "ollama-cloud",
+        items: [
+          {
+            "api-key": " ollama-key ",
+            name: "Ollama Cloud",
+            models: [{ name: "gpt-oss:120b" }],
+            "excluded-models": ["gpt-oss:20b", "*"],
+          },
+        ],
+      }),
+      [],
+    );
+
+    expect(preview.nextItems).toEqual([
+      {
+        apiKey: "ollama-key",
+        name: "Ollama Cloud",
+        baseUrl: "https://ollama.com",
+        excludedModels: ["*", "gpt-oss:20b"],
+      },
+    ]);
+  });
+
   test("normalizes imports, reports diff counts, and removes duplicate OpenAI nested entries", () => {
     const current: OpenAIProvider[] = [
       {

@@ -19,7 +19,7 @@ describe("providersApi Ollama Cloud", () => {
     deleteMock.mockReset();
   });
 
-  test("normalizes Ollama Cloud configs with default Base URL", async () => {
+  test("normalizes Ollama Cloud configs with default Base URL and ignores legacy models", async () => {
     const { providersApi } = await import("@code-proxy/api-client/endpoints/providers");
     getMock.mockResolvedValue({
       "ollama-cloud-api-key": [
@@ -38,14 +38,13 @@ describe("providersApi Ollama Cloud", () => {
         name: "Ollama",
         apiKey: "sk-ollama",
         baseUrl: "https://ollama.com",
-        models: [{ name: "gpt-oss:120b" }],
         excludedModels: ["gpt-oss:20b", "*"],
       },
     ]);
     expect(getMock).toHaveBeenCalledWith("/ollama-cloud-api-key");
   });
 
-  test("serializes and deletes Ollama Cloud configs", async () => {
+  test("serializes Ollama Cloud configs without legacy models and deletes them", async () => {
     const { providersApi } = await import("@code-proxy/api-client/endpoints/providers");
 
     await providersApi.saveOllamaCloudConfigs([
@@ -63,7 +62,6 @@ describe("providersApi Ollama Cloud", () => {
         name: "Ollama",
         "api-key": "sk-ollama",
         "base-url": "https://ollama.com",
-        models: [{ name: "gpt-oss:120b" }],
         "excluded-models": ["gpt-oss:20b", "*"],
       },
     ]);

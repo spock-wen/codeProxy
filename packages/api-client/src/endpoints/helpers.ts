@@ -187,8 +187,6 @@ export const serializeOllamaCloudKey = (config: ProviderSimpleConfig) => {
   if (proxyId) payload["proxy-id"] = proxyId;
   const headers = serializeHeaders(config.headers);
   if (headers) payload.headers = headers;
-  const models = serializeModels(config.models);
-  if (models && models.length) payload.models = models;
   if (config.excludedModels && config.excludedModels.length) {
     payload["excluded-models"] = config.excludedModels;
   }

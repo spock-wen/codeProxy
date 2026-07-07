@@ -163,7 +163,8 @@ const normalizeSimpleItem = (
   if (!apiKey) return { item: null, duplicateCount: 0 };
   const headers = sortRecord(normalizeHeaders(value.headers));
   const { models, duplicateCount } = normalizeModelList(value.models);
-  const usesDynamicModelCatalog = kind === "opencode-go" || kind === "cline";
+  const usesDynamicModelCatalog =
+    kind === "opencode-go" || kind === "cline" || kind === "ollama-cloud";
   const excludedModels = sortExcludedModels(value["excluded-models"] ?? value.excludedModels);
   const baseUrl =
     normalizeString(value["base-url"] ?? value.baseUrl) ??

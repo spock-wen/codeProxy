@@ -651,7 +651,7 @@ describe("ProvidersPage Ollama Cloud tab", () => {
     mocks.proxiesList.mockImplementation(async () => []);
   });
 
-  test("shows Ollama Cloud manual model configuration", async () => {
+  test("shows Ollama Cloud dynamic model list without manual model inputs", async () => {
     render(
       <MemoryRouter initialEntries={["/ai-providers/ollama-cloud/new"]}>
         <ThemeProvider>
@@ -668,14 +668,14 @@ describe("ProvidersPage Ollama Cloud tab", () => {
       name: /Add Ollama Cloud configuration/i,
     });
     expect(within(dialog).getByRole("tab", { name: /Models/i })).toBeInTheDocument();
+    await waitFor(() => expect(mocks.getModelDefinitions).toHaveBeenCalledWith("ollama-cloud"));
     await userEvent.setup().click(within(dialog).getByRole("tab", { name: /Models/i }));
-    expect(within(dialog).getByText("Models (optional)")).toBeInTheDocument();
-    expect(within(dialog).queryByText("gpt-oss:120b")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Models (optional)")).not.toBeInTheDocument();
+    expect(within(dialog).getByText("gpt-oss:120b")).toBeInTheDocument();
     expect(mocks.apiCallRequest).not.toHaveBeenCalled();
-    expect(mocks.getModelDefinitions).not.toHaveBeenCalled();
   });
 
-  test("preserves Ollama Cloud per-key model fields when saving", async () => {
+  test("drops legacy Ollama Cloud per-key model fields when saving", async () => {
     const user = userEvent.setup();
     mocks.getOllamaCloudConfigs.mockImplementation(async () => [
       {
@@ -703,7 +703,7 @@ describe("ProvidersPage Ollama Cloud tab", () => {
       name: /Edit Ollama Cloud configuration/i,
     });
     expect(within(dialog).getByRole("tab", { name: /Models/i })).toBeInTheDocument();
-    expect(mocks.getModelDefinitions).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.getModelDefinitions).toHaveBeenCalledWith("ollama-cloud"));
     await user.click(within(dialog).getByRole("button", { name: /Save/ }));
 
     await waitFor(() => {
@@ -711,13 +711,12 @@ describe("ProvidersPage Ollama Cloud tab", () => {
         expect.objectContaining({
           name: "Existing Ollama Cloud",
           apiKey: "sk-ollama",
-          models: [{ name: "gpt-oss:120b" }],
           excludedModels: ["gpt-oss:20b", "*"],
         }),
       ]);
     });
     const saved = mocks.saveOllamaCloudConfigs.mock.calls[0][0][0];
-    expect(saved).toHaveProperty("models", [{ name: "gpt-oss:120b" }]);
+    expect(saved).not.toHaveProperty("models");
   });
 });
 

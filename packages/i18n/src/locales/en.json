@@ -3426,6 +3426,8 @@
     "opencode_go_models_hint": "Models are loaded from the official OpenCode Go /models endpoint. Checked models are allowed; unchecked models are written to the blocked list.",
     "cline_models_title": "ClinePass model access",
     "cline_models_hint": "Models are loaded from the relay's ClinePass definitions. Checked models are allowed; unchecked models are written to the blocked list.",
+    "ollama_cloud_models_title": "Ollama Cloud model access",
+    "ollama_cloud_models_hint": "Models are loaded from the relay's Ollama Cloud definitions. Checked models are allowed; unchecked models are written to the blocked list.",
     "cline_real_model_id": "ClinePass real model ID",
     "cline_public_model_name": "Public model name",
     "model_enabled": "Enabled",
