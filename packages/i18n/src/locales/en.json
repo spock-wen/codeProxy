@@ -2817,7 +2817,18 @@
     "no_api_keys": "No API keys",
     "usage_table_caption": "Usage records",
     "no_usage_records": "No usage records",
-    "more_suffix": " more"
+    "more_suffix": " more",
+    "filter_name_placeholder": "Filter names",
+    "filter_key_placeholder": "Filter keys",
+    "filter_channel_group_placeholder": "Filter channel groups",
+    "search_names": "Search names...",
+    "search_keys": "Search keys...",
+    "search_channel_groups": "Search channel groups...",
+    "clear_name_filter": "Clear name filter",
+    "clear_key_filter": "Clear key filter",
+    "clear_channel_group_filter": "Clear channel group filter",
+    "reset_filters": "Reset filters",
+    "entry_not_found": "Entry not found. It may have been modified or deleted."
   },
   "api_key_permissions_page": {
     "title": "API Key Permissions",
