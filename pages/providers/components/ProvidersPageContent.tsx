@@ -1212,9 +1212,9 @@ export function ProvidersPage() {
               getDisplayModels={(item) =>
                 getEffectiveProviderModels("cline", item, modelAccessCatalogs.cline)
               }
-              getLatencyEntry={getLatencyEntry}
-              checkLatency={checkLatency}
               naturalHeight
+              showConnectionRows={false}
+              showModelMetric={false}
               showExcludedModels={false}
               renderExtra={(item, idx) => {
                 const queryReady = hasProviderUsageQuery("cline", item);
@@ -1270,9 +1270,9 @@ export function ProvidersPage() {
                   modelAccessCatalogs["ollama-cloud"],
                 )
               }
-              getLatencyEntry={getLatencyEntry}
-              checkLatency={checkLatency}
               naturalHeight
+              showConnectionRows={false}
+              showModelMetric={false}
               showExcludedModels={false}
               renderExtra={(item, idx) => {
                 const queryReady = hasProviderUsageQuery("ollama-cloud", item);

@@ -1018,6 +1018,7 @@ describe("ProvidersPage Cline tab", () => {
       {
         name: "Cline Hidden Excluded",
         apiKey: "sk-cline-hidden",
+        baseUrl: "https://api.cline.bot/api/v1",
         excludedModels: ["cline-pass/legacy-disabled-only"],
       },
     ]);
@@ -1036,6 +1037,10 @@ describe("ProvidersPage Cline tab", () => {
 
     await user.click(await screen.findByRole("tab", { name: /ClinePass/ }));
     expect(await screen.findByText("Cline Hidden Excluded")).toBeInTheDocument();
+    expect(screen.queryByText("sk-cline-hidden")).not.toBeInTheDocument();
+    expect(screen.queryByText("sk-cli***dden")).not.toBeInTheDocument();
+    expect(screen.queryByText("https://api.cline.bot/api/v1")).not.toBeInTheDocument();
+    expect(screen.queryByText("Models")).not.toBeInTheDocument();
     expect(screen.queryByText("cline-pass/legacy-disabled-only")).not.toBeInTheDocument();
   });
 
@@ -1304,6 +1309,7 @@ describe("ProvidersPage Ollama Cloud tab", () => {
       {
         name: "Ollama Hidden Excluded",
         apiKey: "sk-ollama-hidden",
+        baseUrl: "https://ollama.com",
         excludedModels: ["gpt-oss:legacy-disabled-only"],
       },
     ]);
@@ -1322,6 +1328,10 @@ describe("ProvidersPage Ollama Cloud tab", () => {
 
     await user.click(await screen.findByRole("tab", { name: /Ollama Cloud/ }));
     expect(await screen.findByText("Ollama Hidden Excluded")).toBeInTheDocument();
+    expect(screen.queryByText("sk-ollama-hidden")).not.toBeInTheDocument();
+    expect(screen.queryByText("sk-oll***dden")).not.toBeInTheDocument();
+    expect(screen.queryByText("https://ollama.com")).not.toBeInTheDocument();
+    expect(screen.queryByText("Models")).not.toBeInTheDocument();
     expect(screen.queryByText("gpt-oss:legacy-disabled-only")).not.toBeInTheDocument();
   });
 });
