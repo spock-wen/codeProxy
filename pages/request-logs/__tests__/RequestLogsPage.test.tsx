@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import i18n from "@code-proxy/i18n";
@@ -27,6 +27,7 @@ const emptyLogsResponse = {
     api_key_names: {},
     models: [],
     channels: [],
+    statuses: [],
   },
   stats: {
     total: 0,
@@ -49,6 +50,7 @@ const responseWithFilterOptions = {
     },
     models: ["gpt-5.4", "gpt-4.1"],
     channels: ["Codex", "Relay"],
+    statuses: ["success", "failed"],
   },
   stats: {
     total: 0,
@@ -97,6 +99,9 @@ const mocks = vi.hoisted(() => ({
   getLogContent: vi.fn(),
   clearUsageLogs: vi.fn(),
 }));
+
+const expectSignalOptions = () =>
+  expect.objectContaining({ signal: expect.any(AbortSignal) });
 
 function installLocalStorageMock() {
   const store = new Map<string, string>();
@@ -153,8 +158,9 @@ describe("RequestLogsPage", () => {
     mocks.clearUsageLogs.mockReset();
   });
 
-  test("renders the first token latency column from backend data", async () => {
+  test("renders first token latency value in the response metrics column", async () => {
     await i18n.changeLanguage("en");
+    const user = userEvent.setup();
 
     mocks.getUsageLogs.mockResolvedValue({
       items: [
@@ -204,9 +210,17 @@ describe("RequestLogsPage", () => {
       </ThemeProvider>,
     );
 
-    expect(await screen.findByText("Duration")).toBeInTheDocument();
-    expect(await screen.findByText("Streaming")).toBeInTheDocument();
-    expect(await screen.findByText("183ms")).toBeInTheDocument();
+    const table = await screen.findByRole("table", { name: "Request Logs Table" });
+    expect(
+      within(table).getByRole("columnheader", { name: "Response Metrics" }),
+    ).toBeInTheDocument();
+    expect(within(table).getByText("Streaming")).toBeInTheDocument();
+    expect(within(table).getByText("1.20s")).toBeInTheDocument();
+    expect(within(table).getByText("183ms")).toBeInTheDocument();
+    expect(within(table).queryByText("First Token Latency")).not.toBeInTheDocument();
+
+    await user.hover(within(table).getByLabelText("Duration: 1.20s"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("First Token Latency: 183ms");
   });
 
   test("labels non-streaming logs without rendering a first token placeholder", async () => {
@@ -230,29 +244,59 @@ describe("RequestLogsPage", () => {
     );
 
     expect(await screen.findByText("Non-streaming")).toBeInTheDocument();
-    expect(screen.queryByLabelText("First Token: --")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("First Token Latency: --")).not.toBeInTheDocument();
   });
 
-  test("does not crash when backend returns null filter arrays", async () => {
+  test("shows vision fallback model separately from real model mapping", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+
+    mocks.getUsageLogs.mockResolvedValue(
+      responseWithRows([
+        buildUsageLogItem({
+          id: 1,
+          model: "cline-pass/deepseek-v4-pro",
+          upstream_model: "",
+          vision_fallback_model: "cline-pass/mimo-v2.5-pro",
+        }),
+        buildUsageLogItem({
+          id: 2,
+          model: "alias-model",
+          upstream_model: "real-model",
+          vision_fallback_model: "",
+        }),
+      ]),
+    );
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    const table = await screen.findByRole("table", { name: "Request Logs Table" });
+    expect(within(table).getByText("cline-pass/deepseek-v4-pro")).toBeInTheDocument();
+    expect(within(table).getByText("alias-model")).toBeInTheDocument();
+
+    const visionMarker = within(table).getByLabelText("Vision fallback model ID");
+    await user.hover(visionMarker);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Vision fallback model ID cline-pass/mimo-v2.5-pro",
+    );
+    await user.unhover(visionMarker);
+    await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+
+    const realModelMarker = within(table).getByLabelText("Real model ID");
+    await user.hover(realModelMarker);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Real model ID real-model");
+  });
+
+  test("renders empty state with normalized empty filter arrays", async () => {
     await i18n.changeLanguage("en");
 
-    mocks.getUsageLogs.mockResolvedValue({
-      items: [],
-      total: 0,
-      page: 1,
-      size: 50,
-      filters: {
-        api_keys: null,
-        api_key_names: null,
-        models: null,
-        channels: null,
-      },
-      stats: {
-        total: 0,
-        success_rate: 0,
-        total_tokens: 0,
-      },
-    });
+    mocks.getUsageLogs.mockResolvedValue(emptyLogsResponse);
 
     render(
       <ThemeProvider>
@@ -263,6 +307,45 @@ describe("RequestLogsPage", () => {
     );
 
     expect(await screen.findByText("No Data")).toBeInTheDocument();
+  });
+
+  test("aborts stale request-log loads and keeps the latest response", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+    const first = deferred<ReturnType<typeof responseWithRows>>();
+    const second = deferred<ReturnType<typeof responseWithRows>>();
+    let firstSignal: AbortSignal | undefined;
+
+    mocks.getUsageLogs
+      .mockImplementationOnce((_params, options?: { signal?: AbortSignal }) => {
+        firstSignal = options?.signal;
+        return first.promise;
+      })
+      .mockImplementationOnce((_params, options?: { signal?: AbortSignal }) => {
+        expect(options?.signal).toBeInstanceOf(AbortSignal);
+        return second.promise;
+      });
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => expect(mocks.getUsageLogs).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole("tab", { name: "Today" }));
+
+    await waitFor(() => expect(mocks.getUsageLogs).toHaveBeenCalledTimes(2));
+    expect(firstSignal?.aborted).toBe(true);
+
+    second.resolve(responseWithRows([buildUsageLogItem({ id: 2, model: "latest-model" })]));
+    expect(await screen.findByText("latest-model")).toBeInTheDocument();
+
+    first.resolve(responseWithRows([buildUsageLogItem({ id: 1, model: "stale-model" })]));
+    await waitFor(() => expect(screen.queryByText("stale-model")).not.toBeInTheDocument());
   });
 
   test("shows request-log multi-select filters as all-selected by default", async () => {
@@ -298,6 +381,33 @@ describe("RequestLogsPage", () => {
     );
   });
 
+  test("uses backend status filter candidates", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+
+    mocks.getUsageLogs.mockResolvedValue({
+      ...responseWithFilterOptions,
+      filters: {
+        ...responseWithFilterOptions.filters,
+        statuses: ["success"],
+      },
+    });
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    const [, , , statusFilter] = await screen.findAllByRole("combobox");
+    await user.click(statusFilter);
+
+    expect(await screen.findByRole("option", { name: "Success" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Failed" })).not.toBeInTheDocument();
+  });
+
   test("only applies request-log multi-select changes after confirmation and restores full selection", async () => {
     await i18n.changeLanguage("en");
     const user = userEvent.setup();
@@ -327,6 +437,7 @@ describe("RequestLogsPage", () => {
           channels_empty: false,
           statuses_empty: false,
         }),
+        expectSignalOptions(),
       ),
     );
 
@@ -344,6 +455,7 @@ describe("RequestLogsPage", () => {
           api_keys: ["sk-secondary"],
           api_keys_empty: false,
         }),
+        expectSignalOptions(),
       ),
     );
 
@@ -361,6 +473,7 @@ describe("RequestLogsPage", () => {
           api_keys: undefined,
           api_keys_empty: false,
         }),
+        expectSignalOptions(),
       ),
     );
 
@@ -375,6 +488,7 @@ describe("RequestLogsPage", () => {
           api_keys: ["sk-secondary"],
           api_keys_empty: false,
         }),
+        expectSignalOptions(),
       ),
     );
 
@@ -387,6 +501,7 @@ describe("RequestLogsPage", () => {
           api_keys: undefined,
           api_keys_empty: false,
         }),
+        expectSignalOptions(),
       ),
     );
   });
@@ -423,6 +538,7 @@ describe("RequestLogsPage", () => {
           api_keys: undefined,
           api_keys_empty: true,
         }),
+        expectSignalOptions(),
       ),
     );
   });
@@ -462,6 +578,7 @@ describe("RequestLogsPage", () => {
           models: ["gpt-5.4"],
           models_empty: false,
         }),
+        expectSignalOptions(),
       ),
     );
     expect(screen.getByRole("combobox", { name: "Filter by model" })).toHaveTextContent("gpt-5.4");
@@ -475,6 +592,7 @@ describe("RequestLogsPage", () => {
           models: undefined,
           models_empty: false,
         }),
+        expectSignalOptions(),
       ),
     );
     await waitFor(() =>
@@ -565,6 +683,58 @@ describe("RequestLogsPage", () => {
 
     await screen.findByRole("table", { name: "请求日志表" });
     expect(container.querySelector(".table-scrollbar")).not.toBeNull();
+  });
+
+  test("renders response metrics without missing-value placeholders", async () => {
+    await i18n.changeLanguage("zh-CN");
+    const user = userEvent.setup();
+
+    mocks.getUsageLogs.mockResolvedValue(
+      responseWithRows([
+        buildUsageLogItem({
+          id: 1,
+          streaming: true,
+          latency_ms: 354,
+          first_token_ms: 0,
+          output_tokens: 0,
+        }),
+        buildUsageLogItem({
+          id: 2,
+          streaming: false,
+          latency_ms: -1,
+          first_token_ms: 0,
+          output_tokens: 0,
+        }),
+      ]),
+    );
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    const table = await screen.findByRole("table", { name: "请求日志表" });
+    expect(within(table).getByRole("columnheader", { name: "响应指标" })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "类型" })).not.toBeInTheDocument();
+    expect(within(table).getByText("354ms")).toBeInTheDocument();
+    expect(within(table).getByText("流式")).toBeInTheDocument();
+    expect(within(table).getByText("非流式")).toBeInTheDocument();
+    expect(within(table).queryByText("--")).not.toBeInTheDocument();
+
+    await user.hover(within(table).getByLabelText("耗时: 354ms"));
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent("耗时: 354ms");
+    expect(tooltip).not.toHaveTextContent("首 Token 耗时");
+    expect(tooltip).not.toHaveTextContent("每秒 Token");
+    expect(tooltip).not.toHaveTextContent("--");
+    await user.unhover(within(table).getByLabelText("耗时: 354ms"));
+    await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+
+    await user.hover(within(table).getByText("非流式"));
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
   test("shows full numeric values in the table while keeping the summary bar compact", async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Check,
@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@app/providers/AuthProvider";
 import { Button } from "@code-proxy/ui";
 import { Card } from "@code-proxy/ui";
+import { ScrollArea } from "@code-proxy/ui";
 import { TextInput } from "@code-proxy/ui";
 import { useToast } from "@code-proxy/ui";
 import { UpdateDetailsCard } from "@app/update/UpdateDetailsCard";
@@ -29,7 +30,9 @@ import {
 import {
   buildModelVendorStats,
   CopyableModelTag,
+  getModelVendorKey,
   ModelVendorStatBadge,
+  type ModelVendorKey,
 } from "@features/model-tags";
 import { HoverTooltip } from "@code-proxy/ui";
 
@@ -130,14 +133,61 @@ type SystemModelEntry = {
   sources?: ModelAvailabilitySource[];
 };
 
-const formatModelSourcesTooltip = (
+type ModelVendorFilter = "all" | ModelVendorKey;
+
+const formatSourceLabel = (source: ModelAvailabilitySource): string => {
+  const label = source.label.trim();
+  const provider = source.provider?.trim();
+  if (!label || !provider) return label;
+
+  const parts = label.split(" · ").map((part) => part.trim());
+  if (parts.length === 2 && parts[0].toLowerCase() === provider.toLowerCase()) {
+    return `${parts[1]} · ${parts[0]}`;
+  }
+  return label;
+};
+
+const renderModelSourcesTooltip = (
   sources: ModelAvailabilitySource[] | undefined,
-  title: string,
-) => {
-  if (!sources?.length) return "";
-  const labels = Array.from(new Set(sources.map((source) => source.label.trim()).filter(Boolean)));
-  if (labels.length === 0) return "";
-  return `${title}\n${labels.join("\n")}`;
+  modelId: string,
+  actualCallLabel: string,
+): ReactNode => {
+  const entries = (sources ?? [])
+    .map((source) => {
+      const label = formatSourceLabel(source);
+      if (!label) return null;
+      const actualModelId = source.upstreamModelId?.trim() || source.modelId?.trim() || modelId;
+      return {
+        label,
+        actualModelId,
+        mapped: Boolean(actualModelId && actualModelId !== modelId),
+      };
+    })
+    .filter((entry): entry is { label: string; actualModelId: string; mapped: boolean } =>
+      Boolean(entry),
+    );
+
+  if (entries.length === 0) return null;
+
+  return (
+    <span className="block min-w-44 max-w-[18rem] space-y-1 text-left">
+      {entries.map((entry) => (
+        <span key={`${entry.label}\x00${entry.actualModelId}`} className="block">
+          <span className="block text-[12px] font-medium text-slate-900 dark:text-white">
+            {entry.label}
+          </span>
+          {entry.mapped ? (
+            <span className="mt-0.5 flex min-w-0 items-start gap-1.5 text-[11px] text-slate-500 dark:text-white/55">
+              <span className="shrink-0">{actualCallLabel}</span>
+              <span className="min-w-0 break-all font-mono text-slate-700 dark:text-white/75">
+                {entry.actualModelId}
+              </span>
+            </span>
+          ) : null}
+        </span>
+      ))}
+    </span>
+  );
 };
 
 export function SystemPage({
@@ -155,6 +205,7 @@ export function SystemPage({
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [models, setModels] = useState<SystemModelEntry[]>([]);
   const [modelFilter, setModelFilter] = useState("");
+  const [selectedModelVendor, setSelectedModelVendor] = useState<ModelVendorFilter>("all");
 
   const loadModels = useCallback(async () => {
     setModelsLoading(true);
@@ -180,9 +231,10 @@ export function SystemPage({
           .map((item) => item.id) ?? [];
       const nextModelIds = useMappedOwnerModels
         ? (configuredAvailability?.items ?? []).map((item) => item.id)
-        : rootV1ModelIds.length > 0
-          ? rootV1ModelIds
-          : (configuredAvailability?.items ?? []).map((item) => item.id);
+        : [
+            ...rootV1ModelIds,
+            ...(configuredAvailability?.items ?? []).map((item) => item.id),
+          ];
 
       setModels(
         Array.from(new Set(nextModelIds))
@@ -205,9 +257,13 @@ export function SystemPage({
 
   const filteredModels = useMemo(() => {
     const needle = modelFilter.trim().toLowerCase();
-    if (!needle) return models;
-    return models.filter((model) => model.id.toLowerCase().includes(needle));
-  }, [modelFilter, models]);
+    return models.filter((model) => {
+      if (selectedModelVendor !== "all" && getModelVendorKey(model.id) !== selectedModelVendor) {
+        return false;
+      }
+      return !needle || model.id.toLowerCase().includes(needle);
+    });
+  }, [modelFilter, models, selectedModelVendor]);
 
   const vendorStats = useMemo(() => {
     return buildModelVendorStats(
@@ -223,7 +279,7 @@ export function SystemPage({
   const apiKeyLookupUrl = `${window.location.origin}/manage/apikey-lookup`;
 
   return (
-    <div className="min-w-0 space-y-6 overflow-x-hidden">
+    <div className="min-w-0 space-y-6 overflow-x-hidden md:flex md:h-[calc(100dvh-112px)] md:min-h-0 md:flex-col md:space-y-0 md:gap-6">
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -287,7 +343,11 @@ export function SystemPage({
       />
 
       {/* ── Model List ── */}
-      <Card padding="none" className="overflow-hidden" bodyClassName="mt-0">
+      <Card
+        padding="none"
+        className="overflow-hidden md:flex md:min-h-0 md:flex-1 md:flex-col"
+        bodyClassName="mt-0 md:flex md:min-h-0 md:flex-1 md:flex-col"
+      >
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5 dark:border-neutral-800">
           <div className="flex items-center gap-2.5">
@@ -331,13 +391,36 @@ export function SystemPage({
 
         {/* Vendor stats bar */}
         {vendorStats.length > 0 && !modelsLoading && (
-          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-2.5 dark:border-neutral-800/60">
+          <div
+            className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-2.5 dark:border-neutral-800/60"
+            aria-label={t("system_page.available_models")}
+          >
+            <button
+              type="button"
+              aria-label={`${t("common.all", { defaultValue: "All" })} ${models.length}`}
+              aria-pressed={selectedModelVendor === "all"}
+              onClick={() => setSelectedModelVendor("all")}
+              className={[
+                "inline-flex items-center gap-1.5 rounded-md border border-slate-200/70 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600 transition hover:shadow-sm dark:border-neutral-700/60 dark:bg-neutral-900 dark:text-white/70",
+                selectedModelVendor === "all"
+                  ? "ring-2 ring-indigo-500/35 ring-offset-1 ring-offset-white dark:ring-indigo-300/40 dark:ring-offset-neutral-950"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <Layers size={12} aria-hidden="true" />
+              {t("common.all", { defaultValue: "All" })}
+              <span className="tabular-nums">{models.length}</span>
+            </button>
             {vendorStats.map((stat) => (
               <ModelVendorStatBadge
                 key={stat.key}
                 vendorKey={stat.key}
                 label={stat.label}
                 count={stat.count}
+                active={selectedModelVendor === stat.key}
+                onClick={() => setSelectedModelVendor(stat.key)}
               />
             ))}
           </div>
@@ -351,7 +434,14 @@ export function SystemPage({
         )}
 
         {/* Model tags */}
-        <div className="max-h-[480px] overflow-y-auto px-5 py-4">
+        <ScrollArea
+          className="md:min-h-0 md:flex-1 [&_[data-scroll-area-scrollbar='y']]:right-1"
+          viewportClassName="max-h-[480px] md:max-h-none md:!h-full"
+          contentClassName="px-5 py-4 pr-8"
+          scrollbarVisibility="track-hover"
+          scrollbarTrackInset={4}
+          data-testid="system-models-scroll-area"
+        >
           {modelsLoading && models.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-sm text-slate-500 dark:text-white/50">
               <RefreshCw size={14} className="animate-spin mr-2" />
@@ -360,9 +450,15 @@ export function SystemPage({
           ) : filteredModels.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {filteredModels.map((model) => {
-                const tooltip = formatModelSourcesTooltip(
+                const tooltip = renderModelSourcesTooltip(
                   model.sources,
-                  t("system_page.model_sources"),
+                  model.id,
+                  t("system_page.model_actual_call"),
+                );
+                const hasMappedSource = (model.sources ?? []).some(
+                  (source) =>
+                    source.upstreamModelId &&
+                    source.upstreamModelId !== model.id,
                 );
                 const tag = (
                   <CopyableModelTag
@@ -374,7 +470,16 @@ export function SystemPage({
                 );
                 return tooltip ? (
                   <HoverTooltip key={model.id} content={tooltip} placement="top">
-                    <span className="inline-flex">{tag}</span>
+                    <span className="relative inline-flex">
+                      {tag}
+                      {hasMappedSource ? (
+                        <span
+                          aria-hidden="true"
+                          data-model-source-marker="true"
+                          className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-sky-500 ring-2 ring-white dark:ring-neutral-950"
+                        />
+                      ) : null}
+                    </span>
                   </HoverTooltip>
                 ) : (
                   <CopyableModelTag
@@ -395,7 +500,7 @@ export function SystemPage({
               </p>
             </div>
           )}
-        </div>
+        </ScrollArea>
       </Card>
     </div>
   );

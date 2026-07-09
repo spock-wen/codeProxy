@@ -7,6 +7,7 @@ export type ModelVendorKey =
   | "amp"
   | "antigravity"
   | "claude"
+  | "cline"
   | "codex"
   | "deepseek"
   | "gemini"
@@ -43,6 +44,11 @@ export const MODEL_VENDOR_COLORS: Record<ModelVendorKey, ModelVendorTone> = {
     bg: "bg-orange-50 dark:bg-orange-950/20",
     text: "text-orange-700 dark:text-orange-300",
     border: "border-orange-200/60 dark:border-orange-800/30",
+  },
+  cline: {
+    bg: "bg-teal-50 dark:bg-teal-950/20",
+    text: "text-teal-700 dark:text-teal-300",
+    border: "border-teal-200/60 dark:border-teal-800/30",
   },
   gpt: {
     bg: "bg-emerald-50 dark:bg-emerald-950/20",
@@ -151,6 +157,11 @@ const MODEL_VENDOR_DEFINITIONS: ModelVendorDefinition[] = [
     key: "claude",
     label: "claude",
     matches: (modelId) => startsWithAny(modelId, ["claude", "anthropic"]),
+  },
+  {
+    key: "cline",
+    label: "cline",
+    matches: (modelId) => startsWithAny(modelId, ["cline", "cline-pass"]),
   },
   {
     key: "gpt",
@@ -405,24 +416,47 @@ export function ModelVendorStatBadge({
   vendorKey,
   label,
   count,
+  active = false,
+  onClick,
 }: {
   vendorKey: ModelVendorKey;
   label: string;
   count: number;
+  active?: boolean;
+  onClick?: () => void;
 }) {
   const tone = getModelVendorColor(vendorKey);
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold",
-        tone.bg,
-        tone.text,
-        tone.border,
-      )}
-    >
+  const className = cn(
+    "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold",
+    tone.bg,
+    active ? "ring-2 ring-indigo-500/35 ring-offset-1 ring-offset-white dark:ring-indigo-300/40 dark:ring-offset-neutral-950" : "",
+    onClick ? "cursor-pointer transition hover:shadow-sm" : "",
+    tone.text,
+    tone.border,
+  );
+  const content = (
+    <>
       <VendorIcon modelId={vendorKey} size={12} />
       {label}
       <span className="tabular-nums">{count}</span>
-    </span>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        aria-label={`${label} ${count}`}
+        aria-pressed={active}
+        onClick={onClick}
+        className={className}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <span className={className}>{content}</span>
   );
 }

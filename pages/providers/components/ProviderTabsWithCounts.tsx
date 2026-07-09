@@ -3,7 +3,9 @@ import { Cloud } from "lucide-react";
 import iconGemini from "@code-proxy/assets/icons/gemini.svg";
 import iconClaude from "@code-proxy/assets/icons/claude.svg";
 import iconCodex from "@code-proxy/assets/icons/codex.svg";
+import iconCline from "@code-proxy/assets/icons/cline.svg";
 import iconVertex from "@code-proxy/assets/icons/vertex.svg";
+import iconOllama from "@code-proxy/assets/icons/ollama.svg";
 import iconAmp from "@code-proxy/assets/icons/amp.svg";
 import iconOpenai from "@code-proxy/assets/icons/openai.svg";
 import iconOpenCodeDark from "@code-proxy/assets/icons/opencode-dark.svg";
@@ -15,6 +17,8 @@ export type ProviderTabId =
   | "claude"
   | "codex"
   | "opencode-go"
+  | "cline"
+  | "ollama-cloud"
   | "vertex"
   | "bedrock"
   | "openai"
@@ -46,6 +50,8 @@ const TAB_META: Record<ProviderTabId, { icon: ReactNode }> = {
       </>
     ),
   },
+  cline: { icon: <img src={iconCline} alt="" className="size-4" /> },
+  "ollama-cloud": { icon: <img src={iconOllama} alt="" className="size-4" /> },
   vertex: { icon: <img src={iconVertex} alt="" className="size-4" /> },
   bedrock: { icon: <Cloud size={16} /> },
   openai: {
@@ -74,7 +80,7 @@ export function ProviderTabsWithCounts({ tabs, value }: ProviderTabsWithCountsPr
             <TabsTrigger key={tab.id} value={tab.id}>
               {icon}
               {tab.label}
-              {tab.count !== null ? (
+              {tab.count !== null && tab.count > 0 ? (
                 <span
                   className={
                     value === tab.id

@@ -12,6 +12,7 @@ describe("AppRouter", () => {
   test("keeps management routes relative to the /manage basename", () => {
     const source = readAppModule("app/AppRouter.tsx");
     const modelsRoute = readRepoModule("pages/models/route.tsx");
+    const accountSecurityRoute = readRepoModule("pages/account-security/route.tsx");
     const identityRoute = readRepoModule("pages/identity-fingerprint/route.tsx");
     const ccSwitchRoute = readRepoModule("pages/ccswitch-import-settings/route.tsx");
     const apiKeyPermissionsRoute = readRepoModule("pages/api-key-permissions/route.tsx");
@@ -21,9 +22,14 @@ describe("AppRouter", () => {
     expect(modelsRoute).toContain('redirects: [{ from: "/manage/models", to: "/models" }]');
     expect(source).not.toContain('to="/manage/models" replace');
 
+    expect(accountSecurityRoute).toMatch(/path:\s*"\/account-security"/);
+    expect(accountSecurityRoute).toContain(
+      '{ from: "/manage/identity-fingerprint", to: "/account-security" }',
+    );
+
     expect(identityRoute).toMatch(/path:\s*"\/identity-fingerprint"/);
     expect(identityRoute).toContain(
-      'redirects: [{ from: "/manage/identity-fingerprint", to: "/identity-fingerprint" }]',
+      'redirects: [{ from: "/manage/identity-fingerprint", to: "/account-security" }]',
     );
 
     expect(ccSwitchRoute).toContain("CcSwitchImportSettingsPage");
@@ -37,5 +43,20 @@ describe("AppRouter", () => {
     expect(apiKeyPermissionsRoute).toContain(
       'redirects: [{ from: "/manage/api-key-permissions", to: "/api-key-permissions" }]',
     );
+  });
+
+  test("keeps the HTML app loader as the only initial page loader", () => {
+    const routerSource = readAppModule("app/AppRouter.tsx");
+    const protectedRouteSource = readAppModule("app/guards/ProtectedRoute.tsx");
+    const mainSource = readAppModule("main.tsx");
+    const manageEntrySource = readAppModule("manage-entry.tsx");
+
+    expect(mainSource).toContain("dismissAppLoader(true)");
+    expect(manageEntrySource).toContain("dismissAppLoader(true)");
+    expect(routerSource).toContain("const RouteFallback = () => null");
+    expect(routerSource).not.toContain("PageLoader");
+    expect(routerSource).not.toContain('variant="initial"');
+    expect(routerSource).not.toContain('variant="inline"');
+    expect(protectedRouteSource).toContain("if (hasAppLoader()) return null");
   });
 });

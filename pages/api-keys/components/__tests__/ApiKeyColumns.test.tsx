@@ -6,7 +6,7 @@ import type { ApiKeyEntry } from "@code-proxy/api-client/endpoints/api-keys";
 import { createApiKeyColumns } from "../ApiKeyColumns";
 import { GlobalIconButtonTooltip } from "@code-proxy/ui";
 
-const t = ((key: string) => {
+const t = ((key: string, options?: Record<string, string>) => {
   const labels: Record<string, string> = {
     "api_keys_page.col_actions": "Actions",
     "api_keys_page.col_spending_limit": "Spending limit",
@@ -15,6 +15,10 @@ const t = ((key: string) => {
     "api_keys_page.unlimited": "Unlimited",
     "api_keys_page.view_usage": "View usage",
     "api_keys_page.copy_key": "Copy key",
+    "api_keys_page.click_enable": "Click to enable",
+    "api_keys_page.click_disable": "Click to disable",
+    "api_keys_page.select_all_keys": "Select all API keys",
+    "api_keys_page.select_key": `Select ${options?.name ?? ""}`.trim(),
     "ccswitch.import_to_ccswitch": "Import to CC Switch",
     "common.edit": "Edit",
     "common.delete": "Delete",
@@ -34,6 +38,23 @@ const setTooltipSize = (width: number, height: number) => {
     value: height,
   });
 };
+
+const createColumns = (overrides: Partial<Parameters<typeof createApiKeyColumns>[0]> = {}) =>
+  createApiKeyColumns({
+    t,
+    selectedKeys: new Set(),
+    allRowsSelected: false,
+    someRowsSelected: false,
+    onSelectAll: vi.fn(),
+    onSelectRow: vi.fn(),
+    onCopy: vi.fn(),
+    onDelete: vi.fn(),
+    onEdit: vi.fn(),
+    onImportToCcSwitch: vi.fn(),
+    onToggleDisable: vi.fn(),
+    onViewUsage: vi.fn(),
+    ...overrides,
+  });
 
 describe("ApiKeyColumns", () => {
   beforeEach(() => {
@@ -62,15 +83,7 @@ describe("ApiKeyColumns", () => {
       name: "Test key",
       "created-at": "2026-04-28T00:00:00Z",
     };
-    const columns = createApiKeyColumns({
-      t,
-      onCopy: vi.fn(),
-      onDelete: vi.fn(),
-      onEdit: vi.fn(),
-      onImportToCcSwitch: vi.fn(),
-      onToggleDisable: vi.fn(),
-      onViewUsage: vi.fn(),
-    });
+    const columns = createColumns();
     const actionsColumn = columns.find((column) => column.key === "actions");
 
     render(
@@ -87,18 +100,68 @@ describe("ApiKeyColumns", () => {
   });
 
   test("keeps the API key column at the wider fixed width", () => {
-    const columns = createApiKeyColumns({
-      t,
-      onCopy: vi.fn(),
-      onDelete: vi.fn(),
-      onEdit: vi.fn(),
-      onImportToCcSwitch: vi.fn(),
-      onToggleDisable: vi.fn(),
-      onViewUsage: vi.fn(),
-    });
+    const columns = createColumns();
     const keyColumn = columns.find((column) => column.key === "key");
 
     expect(keyColumn?.width).toBe("w-[320px] min-w-[320px]");
+  });
+
+  test("truncates API key text inside an intact rounded badge", () => {
+    const row: ApiKeyEntry = {
+      key: "sk-abcdefghijklmnopqrstuvwxyz0123456789",
+      name: "Test key",
+      "created-at": "2026-04-28T00:00:00Z",
+    };
+    const columns = createColumns();
+    const keyColumn = columns.find((column) => column.key === "key");
+    const maskedKey = `sk-ab${"•".repeat(20)}789`;
+
+    render(<div>{keyColumn?.render(row, 0)}</div>);
+
+    const text = screen.getByText(maskedKey);
+    const badge = text.closest("code");
+    const tooltipTrigger = badge?.parentElement;
+
+    expect(badge).not.toBeNull();
+    expect(tooltipTrigger).not.toBeNull();
+    if (!badge || !tooltipTrigger) return;
+
+    expect(text).toHaveClass("truncate");
+    expect(badge).toHaveClass("inline-flex", "max-w-full", "rounded-md");
+    expect(tooltipTrigger).toHaveAttribute("data-tooltip-managed", "true");
+    expect(tooltipTrigger).toHaveClass("block", "max-w-full");
+  });
+
+  test("truncates limited model summaries inside an intact rounded pill", () => {
+    const row: ApiKeyEntry = {
+      key: "sk-test",
+      name: "Test key",
+      "allowed-models": [
+        "deepseek-v4-flash-ultra-long-model-name",
+        "deepseek-v4-pro",
+        "kimi-k2.5",
+        "kimi-k2.6",
+      ],
+      "created-at": "2026-04-28T00:00:00Z",
+    };
+    const columns = createColumns();
+    const modelColumn = columns.find((column) => column.key === "allowedModels");
+
+    render(<div>{modelColumn?.render(row, 0)}</div>);
+
+    const modelText = screen.getByText("deepseek-v4-flash-ultra-long-model-name");
+    const pill = modelText.parentElement;
+    const tooltipTrigger = pill?.parentElement;
+
+    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(pill).not.toBeNull();
+    expect(tooltipTrigger).not.toBeNull();
+    if (!pill || !tooltipTrigger) return;
+
+    expect(modelText).toHaveClass("min-w-0", "truncate");
+    expect(pill).toHaveClass("flex", "min-w-0", "max-w-full", "rounded-full", "border");
+    expect(tooltipTrigger).toHaveAttribute("data-tooltip-managed", "true");
+    expect(tooltipTrigger).toHaveClass("!flex", "min-w-0", "max-w-full");
   });
 
   test("shows API key spending limits as a dedicated cost column", async () => {
@@ -108,15 +171,7 @@ describe("ApiKeyColumns", () => {
       "spending-limit": 12.5,
       "created-at": "2026-04-28T00:00:00Z",
     };
-    const columns = createApiKeyColumns({
-      t,
-      onCopy: vi.fn(),
-      onDelete: vi.fn(),
-      onEdit: vi.fn(),
-      onImportToCcSwitch: vi.fn(),
-      onToggleDisable: vi.fn(),
-      onViewUsage: vi.fn(),
-    });
+    const columns = createColumns();
     const spendingColumn = columns.find((column) => column.key === "spendingLimit");
 
     expect(spendingColumn?.label).toBe("Spending limit");
@@ -133,5 +188,63 @@ describe("ApiKeyColumns", () => {
     await userEvent.hover(screen.getByText("Spending limit"));
 
     expect(screen.getByRole("tooltip")).toHaveTextContent("Maximum cumulative API key cost");
+  });
+
+  test("keeps selection, name, and actions as responsive fixed columns", () => {
+    const columns = createColumns();
+    const selectColumn = columns.find((column) => column.key === "select");
+    const nameColumn = columns.find((column) => column.key === "name");
+    const actionsColumn = columns.find((column) => column.key === "actions");
+
+    expect(selectColumn?.lockOrder).toBe("start");
+    expect(nameColumn?.lockOrder).toBe("start");
+    expect(actionsColumn?.lockOrder).toBe("end");
+    expect(selectColumn?.headerClassName).toContain("md:sticky");
+    expect(selectColumn?.cellClassName).toContain("md:sticky");
+    expect(nameColumn?.headerClassName).toContain("md:sticky");
+    expect(nameColumn?.cellClassName).toContain("md:sticky");
+    expect(actionsColumn?.headerClassName).toContain("md:sticky");
+    expect(actionsColumn?.cellClassName).toContain("md:sticky");
+    expect(`${selectColumn?.headerClassName} ${selectColumn?.cellClassName}`).not.toMatch(
+      /\bmd:(?:left|right)-/,
+    );
+    expect(`${nameColumn?.headerClassName} ${nameColumn?.cellClassName}`).not.toMatch(
+      /\bmd:(?:left|right)-/,
+    );
+    expect(`${actionsColumn?.headerClassName} ${actionsColumn?.cellClassName}`).not.toMatch(
+      /\bmd:(?:left|right)-/,
+    );
+    const fixedColumnClassNames = [
+      selectColumn?.headerClassName,
+      selectColumn?.cellClassName,
+      nameColumn?.headerClassName,
+      nameColumn?.cellClassName,
+      actionsColumn?.headerClassName,
+      actionsColumn?.cellClassName,
+    ].join(" ");
+    expect(fixedColumnClassNames).not.toMatch(/\bmd:border-[lr]\b/);
+    expect(fixedColumnClassNames).not.toContain("md:border-slate-200");
+    expect(fixedColumnClassNames).not.toContain("md:dark:border-neutral-800");
+    expect(selectColumn?.headerClassName).not.toMatch(/(^|\s)sticky(\s|$)/);
+    expect(nameColumn?.cellClassName).not.toMatch(/(^|\s)sticky(\s|$)/);
+    expect(actionsColumn?.cellClassName).not.toMatch(/(^|\s)sticky(\s|$)/);
+  });
+
+  test("renders the status toggle inside the actions column", () => {
+    const row: ApiKeyEntry = {
+      key: "sk-test",
+      name: "Test key",
+      disabled: true,
+      "created-at": "2026-04-28T00:00:00Z",
+    };
+    const columns = createColumns();
+    const statusColumn = columns.find((column) => column.key === "status");
+    const actionsColumn = columns.find((column) => column.key === "actions");
+
+    expect(statusColumn).toBeUndefined();
+
+    render(<div>{actionsColumn?.render(row, 0)}</div>);
+
+    expect(screen.getByRole("button", { name: "Click to enable" })).toBeInTheDocument();
   });
 });

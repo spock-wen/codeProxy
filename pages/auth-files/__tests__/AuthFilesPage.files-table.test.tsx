@@ -68,6 +68,7 @@ const mocks = vi.hoisted(() => ({
   getAuthStatus: vi.fn(async () => ({ status: "pending" })),
   startAuth: vi.fn(async () => ({ url: "https://example.test/oauth", state: "state-1" })),
   reconcile: vi.fn(async () => ({})),
+  clearStatus: vi.fn(async () => ({})),
 }));
 
 let authGroupOwnerMappingMap: Record<string, string> = {};
@@ -98,7 +99,7 @@ vi.mock("@code-proxy/api-client", async (importOriginal) => {
       getAuthGroupModelOwnerMappingMap: mocks.getAuthGroupModelOwnerMappingMap,
       saveAuthGroupModelOwnerMapping: mocks.saveAuthGroupModelOwnerMapping,
     },
-    quotaApi: { ...mod.quotaApi, reconcile: mocks.reconcile },
+    quotaApi: { ...mod.quotaApi, reconcile: mocks.reconcile, clearStatus: mocks.clearStatus },
     usageApi: {
       ...mod.usageApi,
       getEntityStats: mocks.getEntityStats,
@@ -275,6 +276,8 @@ describe("AuthFilesPage files table", () => {
     }));
     mocks.reconcile.mockReset();
     mocks.reconcile.mockImplementation(async () => ({}));
+    mocks.clearStatus.mockReset();
+    mocks.clearStatus.mockImplementation(async () => ({}));
   });
 
   afterEach(() => {
@@ -982,10 +985,15 @@ describe("AuthFilesPage files table", () => {
     expect(await screen.findByText("codex-pro.json")).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(mocks.getEntityStats).toHaveBeenCalledWith(30, "all", {
-        authIndexes: ["auth-codex", "auth-kimi"],
-        sources: ["t:codex-pro.json", "t:codex-pro", "t:kimi-a.json", "t:kimi-a"],
-      });
+      expect(mocks.getEntityStats).toHaveBeenCalledWith(
+        30,
+        "all",
+        {
+          authIndexes: ["auth-codex", "auth-kimi"],
+          sources: ["t:codex-pro.json", "t:codex-pro", "t:kimi-a.json", "t:kimi-a"],
+        },
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      );
     });
   });
 
@@ -2546,7 +2554,7 @@ describe("AuthFilesPage files table", () => {
     );
 
     expect(await screen.findByText("Codex Subscriber")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
     fireEvent.click(await screen.findByRole("tab", { name: "Fields" }));
 
     const input = await screen.findByLabelText("Subscription start date");
@@ -2606,7 +2614,7 @@ describe("AuthFilesPage files table", () => {
     );
 
     expect(await screen.findByText("Codex Subscriber")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
     fireEvent.click(await screen.findByRole("tab", { name: "Fields" }));
 
     fireEvent.click(await screen.findByLabelText("Subscription start date"));
@@ -2655,7 +2663,7 @@ describe("AuthFilesPage files table", () => {
 
     const cards = await screen.findByTestId("auth-files-cards");
     expect(cards).not.toHaveTextContent(/d left/);
-    fireEvent.click(within(cards).getByRole("button", { name: "View" }));
+    fireEvent.click(within(cards).getByRole("button", { name: "Details" }));
     const dialog = await screen.findByRole("dialog", { name: "Codex Subscriber" });
     fireEvent.click(within(dialog).getByRole("tab", { name: "Fields" }));
 
@@ -2703,7 +2711,7 @@ describe("AuthFilesPage files table", () => {
     const cards = await screen.findByTestId("auth-files-cards");
     expect(cards).toHaveTextContent("pcamtu927@gmail.com");
 
-    fireEvent.click(within(cards).getByRole("button", { name: "View" }));
+    fireEvent.click(within(cards).getByRole("button", { name: "Details" }));
 
     const dialog = await screen.findByRole("dialog", {
       name: "pcamtu927@gmail.com",
@@ -2774,7 +2782,7 @@ describe("AuthFilesPage files table", () => {
     });
     expect(authGroupOwnerMappingMap).toEqual({ codex: "openai" });
 
-    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
     const dialog = await screen.findByRole("dialog", { name: "Codex Main" });
     fireEvent.click(within(dialog).getByRole("tab", { name: "Models" }));
 
@@ -2892,7 +2900,7 @@ describe("AuthFilesPage files table", () => {
     );
 
     const cards = await screen.findByTestId("auth-files-cards");
-    expect(within(cards).getByText("10秒")).toBeInTheDocument();
+    expect(within(cards).getByText("10s")).toBeInTheDocument();
     expect(intervalSpy.mock.calls.some(([, delay]) => delay === 10_000)).toBe(false);
   });
 
@@ -2958,8 +2966,8 @@ describe("AuthFilesPage files table", () => {
     const card = title.closest("section");
     expect(card).not.toBeNull();
 
-    expect(within(card as HTMLElement).getByText("5小时0秒")).toBeInTheDocument();
-    expect(within(card as HTMLElement).getByText("6天0秒")).toBeInTheDocument();
+    expect(within(card as HTMLElement).getByText("5h0s")).toBeInTheDocument();
+    expect(within(card as HTMLElement).getByText("6d0s")).toBeInTheDocument();
     expect(within(card as HTMLElement).queryByText(modifiedText)).not.toBeInTheDocument();
   });
 
@@ -3327,7 +3335,7 @@ describe("AuthFilesPage files table", () => {
     expect(within(tooltips[0]).getByText("Claude")).toBeInTheDocument();
     const resetText = Array.from(tooltips[0].querySelectorAll("span")).find(
       (element) =>
-        element.textContent?.includes("秒") && element.className.includes("tabular-nums"),
+        element.textContent?.includes("s") && element.className.includes("tabular-nums"),
     );
     expect(resetText).toBeTruthy();
     expect(resetText).not.toHaveClass("truncate");
@@ -4157,15 +4165,20 @@ describe("AuthFilesPage files table", () => {
     const cardView = within(card as HTMLElement);
 
     expect(cardView.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
-    expect(cardView.getByRole("button", { name: "View" })).toBeInTheDocument();
+    expect(cardView.getByRole("button", { name: "Details" })).toBeInTheDocument();
     expect(cardView.getByRole("button", { name: "More actions" })).toBeInTheDocument();
     expect(cardView.queryByRole("button", { name: "Edit Tags" })).not.toBeInTheDocument();
+    expect(cardView.queryByRole("button", { name: "Clear status" })).not.toBeInTheDocument();
     expect(cardView.queryByRole("button", { name: "Download" })).not.toBeInTheDocument();
 
     await user.click(cardView.getByRole("button", { name: "More actions" }));
 
     expect(screen.getByRole("menuitem", { name: "Edit Tags" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Clear status" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Download" })).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: "Clear status" }));
+
+    await waitFor(() => expect(mocks.clearStatus).toHaveBeenCalledWith("1"));
   });
 
   test("cards localize codex additional quota window labels in Chinese", async () => {
@@ -4408,6 +4421,7 @@ describe("AuthFilesPage files table", () => {
         items: [{ label: "m_quota.code_5h", percent: 12, resetAtMs: now + 60_000 }],
         planType: "plus",
         resetCreditCount: 3,
+        resetCreditExpirations: ["2026-07-03T10:00:00Z", "2026-07-04T10:00:00Z"],
       })
       .mockResolvedValueOnce({
         items: [{ label: "m_quota.code_5h", percent: 12, resetAtMs: now + 60_000 }],
@@ -4450,6 +4464,12 @@ describe("AuthFilesPage files table", () => {
     expect(await screen.findByText("Reset 3 times")).toBeInTheDocument();
     const cards = screen.getByTestId("auth-files-cards");
     const resetButton = within(cards).getByRole("button", { name: "Query reset credits" });
+    expect(resetButton).not.toHaveAttribute("title");
+    const user = userEvent.setup();
+    await user.hover(resetButton);
+    const resetTooltip = await screen.findByRole("tooltip");
+    expect(resetTooltip).toHaveTextContent("Reset credit expiration times:");
+    expect(resetTooltip).toHaveTextContent("2026");
     const callsBadge = within(cards).getByText("0 calls");
     expect(
       resetButton.compareDocumentPosition(callsBadge) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -4457,6 +4477,8 @@ describe("AuthFilesPage files table", () => {
     fireEvent.click(resetButton);
 
     expect(await screen.findByText("Reset 4 times")).toBeInTheDocument();
+    const updatedResetButton = within(cards).getByRole("button", { name: "Query reset credits" });
+    expect(updatedResetButton).not.toHaveAttribute("title");
     expect(mocks.fetchQuota).toHaveBeenLastCalledWith(
       "codex",
       expect.objectContaining({ name: "codex.json" }),
@@ -4470,6 +4492,7 @@ describe("AuthFilesPage files table", () => {
       const raw = window.localStorage.getItem(AUTH_FILES_DATA_CACHE_KEY);
       expect(raw).toContain('"planType":"plus"');
       expect(raw).toContain('"resetCreditCount":4');
+      expect(raw).not.toContain("resetCreditExpirations");
     });
   });
 

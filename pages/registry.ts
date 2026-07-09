@@ -1,8 +1,10 @@
+import type { ReactElement } from "react";
 import { loginRoute } from "./login/route";
 import { dashboardRoute } from "./dashboard/route";
 import { monitorRoute } from "./monitor/route";
 import { requestLogsRoute } from "./request-logs/route";
 import { providersRoute } from "./providers/route";
+import { accountSecurityRoute } from "./account-security/route";
 import { authFilesRoute } from "./auth-files/route";
 import { apiKeysRoute } from "./api-keys/route";
 import { apiKeyPermissionsRoute } from "./api-key-permissions/route";
@@ -17,12 +19,24 @@ import { imageGenerationRoute } from "./image-generation/route";
 import { ccswitchImportSettingsRoute } from "./ccswitch-import-settings/route";
 import { apiKeyLookupRoute } from "./api-key-lookup/route";
 
-export const pageRoutes = [
+export interface PageRoute {
+  path: string;
+  element: ReactElement;
+  auth: boolean;
+  layout: string;
+  nav: { labelKey: string } | null;
+  redirects?: Array<{ from: string; to: string }>;
+  hasWildcard?: boolean;
+  preload?: () => Promise<unknown>;
+}
+
+export const pageRoutes: PageRoute[] = [
   loginRoute,
   dashboardRoute,
   monitorRoute,
   requestLogsRoute,
   providersRoute,
+  accountSecurityRoute,
   authFilesRoute,
   apiKeysRoute,
   apiKeyPermissionsRoute,
@@ -37,3 +51,25 @@ export const pageRoutes = [
   ccswitchImportSettingsRoute,
   apiKeyLookupRoute,
 ];
+
+const normalizePathname = (to: string) => to.split(/[?#]/, 1)[0] || "/";
+
+const matchesPath = (pathname: string, routePath: string) =>
+  pathname === routePath || pathname.startsWith(`${routePath}/`);
+
+export function preloadPageRoute(to: string): Promise<unknown> {
+  const pathname = normalizePathname(to);
+  let matchedRoute: PageRoute | null = null;
+  let matchedLength = -1;
+
+  for (const route of pageRoutes) {
+    const paths = [route.path, ...(route.redirects ?? []).map((redirect) => redirect.from)];
+    for (const path of paths) {
+      if (!matchesPath(pathname, path) || path.length <= matchedLength) continue;
+      matchedRoute = route;
+      matchedLength = path.length;
+    }
+  }
+
+  return matchedRoute?.preload?.() ?? Promise.resolve();
+}

@@ -1,5 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+
+const readAllowedClients = (value: unknown): string[] => {
+  if (!isRecord(value) || !Array.isArray(value.allowed_clients)) return [];
+  return value.allowed_clients.filter((item): item is string => typeof item === "string");
+};
+
 const setAuthed = async (page: Page) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -67,6 +75,7 @@ test("Sidebar: collapse/expand should keep nav items nowrap and slide out of vie
   page,
 }) => {
   await setAuthed(page);
+  await page.setViewportSize({ width: 1280, height: 520 });
 
   await page.route("**/v0/management/config", async (route) => {
     await route.fulfill({
@@ -92,10 +101,26 @@ test("Sidebar: collapse/expand should keep nav items nowrap and slide out of vie
   const linkWhiteSpace = await dashboardLink.evaluate((el) => getComputedStyle(el).whiteSpace);
   expect(linkWhiteSpace).toBe("nowrap");
 
+  const aside = page.locator("aside");
+  const sidebarScrollbar = aside.locator("[data-scroll-area-scrollbar='y']");
+  await expect(sidebarScrollbar).toHaveCount(1);
+  await expect
+    .poll(async () => Number(await sidebarScrollbar.evaluate((el) => getComputedStyle(el).opacity)))
+    .toBeLessThan(0.05);
+
+  await dashboardLink.hover();
+  await expect
+    .poll(async () => Number(await sidebarScrollbar.evaluate((el) => getComputedStyle(el).opacity)))
+    .toBeGreaterThan(0.95);
+
+  await page.mouse.move(760, 120);
+  await expect
+    .poll(async () => Number(await sidebarScrollbar.evaluate((el) => getComputedStyle(el).opacity)))
+    .toBeLessThan(0.05);
+
   await page.getByRole("button", { name: /Collapse Sidebar|收起侧边栏/i }).click();
   await expect(page.getByRole("button", { name: /Expand Sidebar|展开侧边栏/i })).toBeVisible();
 
-  const aside = page.locator("aside");
   await expect
     .poll(async () => {
       return await aside.evaluate((el) => el.getBoundingClientRect().width);
@@ -186,7 +211,7 @@ test("API Keys: table should scroll vertically when many keys are listed", async
 
   await page.goto("/#/api-keys");
 
-  const tableScroller = page.locator(".table-scrollbar");
+  const tableScroller = page.locator("[data-vt-scroll-content]").locator("xpath=..");
   await expect(tableScroller).toBeVisible();
 
   await expect
@@ -258,4 +283,136 @@ test("Config: source editor save should persist edited yaml through save path", 
   await expect.poll(() => savedPayloads.length).toBe(1);
   expect(savedPayloads[0]).toBe(nextYaml);
   await expect(editor).toHaveValue(nextYaml);
+});
+
+test("Config: global Codex OAuth allowed-client preset should persist through runtime settings", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await setAuthed(page);
+  await page.addInitScript(() => {
+    localStorage.setItem("config-panel:tab", "runtime");
+  });
+
+  let allowedClients: string[] = [];
+  const savedPayloads: unknown[] = [];
+
+  await page.route("**/v0/management/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+
+    if (path.endsWith("/v0/management/codex-oauth-admission")) {
+      if (request.method() === "PUT") {
+        const payload: unknown = JSON.parse(request.postData() ?? "{}");
+        savedPayloads.push(payload);
+        allowedClients = readAllowedClients(payload);
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ status: "ok" }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          allowed_clients: allowedClients,
+          available_allowed_clients: [
+            {
+              id: "claude_code",
+              label: "Claude Code",
+              description:
+                "Allow the Claude Code Codex plugin when Originator and User-Agent both match.",
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (path.endsWith("/v0/management/config.yaml")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "text/yaml; charset=utf-8",
+        body: "logging-to-file: false\n",
+      });
+      return;
+    }
+
+    if (path.endsWith("/v0/management/logs-max-total-size-mb")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ "logs-max-total-size-mb": 128 }),
+      });
+      return;
+    }
+
+    if (path.endsWith("/v0/management/force-model-prefix")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ "force-model-prefix": false }),
+      });
+      return;
+    }
+
+    if (path.endsWith("/v0/management/routing/strategy")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ strategy: "round-robin" }),
+      });
+      return;
+    }
+
+    if (path.endsWith("/v0/management/auto-update/enabled")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ enabled: true }),
+      });
+      return;
+    }
+
+    if (path.endsWith("/v0/management/auto-update/channel")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ channel: "main" }),
+      });
+      return;
+    }
+
+    if (path.endsWith("/v0/management/config")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ "ws-auth": true, "request-retry": 2 }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({}),
+    });
+  });
+
+  await page.goto("/#/config");
+
+  const panel = page.getByTestId("codex-oauth-global-admission-panel");
+  await expect(panel).toBeVisible();
+
+  const preset = page.getByTestId("codex-oauth-global-preset-claude_code");
+  await expect(preset).not.toBeChecked();
+  await preset.click();
+
+  await expect.poll(() => savedPayloads.length).toBe(1);
+  expect(readAllowedClients(savedPayloads[0])).toEqual(["claude_code"]);
+  await expect(preset).toBeChecked();
 });

@@ -1,6 +1,7 @@
 import iconAmp from "@code-proxy/assets/icons/amp.svg";
 import iconAntigravity from "@code-proxy/assets/icons/antigravity.svg";
 import iconClaude from "@code-proxy/assets/icons/claude.svg";
+import iconCline from "@code-proxy/assets/icons/cline.svg";
 import iconCodex from "@code-proxy/assets/icons/codex.svg";
 import iconDeepseek from "@code-proxy/assets/icons/deepseek.svg";
 import iconGemini from "@code-proxy/assets/icons/gemini.svg";
@@ -12,6 +13,7 @@ import iconKimiLight from "@code-proxy/assets/icons/kimi-light.svg";
 import iconKiro from "@code-proxy/assets/icons/kiro.svg";
 import iconMimo from "@code-proxy/assets/icons/mimo.svg";
 import iconMinimax from "@code-proxy/assets/icons/minimax.svg";
+import iconOllama from "@code-proxy/assets/icons/ollama.svg";
 import iconOpencodeDark from "@code-proxy/assets/icons/opencode-dark.svg";
 import iconOpencodeLight from "@code-proxy/assets/icons/opencode-light.svg";
 import iconOpenaiDark from "@code-proxy/assets/icons/openai-dark.svg";
@@ -23,6 +25,7 @@ const VENDOR_ICONS: Record<string, { light: string; dark: string }> = {
   amp: { light: iconAmp, dark: iconAmp },
   antigravity: { light: iconAntigravity, dark: iconAntigravity },
   claude: { light: iconClaude, dark: iconClaude },
+  cline: { light: iconCline, dark: iconCline },
   codex: { light: iconCodex, dark: iconCodex },
   deepseek: { light: iconDeepseek, dark: iconDeepseek },
   gemini: { light: iconGemini, dark: iconGemini },
@@ -34,6 +37,7 @@ const VENDOR_ICONS: Record<string, { light: string; dark: string }> = {
   kimi: { light: iconKimiLight, dark: iconKimiDark },
   mimo: { light: iconMimo, dark: iconMimo },
   minimax: { light: iconMinimax, dark: iconMinimax },
+  ollama: { light: iconOllama, dark: iconOllama },
   o1: { light: iconOpenaiLight, dark: iconOpenaiDark },
   o3: { light: iconOpenaiLight, dark: iconOpenaiDark },
   o4: { light: iconOpenaiLight, dark: iconOpenaiDark },

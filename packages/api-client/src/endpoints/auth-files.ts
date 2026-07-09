@@ -3,7 +3,12 @@ import type { AuthFilesResponse, OAuthModelAliasEntry } from "../dto/types";
 import { normalizeOauthExcludedModels, normalizeOauthModelAlias } from "./helpers";
 
 export const authFilesApi = {
-  list: (): Promise<AuthFilesResponse> => apiClient.get<AuthFilesResponse>("/auth-files"),
+  list: (options?: { signal?: AbortSignal }): Promise<AuthFilesResponse> => {
+    if (options?.signal) {
+      return apiClient.get<AuthFilesResponse>("/auth-files", { signal: options.signal });
+    }
+    return apiClient.get<AuthFilesResponse>("/auth-files");
+  },
   setStatus: (name: string, disabled: boolean) =>
     apiClient.patch<{ status: string; disabled: boolean }>("/auth-files/status", {
       name,
@@ -33,6 +38,8 @@ export const authFilesApi = {
     custom_tags?: string[];
     hidden_default_tags?: string[];
     display_tags?: string[];
+    codex_cli_only?: boolean;
+    codex_cli_only_allowed_clients?: string[];
   }) => apiClient.patch("/auth-files/fields", payload),
 
   getOauthExcludedModels: async (): Promise<Record<string, string[]>> => {
