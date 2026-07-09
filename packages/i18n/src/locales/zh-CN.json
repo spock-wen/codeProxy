@@ -983,6 +983,7 @@
     "product_usage": "产品使用",
     "product_usage_named": "{{product}} 使用",
     "used_percent": "已用 {{percent}}",
+    "remaining_percent": "剩余 {{percent}}",
     "reset_at": "重置 {{time}}",
     "pay_as_you_go_label": "按量付费",
     "pay_as_you_go_disabled": "未启用",

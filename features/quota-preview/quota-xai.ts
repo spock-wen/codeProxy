@@ -282,14 +282,12 @@ const formatUsdFromCents = (cents: number | null): string => {
   );
 };
 
-const remainingPercent = (usedPercent: number | null): number | null =>
-  usedPercent === null ? null : Math.round(clampPercent(100 - usedPercent));
+// Bar + label both mean "remaining". Null/unknown usage is treated as fully remaining (100%).
+const remainingPercent = (usedPercent: number | null): number =>
+  usedPercent === null ? 100 : Math.round(clampPercent(100 - usedPercent));
 
-const formatUsedPercent = (usedPercent: number | null): string =>
-  usedPercent === null ? "--" : `xai_quota.used_percent::${Math.round(clampPercent(usedPercent))}%`;
-
-const formatPercent = (percent: number | null): string =>
-  percent === null ? "--" : `${Math.round(clampPercent(percent))}%`;
+const formatRemainingPercent = (usedPercent: number | null): string =>
+  `${remainingPercent(usedPercent)}%`;
 
 const formatPeriodRange = (start?: string, end?: string): string | undefined => {
   const startMs = parseResetTimeToMs(start);
@@ -320,7 +318,7 @@ export const buildXaiItems = (billing: XaiBillingSummary): QuotaItem[] => {
       key: "weekly_limit",
       label: "xai_quota.weekly_limit",
       percent: remainingPercent(weeklyUsed),
-      value: formatUsedPercent(weeklyUsed),
+      value: formatRemainingPercent(weeklyUsed),
       resetAtMs: parseResetTimeToMs(billing.periodEnd),
       meta: formatPeriodRange(billing.periodStart, billing.periodEnd),
     });
@@ -332,7 +330,7 @@ export const buildXaiItems = (billing: XaiBillingSummary): QuotaItem[] => {
       key: `product:${item.product}`,
       label: `xai_quota.product_usage_named::${item.product}`,
       percent: remainingPercent(used),
-      value: formatUsedPercent(used),
+      value: formatRemainingPercent(used),
     });
   });
 
@@ -347,15 +345,16 @@ export const buildXaiItems = (billing: XaiBillingSummary): QuotaItem[] => {
       key: "pay_as_you_go",
       label: "xai_quota.pay_as_you_go_label",
       percent: remainingPercent(onDemandUsed),
-      value: formatPercent(remainingPercent(onDemandUsed)),
+      value: formatRemainingPercent(onDemandUsed),
       meta: `${formatUsdFromCents(remainingCents)} / ${formatUsdFromCents(billing.onDemandCapCents)}`,
     });
   } else {
+    // Not enabled: treat as full remaining (100% green bar), no "disabled" status text.
     items.push({
       key: "pay_as_you_go",
       label: "xai_quota.pay_as_you_go_label",
-      percent: null,
-      value: "xai_quota.pay_as_you_go_disabled",
+      percent: 100,
+      value: "100%",
     });
   }
 
@@ -373,7 +372,7 @@ export const buildXaiItems = (billing: XaiBillingSummary): QuotaItem[] => {
       key: "monthly_credits",
       label: "xai_quota.monthly_credits",
       percent: remainingPercent(monthlyUsed),
-      value: formatPercent(remainingPercent(monthlyUsed)),
+      value: formatRemainingPercent(monthlyUsed),
       resetAtMs: parseResetTimeToMs(billing.billingPeriodEnd),
       meta: `${formatUsdFromCents(remainingCents)} / ${formatUsdFromCents(billing.monthlyLimitCents)}`,
     });

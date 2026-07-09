@@ -1296,7 +1296,7 @@ describe("AuthFilesPage files table", () => {
           key: "weekly_limit",
           label: "xai_quota.weekly_limit",
           percent: 75,
-          value: "xai_quota.used_percent::25%",
+          value: "75%",
           resetAtMs: now + 7 * 24 * 60 * 60 * 1000,
           meta: "07/06/2026 - 07/13/2026",
         },
@@ -1304,7 +1304,7 @@ describe("AuthFilesPage files table", () => {
           key: "product:Grok 4",
           label: "xai_quota.product_usage_named::Grok 4",
           percent: 60,
-          value: "xai_quota.used_percent::40%",
+          value: "60%",
         },
         {
           key: "pay_as_you_go",
@@ -1360,14 +1360,16 @@ describe("AuthFilesPage files table", () => {
         expect.objectContaining({ name: "xai-user.json" }),
       );
       expect(quota).toHaveTextContent("Weekly limit");
-      expect(quota).toHaveTextContent("Used 25%");
+      expect(quota).toHaveTextContent("75%");
       expect(quota).toHaveTextContent("Grok 4 usage");
+      expect(quota).toHaveTextContent("60%");
       expect(quota).toHaveTextContent("Pay as you go");
       expect(quota).toHaveTextContent("$40.00 / $50.00");
       expect(quota).toHaveTextContent("Monthly credits");
       expect(quota).toHaveTextContent("$130.00 / $150.00");
       expect(card as HTMLElement).toHaveTextContent("Plan SuperGrok");
     });
+    expect(quota).not.toHaveTextContent("Used");
     expect(quota).not.toHaveTextContent("Requests");
     expect(quota).not.toHaveTextContent("Failure");
   });

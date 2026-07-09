@@ -139,6 +139,9 @@ export function useAuthFilesQuotaState({
         if (key === "xai_quota.used_percent" && value) {
           return t(key, { percent: value });
         }
+        if (key === "xai_quota.remaining_percent" && value) {
+          return t(key, { percent: value });
+        }
         if (key === "xai_quota.reset_at" && value) {
           return t(key, { time: value });
         }

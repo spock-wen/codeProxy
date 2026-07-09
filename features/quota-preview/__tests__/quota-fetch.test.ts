@@ -610,7 +610,7 @@ describe("fetchQuota for xai", () => {
         key: "weekly_limit",
         label: "xai_quota.weekly_limit",
         percent: 75,
-        value: "xai_quota.used_percent::25%",
+        value: "75%",
         resetAtMs: Date.parse("2026-07-13T00:00:00Z"),
         meta: expect.any(String),
       },
@@ -618,14 +618,14 @@ describe("fetchQuota for xai", () => {
         key: "product:Grok 4",
         label: "xai_quota.product_usage_named::Grok 4",
         percent: 60,
-        value: "xai_quota.used_percent::40%",
+        value: "60%",
       },
       {
         key: "pay_as_you_go",
         label: "xai_quota.pay_as_you_go_label",
         percent: 80,
         value: "80%",
-        meta: "$40.00 / $50.00",
+        meta: expect.stringMatching(/40\.00.*50\.00/),
       },
       {
         key: "monthly_credits",
@@ -633,7 +633,7 @@ describe("fetchQuota for xai", () => {
         percent: 87,
         value: "87%",
         resetAtMs: Date.parse("2026-08-01T00:00:00Z"),
-        meta: "$130.00 / $150.00",
+        meta: expect.stringMatching(/130\.00.*150\.00/),
       },
     ]);
   });

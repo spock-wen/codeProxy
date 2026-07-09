@@ -196,6 +196,7 @@ export function useAuthFilesFilesPresentation({
         const value = separatorIndex >= 0 ? text.slice(separatorIndex + 2) : "";
         if (key === "xai_quota.product_usage_named" && value) return t(key, { product: value });
         if (key === "xai_quota.used_percent" && value) return t(key, { percent: value });
+        if (key === "xai_quota.remaining_percent" && value) return t(key, { percent: value });
         if (key === "xai_quota.reset_at" && value) return t(key, { time: value });
         return t(key);
       }
@@ -569,7 +570,8 @@ export function useAuthFilesFilesPresentation({
       const percentText =
         (item?.value ? translateQuotaText(item.value) : undefined) ??
         (normalized === null ? "--" : `${Math.round(normalized)}%`);
-      const detailText = formatQuotaItemDetailText(item) ?? "--";
+      // Keep a fixed-height meta row so bars stay evenly spaced; hide "--" when empty.
+      const detailText = formatQuotaItemDetailText(item);
 
       return (
         <div key={label} className="space-y-1">
@@ -593,8 +595,8 @@ export function useAuthFilesFilesPresentation({
               aria-hidden="true"
             />
           </div>
-          <div className="truncate text-[10px] tabular-nums text-slate-500 dark:text-white/45">
-            {detailText}
+          <div className="min-h-[14px] truncate text-[10px] tabular-nums text-slate-500 dark:text-white/45">
+            {detailText ?? "\u00A0"}
           </div>
         </div>
       );

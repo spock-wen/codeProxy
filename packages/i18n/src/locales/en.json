@@ -975,6 +975,7 @@
     "product_usage": "Product usage",
     "product_usage_named": "{{product}} usage",
     "used_percent": "Used {{percent}}",
+    "remaining_percent": "Left {{percent}}",
     "reset_at": "Resets {{time}}",
     "pay_as_you_go_label": "Pay as you go",
     "pay_as_you_go_disabled": "Not enabled",
