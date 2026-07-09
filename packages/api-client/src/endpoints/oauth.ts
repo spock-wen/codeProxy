@@ -6,7 +6,13 @@ import type {
   OAuthStartResponse,
 } from "../dto/types";
 
-const WEBUI_SUPPORTED: OAuthProvider[] = ["codex", "anthropic", "antigravity", "gemini-cli"];
+const WEBUI_SUPPORTED: OAuthProvider[] = [
+  "codex",
+  "anthropic",
+  "antigravity",
+  "xai",
+  "gemini-cli",
+];
 const CALLBACK_PROVIDER_MAP: Partial<Record<OAuthProvider, string>> = {
   "gemini-cli": "gemini",
 };

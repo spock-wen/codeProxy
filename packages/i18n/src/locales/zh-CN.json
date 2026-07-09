@@ -508,6 +508,7 @@
     "filter_claude": "Claude",
     "filter_codex": "Codex",
     "filter_antigravity": "Antigravity",
+    "filter_xai": "xAI",
     "filter_kiro": "Kiro",
     "filter_iflow": "iFlow",
     "filter_vertex": "Vertex",
@@ -521,6 +522,7 @@
     "type_claude": "Claude",
     "type_codex": "Codex",
     "type_antigravity": "Antigravity",
+    "type_xai": "xAI",
     "type_kiro": "Kiro",
     "type_iflow": "iFlow",
     "type_vertex": "Vertex",
@@ -3861,6 +3863,10 @@
       "antigravity": {
         "title": "Antigravity OAuth",
         "hint": "用于 Antigravity 配额 / 能力 OAuth 登录。"
+      },
+      "xai": {
+        "title": "xAI / Grok OAuth",
+        "hint": "用于通过 xAI 原生 OAuth 登录 Grok。"
       },
       "gemini_cli": {
         "title": "Gemini CLI OAuth",

@@ -40,6 +40,7 @@ const PROVIDERS: { id: OAuthProvider; titleKey: string; hintKey: string }[] = [
     titleKey: "oauth.providers.antigravity.title",
     hintKey: "oauth.providers.antigravity.hint",
   },
+  { id: "xai", titleKey: "oauth.providers.xai.title", hintKey: "oauth.providers.xai.hint" },
   {
     id: "gemini-cli",
     titleKey: "oauth.providers.gemini_cli.title",
