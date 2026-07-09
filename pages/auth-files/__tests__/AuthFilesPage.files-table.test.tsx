@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ToastProvider } from "@code-proxy/ui";
 import { ThemeProvider } from "@code-proxy/ui";
 import { AuthFilesPage } from "@pages/auth-files/AuthFilesPage";
+import type { AuthFileItem } from "@code-proxy/api-client";
 import {
   AUTH_FILES_DATA_CACHE_KEY,
   AUTH_FILES_QUOTA_AUTO_REFRESH_KEY,
@@ -14,7 +15,7 @@ import {
 import i18n from "@code-proxy/i18n";
 
 const mocks = vi.hoisted(() => ({
-  list: vi.fn(async () => ({
+  list: vi.fn<() => Promise<{ files: AuthFileItem[] }>>(async () => ({
     files: [
       {
         name: "qwen.json",
@@ -1221,6 +1222,52 @@ describe("AuthFilesPage files table", () => {
     await waitFor(() => {
       expect(mocks.deleteFile).toHaveBeenCalledWith("qwen.json");
       expect(screen.queryByText("qwen.json")).not.toBeInTheDocument();
+    });
+  });
+
+  test("resets the file group when deleting the last file for the selected provider", async () => {
+    const now = Date.now();
+    const xaiFile: AuthFileItem = {
+      name: "xai-user.json",
+      type: "xai",
+      provider: "xai",
+      account_type: "oauth",
+      email: "user@example.com",
+      auth_index: "xai-auth",
+      size: 2048,
+      modified: now,
+      disabled: false,
+    };
+
+    window.localStorage.setItem(
+      AUTH_FILES_UI_STATE_KEY,
+      JSON.stringify({ tab: "files", filter: "xai", search: "", page: 1 }),
+    );
+    mocks.list.mockImplementation(async () => ({ files: [xaiFile] }));
+
+    render(
+      <MemoryRouter initialEntries={["/auth-files"]}>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/auth-files" element={<AuthFilesPage />} />
+            </Routes>
+          </ToastProvider>
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("user@example.com")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "File group" })).toHaveTextContent("xai (1)");
+
+    fireEvent.click(screen.getByLabelText("Select user@example.com"));
+    fireEvent.click(screen.getByRole("button", { name: "Delete selected (1)" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(mocks.deleteFile).toHaveBeenCalledWith("xai-user.json");
+      expect(screen.queryByText("user@example.com")).not.toBeInTheDocument();
+      expect(screen.getByRole("combobox", { name: "File group" })).toHaveTextContent("All (0)");
     });
   });
 

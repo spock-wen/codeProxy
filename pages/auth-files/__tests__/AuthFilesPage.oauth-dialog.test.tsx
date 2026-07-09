@@ -6,6 +6,7 @@ import { ToastProvider } from "@code-proxy/ui";
 import { ThemeProvider } from "@code-proxy/ui";
 import { AuthFilesPage } from "@pages/auth-files/AuthFilesPage";
 import type { AuthFileItem } from "@code-proxy/api-client";
+import { AUTH_FILES_UI_STATE_KEY } from "@code-proxy/domain";
 import type {
   ProxyCheckResult,
   ProxyPoolEntry,
@@ -457,6 +458,81 @@ describe("AuthFilesPage OAuth login dialog", () => {
         ([title]) => title === "xAI / Grok OAuth authorization succeeded",
       ),
     ).toHaveLength(1);
+  });
+
+  test("switches to the newly authorized xAI file group", async () => {
+    const user = userEvent.setup();
+    const now = Date.now();
+    const initialFile: AuthFileItem = {
+      name: "qwen.json",
+      type: "qwen",
+      size: 1024,
+      modified: now,
+      disabled: false,
+    };
+    const xaiFile: AuthFileItem = {
+      name: "xai-user.json",
+      type: "xai",
+      provider: "xai",
+      account_type: "oauth",
+      email: "user@example.com",
+      auth_index: "xai-auth",
+      size: 2048,
+      modified: now + 1,
+      disabled: false,
+    };
+    const firstPoll = deferred<{ status: "waiting" }>();
+    const secondPoll = deferred<{ status: "ok" }>();
+
+    window.localStorage.setItem("authFilesPage.filesViewMode.v1", JSON.stringify("cards"));
+    window.localStorage.setItem(
+      AUTH_FILES_UI_STATE_KEY,
+      JSON.stringify({ tab: "files", filter: "qwen", search: "qwen", page: 1 }),
+    );
+    mocks.list
+      .mockResolvedValueOnce({ files: [initialFile] })
+      .mockResolvedValue({ files: [initialFile, xaiFile] });
+    mocks.startAuth.mockResolvedValueOnce({
+      url: "https://accounts.x.ai/oauth2/consent",
+      state: "xai-state",
+    });
+    mocks.getAuthStatus
+      .mockImplementationOnce(() => firstPoll.promise)
+      .mockImplementationOnce(() => secondPoll.promise);
+
+    render(
+      <MemoryRouter initialEntries={["/auth-files"]}>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/auth-files" element={<AuthFilesPage />} />
+            </Routes>
+          </ToastProvider>
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("qwen.json")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add OAuth Login" }));
+
+    const dialog = await screen.findByRole("dialog");
+    const scoped = within(dialog);
+    await user.click(scoped.getByRole("tab", { name: "xAI / Grok OAuth" }));
+    await user.click(scoped.getByRole("button", { name: "Start authorization" }));
+    await waitFor(() => expect(mocks.getAuthStatus).toHaveBeenCalledTimes(1));
+
+    await user.type(scoped.getByPlaceholderText("Paste the code shown by xAI / Grok"), "code");
+    await user.click(scoped.getByRole("button", { name: "Submit callback" }));
+    await waitFor(() => expect(mocks.getAuthStatus).toHaveBeenCalledTimes(2));
+
+    secondPoll.resolve({ status: "ok" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    expect(screen.getByRole("combobox", { name: "File group" })).toHaveTextContent("xai (1)");
+    expect(await screen.findByText("user@example.com")).toBeInTheDocument();
+    expect(screen.queryByText("qwen.json")).not.toBeInTheDocument();
+
+    firstPoll.resolve({ status: "waiting" });
   });
 
   test("keeps the dialog open until OAuth completes and the new auth file is listed", async () => {
