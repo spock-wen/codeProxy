@@ -121,8 +121,8 @@ export function LoginPage() {
                 ))}
               </div>
             </aside>
-            <section className="rounded-[2rem] border border-white/70 bg-white/75 p-3 shadow-2xl shadow-slate-300/30 backdrop-blur-xl dark:border-white/10 dark:bg-neutral-950/70 dark:shadow-black/30">
-              <div className="rounded-[1.6rem] border border-slate-200/80 bg-white p-7 sm:p-9 dark:border-neutral-800 dark:bg-neutral-950">
+            <section className="rounded-4xl border border-white/70 bg-white/75 p-3 shadow-2xl shadow-slate-300/30 backdrop-blur-xl dark:border-white/10 dark:bg-neutral-950/70 dark:shadow-black/30">
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-7 sm:p-9 dark:border-neutral-800 dark:bg-neutral-950">
                 <div className="mb-8 space-y-2">
                   <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
                     {t("login.sign_in")}
