@@ -258,6 +258,18 @@ const LEGACY_SERVICE_MENUS: MenuIdentity[] = [
     sort_order: 40,
   }),
   menu({
+    code: "models.plaza",
+    parent_code: "group.models",
+    type: "menu",
+    path: "/models/plaza",
+    component: "model-plaza",
+    label_key: "shell.nav_model_plaza",
+    icon: "store",
+    // Same surface as former System Info "available models": tenant-visible model set.
+    permission_code: "system.status.read",
+    sort_order: 5,
+  }),
+  menu({
     code: "models.catalog",
     parent_code: "group.models",
     type: "menu",

@@ -9,6 +9,7 @@ import { authFilesRoute } from "./auth-files/route";
 import { apiKeysRoute } from "./api-keys/route";
 import { apiKeyPermissionsRoute } from "./api-key-permissions/route";
 import { modelsRoute } from "./models/route";
+import { modelPlazaRoute } from "./model-plaza/route";
 import { channelGroupsRoute } from "./channel-groups/route";
 import { configRoute } from "./config/route";
 import { logsRoute } from "./logs/route";
@@ -56,6 +57,7 @@ export const pageRoutes: PageRoute[] = [
   apiKeysRoute,
   apiKeyPermissionsRoute,
   modelsRoute,
+  modelPlazaRoute,
   channelGroupsRoute,
   configRoute,
   logsRoute,

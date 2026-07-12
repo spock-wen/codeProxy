@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Check,
@@ -9,32 +9,12 @@ import {
   CalendarClock,
   MonitorSmartphone,
   KeyRound,
-  RefreshCw,
-  Search,
   Server,
-  Layers,
-  CircleAlert,
 } from "lucide-react";
 import { useAuth } from "@app/providers/AuthProvider";
-import { Button } from "@code-proxy/ui";
 import { Card } from "@code-proxy/ui";
-import { ScrollArea } from "@code-proxy/ui";
-import { TextInput } from "@code-proxy/ui";
 import { useToast } from "@code-proxy/ui";
 import { UpdateDetailsCard } from "@app/update/UpdateDetailsCard";
-import {
-  loadConfiguredModelAvailability,
-  loadModelPathAvailability,
-  type ModelAvailabilitySource,
-} from "@features/model-availability";
-import {
-  buildModelVendorStats,
-  CopyableModelTag,
-  getModelVendorKey,
-  ModelVendorStatBadge,
-  type ModelVendorKey,
-} from "@features/model-tags";
-import { HoverTooltip } from "@code-proxy/ui";
 
 /* ═══════════════════════════════════════════════════════════
    InfoCard — compact grid card with icon
@@ -126,70 +106,6 @@ function InfoCard({
    Main Page
    ═══════════════════════════════════════════════════════════ */
 
-const _AUTO_REFRESH_INTERVAL = 30_000;
-
-type SystemModelEntry = {
-  id: string;
-  sources?: ModelAvailabilitySource[];
-};
-
-type ModelVendorFilter = "all" | ModelVendorKey;
-
-const formatSourceLabel = (source: ModelAvailabilitySource): string => {
-  const label = source.label.trim();
-  const provider = source.provider?.trim();
-  if (!label || !provider) return label;
-
-  const parts = label.split(" · ").map((part) => part.trim());
-  if (parts.length === 2 && parts[0].toLowerCase() === provider.toLowerCase()) {
-    return `${parts[1]} · ${parts[0]}`;
-  }
-  return label;
-};
-
-const renderModelSourcesTooltip = (
-  sources: ModelAvailabilitySource[] | undefined,
-  modelId: string,
-  actualCallLabel: string,
-): ReactNode => {
-  const entries = (sources ?? [])
-    .map((source) => {
-      const label = formatSourceLabel(source);
-      if (!label) return null;
-      const actualModelId = source.upstreamModelId?.trim() || source.modelId?.trim() || modelId;
-      return {
-        label,
-        actualModelId,
-        mapped: Boolean(actualModelId && actualModelId !== modelId),
-      };
-    })
-    .filter((entry): entry is { label: string; actualModelId: string; mapped: boolean } =>
-      Boolean(entry),
-    );
-
-  if (entries.length === 0) return null;
-
-  return (
-    <span className="block min-w-44 max-w-[18rem] space-y-1 text-left">
-      {entries.map((entry) => (
-        <span key={`${entry.label}\x00${entry.actualModelId}`} className="block">
-          <span className="block text-xs font-medium text-slate-900 dark:text-white">
-            {entry.label}
-          </span>
-          {entry.mapped ? (
-            <span className="mt-0.5 flex min-w-0 items-start gap-1.5 text-xs text-slate-500 dark:text-white/55">
-              <span className="shrink-0">{actualCallLabel}</span>
-              <span className="min-w-0 break-all font-mono text-slate-700 dark:text-white/75">
-                {entry.actualModelId}
-              </span>
-            </span>
-          ) : null}
-        </span>
-      ))}
-    </span>
-  );
-};
-
 export function SystemPage({
   updateHeartbeatIntervalMs,
   updateHeartbeatTimeoutMs,
@@ -198,89 +114,11 @@ export function SystemPage({
   updateHeartbeatTimeoutMs?: number;
 } = {}) {
   const { t } = useTranslation();
-  const { notify } = useToast();
   const auth = useAuth();
-
-  const [modelsLoading, setModelsLoading] = useState(false);
-  const [modelsError, setModelsError] = useState<string | null>(null);
-  const [models, setModels] = useState<SystemModelEntry[]>([]);
-  const [modelFilter, setModelFilter] = useState("");
-  const [selectedModelVendor, setSelectedModelVendor] = useState<ModelVendorFilter>("all");
-
-  const loadModels = useCallback(async () => {
-    setModelsLoading(true);
-    setModelsError(null);
-    try {
-      const [configuredAvailability, pathAvailability] = await Promise.all([
-        loadConfiguredModelAvailability().catch(() => null),
-        loadModelPathAvailability().catch(() => null),
-      ]);
-
-      const useMappedOwnerModels = configuredAvailability?.usesMappedOwners === true;
-      const configuredById = new Map(
-        (configuredAvailability?.items ?? []).map((item) => [item.id.toLowerCase(), item]),
-      );
-      const rootV1ModelIds =
-        pathAvailability?.items
-          .filter((item) =>
-            item.paths.some(
-              (path) =>
-                path.scope === "root" && path.method === "GET" && path.path === "/v1/models",
-            ),
-          )
-          .map((item) => item.id) ?? [];
-      const nextModelIds = useMappedOwnerModels
-        ? (configuredAvailability?.items ?? []).map((item) => item.id)
-        : [
-            ...rootV1ModelIds,
-            ...(configuredAvailability?.items ?? []).map((item) => item.id),
-          ];
-
-      setModels(
-        Array.from(new Set(nextModelIds))
-          .sort((a, b) => a.localeCompare(b))
-          .map((id) => ({
-            id,
-            sources: configuredById.get(id.toLowerCase())?.sources,
-          })),
-      );
-    } catch (err: unknown) {
-      setModelsError(err instanceof Error ? err.message : t("system_page.load_failed"));
-    } finally {
-      setModelsLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    void loadModels();
-  }, [loadModels]);
-
-  const filteredModels = useMemo(() => {
-    const needle = modelFilter.trim().toLowerCase();
-    return models.filter((model) => {
-      if (selectedModelVendor !== "all" && getModelVendorKey(model.id) !== selectedModelVendor) {
-        return false;
-      }
-      return !needle || model.id.toLowerCase().includes(needle);
-    });
-  }, [modelFilter, models, selectedModelVendor]);
-
-  const vendorStats = useMemo(() => {
-    return buildModelVendorStats(
-      models.map((model) => model.id),
-      t("common.other"),
-    );
-  }, [models, t]);
-
-  const handleModelCopied = useCallback(() => {
-    notify({ type: "success", message: t("system_page.copied"), duration: 1200 });
-  }, [notify, t]);
-
   const apiKeyLookupUrl = `${window.location.origin}/manage/apikey-lookup`;
 
   return (
-    <div className="min-w-0 space-y-6 overflow-x-hidden md:flex md:h-[calc(100dvh-112px)] md:min-h-0 md:flex-col md:space-y-0 md:gap-6">
-      {/* ── Header ── */}
+    <div className="min-w-0 space-y-6 overflow-x-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
@@ -297,7 +135,6 @@ export function SystemPage({
         </div>
       </div>
 
-      {/* ── Connection & Version Grid ── */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <InfoCard
           icon={Globe}
@@ -341,167 +178,6 @@ export function SystemPage({
         heartbeatIntervalMs={updateHeartbeatIntervalMs}
         heartbeatTimeoutMs={updateHeartbeatTimeoutMs}
       />
-
-      {/* ── Model List ── */}
-      <Card
-        padding="none"
-        className="overflow-hidden md:flex md:min-h-0 md:flex-1 md:flex-col"
-        bodyClassName="mt-0 md:flex md:min-h-0 md:flex-1 md:flex-col"
-      >
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5 dark:border-neutral-800">
-          <div className="flex items-center gap-2.5">
-            <Layers size={15} className="text-slate-500 dark:text-white/40" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              {t("system_page.available_models")}
-            </h3>
-            <HoverTooltip content={t("system_page.available_models_tooltip")} placement="bottom">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full text-amber-500 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-500/10">
-                <CircleAlert size={14} aria-hidden="true" />
-              </span>
-            </HoverTooltip>
-            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-bold tabular-nums text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300">
-              {filteredModels.length}
-            </span>
-            {modelFilter && filteredModels.length !== models.length && (
-              <span className="text-2xs text-slate-400 dark:text-white/30">
-                / {models.length}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <TextInput
-              value={modelFilter}
-              onChange={(e) => setModelFilter(e.target.value)}
-              placeholder={t("system_page.search_models")}
-              className="!w-32 sm:!w-48"
-              startAdornment={<Search size={14} className="text-slate-400 dark:text-white/35" />}
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => void loadModels()}
-              disabled={modelsLoading}
-            >
-              <RefreshCw size={13} className={modelsLoading ? "animate-spin" : ""} />
-              {t("system_page.refresh")}
-            </Button>
-          </div>
-        </div>
-
-        {/* Vendor stats bar */}
-        {vendorStats.length > 0 && !modelsLoading && (
-          <div
-            className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-2.5 dark:border-neutral-800/60"
-            aria-label={t("system_page.available_models")}
-          >
-            <button
-              type="button"
-              aria-label={`${t("common.all", { defaultValue: "All" })} ${models.length}`}
-              aria-pressed={selectedModelVendor === "all"}
-              onClick={() => setSelectedModelVendor("all")}
-              className={[
-                "inline-flex items-center gap-1.5 rounded-md border border-slate-200/70 bg-white px-2 py-0.5 text-2xs font-semibold text-slate-600 transition hover:shadow-sm dark:border-neutral-700/60 dark:bg-neutral-900 dark:text-white/70",
-                selectedModelVendor === "all"
-                  ? "ring-2 ring-indigo-500/35 ring-offset-1 ring-offset-white dark:ring-indigo-300/40 dark:ring-offset-neutral-950"
-                  : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <Layers size={12} aria-hidden="true" />
-              {t("common.all", { defaultValue: "All" })}
-              <span className="tabular-nums">{models.length}</span>
-            </button>
-            {vendorStats.map((stat) => (
-              <ModelVendorStatBadge
-                key={stat.key}
-                vendorKey={stat.key}
-                label={stat.label}
-                count={stat.count}
-                active={selectedModelVendor === stat.key}
-                onClick={() => setSelectedModelVendor(stat.key)}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Error */}
-        {modelsError && (
-          <div className="border-b border-rose-100 bg-rose-50 px-5 py-2.5 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
-            {modelsError}
-          </div>
-        )}
-
-        {/* Model tags */}
-        <ScrollArea
-          className="md:min-h-0 md:flex-1 [&_[data-scroll-area-scrollbar='y']]:right-1"
-          viewportClassName="max-h-[480px] md:max-h-none md:!h-full"
-          contentClassName="px-5 py-4 pr-8"
-          scrollbarVisibility="track-hover"
-          scrollbarTrackInset={4}
-          data-testid="system-models-scroll-area"
-        >
-          {modelsLoading && models.length === 0 ? (
-            <div className="flex items-center justify-center py-12 text-sm text-slate-500 dark:text-white/50">
-              <RefreshCw size={14} className="animate-spin mr-2" />
-              {t("system_page.loading_models")}
-            </div>
-          ) : filteredModels.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {filteredModels.map((model) => {
-                const tooltip = renderModelSourcesTooltip(
-                  model.sources,
-                  model.id,
-                  t("system_page.model_actual_call"),
-                );
-                const hasMappedSource = (model.sources ?? []).some(
-                  (source) =>
-                    source.upstreamModelId &&
-                    source.upstreamModelId !== model.id,
-                );
-                const tag = (
-                  <CopyableModelTag
-                    id={model.id}
-                    title={t("system_page.click_copy")}
-                    copiedLabel={t("system_page.copied")}
-                    onCopied={handleModelCopied}
-                  />
-                );
-                return tooltip ? (
-                  <HoverTooltip key={model.id} content={tooltip} placement="top">
-                    <span className="relative inline-flex">
-                      {tag}
-                      {hasMappedSource ? (
-                        <span
-                          aria-hidden="true"
-                          data-model-source-marker="true"
-                          className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-sky-500 ring-2 ring-white dark:ring-neutral-950"
-                        />
-                      ) : null}
-                    </span>
-                  </HoverTooltip>
-                ) : (
-                  <CopyableModelTag
-                    key={model.id}
-                    id={model.id}
-                    title={t("system_page.click_copy")}
-                    copiedLabel={t("system_page.copied")}
-                    onCopied={handleModelCopied}
-                  />
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-white/30">
-              <Layers size={28} className="mb-2 opacity-40" />
-              <p className="text-sm">
-                {models.length === 0 ? t("system_page.no_models") : t("system_page.no_match")}
-              </p>
-            </div>
-          )}
-        </ScrollArea>
-      </Card>
     </div>
   );
 }

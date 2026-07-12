@@ -20,6 +20,7 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
+  Store,
   UserRound,
   UsersRound,
   type LucideIcon,
@@ -50,6 +51,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   settings: Settings,
   "shield-check": ShieldCheck,
   sparkles: Sparkles,
+  store: Store,
   "user-round": UserRound,
   "users-round": UsersRound,
 };
