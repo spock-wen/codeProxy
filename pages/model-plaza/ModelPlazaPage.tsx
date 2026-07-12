@@ -426,7 +426,7 @@ export function ModelPlazaPage() {
       {vendorStats.length > 0 && !loading ? (
         <div
           data-testid="model-plaza-tabs-sticky"
-          className="sticky top-0 z-20 -mx-4 border-b border-slate-200/70 bg-white/95 px-4 py-2.5 backdrop-blur-md sm:-mx-6 sm:px-6 dark:border-neutral-800/80 dark:bg-neutral-950/95"
+          className="sticky top-0 z-20 -mx-4 bg-[var(--pl-bg)] px-4 py-2.5 sm:-mx-6 sm:px-6"
         >
           <Tabs
             value={tabValue}

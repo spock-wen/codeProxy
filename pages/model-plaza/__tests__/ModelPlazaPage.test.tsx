@@ -262,6 +262,9 @@ describe("ModelPlazaPage", () => {
     const sticky = screen.getByTestId("model-plaza-tabs-sticky");
     expect(sticky.className).toMatch(/(?:^|\s)sticky(?:\s|$)/);
     expect(sticky.className).toMatch(/(?:^|\s)top-0(?:\s|$)/);
+    expect(sticky.className).toMatch(/bg-\[var\(--pl-bg\)\]/);
+    expect(sticky.className).not.toMatch(/border-b/);
+    expect(sticky.className).not.toMatch(/backdrop-blur/);
     // overflow-x-hidden on an ancestor computes overflow-y as auto and breaks sticky
     expect(container.firstElementChild?.className ?? "").not.toMatch(/overflow-x-hidden/);
   });
