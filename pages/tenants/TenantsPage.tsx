@@ -6,6 +6,7 @@ import {
   Button,
   ConfirmModal,
   DataTable,
+  DateTimePicker,
   Modal,
   Select,
   TextInput,
@@ -47,6 +48,21 @@ export function TenantsPage() {
 
   const tenantName = useCallback(
     (tenant: TenantIdentity) => (tenant.type === "system" ? t("shell.system_tenant") : tenant.name),
+    [t],
+  );
+
+  // ponytail: reuse auth_files picker labels; promote to common.* if more pages need them
+  const dateTimePickerLabels = useMemo(
+    () => ({
+      picker: t("auth_files.subscription_date_picker"),
+      open: t("auth_files.subscription_date_picker_open"),
+      previousMonth: t("auth_files.subscription_date_picker_previous_month"),
+      nextMonth: t("auth_files.subscription_date_picker_next_month"),
+      today: t("auth_files.subscription_date_picker_today"),
+      clear: t("auth_files.subscription_date_picker_clear"),
+      hour: t("auth_files.subscription_date_picker_hour"),
+      minute: t("auth_files.subscription_date_picker_minute"),
+    }),
     [t],
   );
 
@@ -294,10 +310,31 @@ export function TenantsPage() {
         }
       >
         <form id="create-tenant-form" onSubmit={createTenant} className="grid gap-4 md:grid-cols-2">
+          <label className="space-y-1.5">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              {t("identity_admin.name")}
+            </span>
+            <TextInput
+              aria-label={t("identity_admin.name")}
+              value={createForm.name}
+              onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })}
+              required
+            />
+          </label>
+          <label className="space-y-1.5">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              {t("identity_admin.expires_at")}
+            </span>
+            <DateTimePicker
+              value={createForm.expires_at}
+              onChange={(value) => setCreateForm({ ...createForm, expires_at: value })}
+              aria-label={t("identity_admin.expires_at")}
+              locale={i18n.language}
+              labels={dateTimePickerLabels}
+            />
+          </label>
           {(
             [
-              ["name", t("identity_admin.name")],
-              ["expires_at", t("identity_admin.expires_at")],
               ["admin_username", t("identity_admin.admin_username")],
               ["admin_display_name", t("identity_admin.admin_display_name")],
               ["admin_password", t("identity_admin.admin_password")],
@@ -313,13 +350,7 @@ export function TenantsPage() {
               </span>
               <TextInput
                 aria-label={label}
-                type={
-                  key === "admin_password"
-                    ? "password"
-                    : key === "expires_at"
-                      ? "datetime-local"
-                      : "text"
-                }
+                type={key === "admin_password" ? "password" : "text"}
                 value={createForm[key]}
                 onChange={(event) => setCreateForm({ ...createForm, [key]: event.target.value })}
                 required={key !== "description"}
@@ -433,11 +464,12 @@ export function TenantsPage() {
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
               {t("identity_admin.expires_at")}
             </span>
-            <TextInput
-              type="datetime-local"
+            <DateTimePicker
               value={renewAt}
-              onChange={(event) => setRenewAt(event.target.value)}
-              required
+              onChange={setRenewAt}
+              aria-label={t("identity_admin.expires_at")}
+              locale={i18n.language}
+              labels={dateTimePickerLabels}
             />
           </label>
         </form>
