@@ -132,6 +132,17 @@ const testMenus: MenuIdentity[] = [
     permission_code: "system.config.read",
     sort_order: 30,
   }),
+  // Top-level leaf after all groups (not nested under 运行观测).
+  menu({
+    code: "runtime.system",
+    type: "menu",
+    path: "/runtime/system",
+    component: "system",
+    label_key: "shell.nav_system",
+    icon: "info",
+    permission_code: "system.status.read",
+    sort_order: 70,
+  }),
 ];
 
 vi.mock("@app/providers/AuthProvider", () => ({
@@ -314,6 +325,35 @@ describe("AppShell route progress", () => {
     fireEvent.click(runtimeGroup);
     expect(runtimeGroup).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("link", { name: /Request Logs|请求日志/i })).not.toBeInTheDocument();
+  });
+
+  test("renders system info as a top-level leaf after all nav groups", () => {
+    renderShell("/dashboard");
+
+    const systemInfo = screen.getByRole("link", { name: /System Info|系统信息/i });
+    expect(systemInfo).toHaveAttribute("href", "/runtime/system");
+
+    // Must not appear nested under the runtime group children list.
+    const runtimeGroup = screen.getByRole("button", {
+      name: /Operations|Observability|运行监控|运行观测/i,
+    });
+    const runtimeRegion = runtimeGroup.closest("div");
+    expect(runtimeRegion?.querySelector('a[href="/runtime/system"]')).toBeNull();
+
+    const nav = document.querySelector("nav");
+    expect(nav).toBeTruthy();
+    const topLevel = Array.from(nav!.children);
+    const systemIndex = topLevel.findIndex(
+      (el) => el instanceof HTMLElement && el.matches('a[href="/runtime/system"]'),
+    );
+    let lastGroupIndex = -1;
+    topLevel.forEach((el, index) => {
+      if (el instanceof HTMLElement && el.querySelector("button[aria-expanded]")) {
+        lastGroupIndex = index;
+      }
+    });
+    expect(systemIndex).toBeGreaterThan(lastGroupIndex);
+    expect(systemIndex).toBe(topLevel.length - 1);
   });
 
   test("keeps a stable icon rail and the same sidebar toggle icon when collapsed", () => {

@@ -62,6 +62,7 @@ interface SidebarNavItem {
   i18nKey: string;
   icon: LucideIcon;
   permission: string;
+  sortOrder: number;
   external?: boolean;
 }
 
@@ -70,8 +71,13 @@ interface SidebarNavGroup {
   menuCode: string;
   i18nKey: string;
   icon: LucideIcon;
+  sortOrder: number;
   items: readonly SidebarNavItem[];
 }
+
+type SidebarNavEntry =
+  | { kind: "item"; item: SidebarNavItem }
+  | { kind: "group"; group: SidebarNavGroup };
 
 const isSidebarLeaf = (menu: MenuIdentity) =>
   (menu.type === "menu" || menu.type === "embed" || menu.type === "link") &&
@@ -86,6 +92,7 @@ const toSidebarItem = (menu: MenuIdentity): SidebarNavItem => ({
   i18nKey: menuLabelKey(menu),
   icon: resolveMenuIcon(menu.icon),
   permission: menu.permission_code || "",
+  sortOrder: menu.sort_order,
   external: menu.type === "link",
 });
 
@@ -95,6 +102,7 @@ const FALLBACK_NAV_GROUPS: readonly SidebarNavGroup[] = [
     menuCode: "group.system",
     i18nKey: "shell.nav_group_system",
     icon: resolveMenuIcon("settings"),
+    sortOrder: 60,
     items: [
       {
         menuCode: "system.menus",
@@ -102,6 +110,7 @@ const FALLBACK_NAV_GROUPS: readonly SidebarNavGroup[] = [
         i18nKey: "shell.nav_menu_management",
         icon: resolveMenuIcon("menu"),
         permission: "platform.menus.read",
+        sortOrder: 20,
       },
     ],
   },
@@ -113,6 +122,7 @@ const FALLBACK_DASHBOARD_ITEM: SidebarNavItem = {
   i18nKey: "shell.nav_dashboard",
   icon: resolveMenuIcon("layout-dashboard"),
   permission: "dashboard.read",
+  sortOrder: 10,
 };
 
 function buildSidebarFromMenus(menus: MenuIdentity[]): {
@@ -141,6 +151,7 @@ function buildSidebarFromMenus(menus: MenuIdentity[]): {
         menuCode: root.code,
         i18nKey: menuLabelKey(root),
         icon: resolveMenuIcon(root.icon),
+        sortOrder: root.sort_order,
         items,
       });
       continue;
@@ -148,6 +159,25 @@ function buildSidebarFromMenus(menus: MenuIdentity[]): {
     if (isSidebarLeaf(root)) primaryItems.push(toSidebarItem(root));
   }
   return { primaryItems, groups };
+}
+
+function mergeSidebarEntries(
+  primaryItems: readonly SidebarNavItem[],
+  groups: readonly SidebarNavGroup[],
+): SidebarNavEntry[] {
+  const entries: SidebarNavEntry[] = [
+    ...primaryItems.map((item): SidebarNavEntry => ({ kind: "item", item })),
+    ...groups.map((group): SidebarNavEntry => ({ kind: "group", group })),
+  ];
+  entries.sort((a, b) => {
+    const orderA = a.kind === "item" ? a.item.sortOrder : a.group.sortOrder;
+    const orderB = b.kind === "item" ? b.item.sortOrder : b.group.sortOrder;
+    if (orderA !== orderB) return orderA - orderB;
+    const codeA = a.kind === "item" ? a.item.menuCode : a.group.menuCode;
+    const codeB = b.kind === "item" ? b.item.menuCode : b.group.menuCode;
+    return codeA.localeCompare(codeB);
+  });
+  return entries;
 }
 
 const getPageTitleKey = (pathname: string, menus?: MenuIdentity[] | null): string => {
@@ -639,6 +669,12 @@ function ShellSidebar({
         .filter((group) => menuIsVisible(group.menuCode) && group.items.length > 0),
     [builtNav.groups, can, menuIsVisible],
   );
+  // Interleave top-level leaves and groups by sort_order so a primary leaf
+  // (e.g. 系统信息 at 70) can sit below every directory group.
+  const visibleNavEntries = useMemo(
+    () => mergeSidebarEntries(visiblePrimaryItems, visibleNavGroups),
+    [visibleNavGroups, visiblePrimaryItems],
+  );
   const visibleNavItems = useMemo(
     () => [...visiblePrimaryItems, ...visibleNavGroups.flatMap((group) => group.items)],
     [visibleNavGroups, visiblePrimaryItems],
@@ -858,36 +894,35 @@ function ShellSidebar({
             scrollbarTrackInset={16}
           >
             <nav className="space-y-1 pb-4 pt-3">
-              {visiblePrimaryItems.map((item) => (
-                <SidebarPrimaryLink
-                  key={item.menuCode}
-                  item={item}
-                  active={activeTo === item.to}
-                  collapsed={visualRailCollapsed}
-                  labelVisible={sidebarLabelsVisible}
-                  label={t(item.i18nKey, { defaultValue: item.i18nKey })}
-                  onClick={handleNavClick}
-                  onWarm={warmPageRoute}
-                />
-              ))}
-              <div className="space-y-1 pt-1">
-                {visibleNavGroups.map((group) => (
+              {visibleNavEntries.map((entry) =>
+                entry.kind === "item" ? (
+                  <SidebarPrimaryLink
+                    key={entry.item.menuCode}
+                    item={entry.item}
+                    active={activeTo === entry.item.to}
+                    collapsed={visualRailCollapsed}
+                    labelVisible={sidebarLabelsVisible}
+                    label={t(entry.item.i18nKey, { defaultValue: entry.item.i18nKey })}
+                    onClick={handleNavClick}
+                    onWarm={warmPageRoute}
+                  />
+                ) : (
                   <SidebarMenuGroup
-                    key={group.id}
-                    group={group}
+                    key={entry.group.id}
+                    group={entry.group}
                     activeTo={activeTo}
-                    active={group.id === activeGroupId}
-                    inlineOpen={openGroups.has(group.id)}
+                    active={entry.group.id === activeGroupId}
+                    inlineOpen={openGroups.has(entry.group.id)}
                     railCollapsed={railCollapsed}
                     visualRailCollapsed={visualRailCollapsed}
                     labelsVisible={sidebarLabelsVisible}
                     mode={mode}
-                    onToggle={() => toggleGroup(group.id)}
+                    onToggle={() => toggleGroup(entry.group.id)}
                     onClick={handleNavClick}
                     onWarm={warmPageRoute}
                   />
-                ))}
-              </div>
+                ),
+              )}
             </nav>
           </ScrollArea>
           <div className="shrink-0 overflow-visible px-0 pb-2 pt-1">
