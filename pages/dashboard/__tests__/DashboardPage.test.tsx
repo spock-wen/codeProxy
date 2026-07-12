@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   notify: vi.fn(),
   useSystemStats: vi.fn(),
   can: vi.fn((permission: string) => permission === "system.status.read" || permission === "dashboard.read"),
+  principal: null as null | { platform_admin?: boolean },
   intervalCallback: null as null | (() => void),
 }));
 
@@ -20,7 +21,7 @@ vi.mock("@code-proxy/api-client/endpoints/usage", () => ({
 vi.mock("@app/providers/AuthProvider", () => ({
   useAuth: () => ({
     can: mocks.can,
-    state: { principal: null },
+    state: { principal: mocks.principal },
     actions: {},
   }),
 }));
@@ -126,6 +127,7 @@ describe("DashboardPage", () => {
     mocks.can.mockImplementation(
       (permission: string) => permission === "system.status.read" || permission === "dashboard.read",
     );
+    mocks.principal = null;
     mocks.intervalCallback = null;
     mocks.useSystemStats.mockReturnValue({
       stats: {
@@ -232,5 +234,38 @@ describe("DashboardPage", () => {
       expect(screen.getByTestId("system-monitor-section")).toBeInTheDocument();
     });
     expect(mocks.useSystemStats).toHaveBeenCalledWith(5, true);
+  });
+
+  test("shows all-tenants throughput hint for platform super-admin", async () => {
+    mocks.principal = { platform_admin: true };
+    mocks.getDashboardSummary.mockResolvedValueOnce({
+      ...summary,
+      meta: {
+        ...summary.meta,
+        throughput_scope: "all_tenants",
+      },
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByLabelText("Shows request throughput across all tenants"),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByText("Throughput Trend")).toBeInTheDocument();
+  });
+
+  test("hides all-tenants throughput hint for ordinary tenant users", async () => {
+    mocks.getDashboardSummary.mockResolvedValueOnce(summary);
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Throughput Trend")).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByLabelText("Shows request throughput across all tenants"),
+    ).toBeNull();
   });
 });

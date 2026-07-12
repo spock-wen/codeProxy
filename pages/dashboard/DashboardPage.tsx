@@ -10,6 +10,7 @@ import {
 import { Trans, useTranslation } from "react-i18next";
 import {
   Activity,
+  CircleAlert,
   Database,
   DollarSign,
   RefreshCw,
@@ -354,6 +355,7 @@ function ThroughputTrendChart({
   showRPM,
   showTPM,
   onToggle,
+  allTenantsScope = false,
 }: {
   title: string;
   points: DashboardThroughputPoint[];
@@ -363,6 +365,8 @@ function ThroughputTrendChart({
   showRPM: boolean;
   showTPM: boolean;
   onToggle: (key: string) => void;
+  /** Platform super-admin: series aggregates every tenant. */
+  allTenantsScope?: boolean;
 }) {
   const { t } = useTranslation();
   const option = useMemo(
@@ -370,11 +374,27 @@ function ThroughputTrendChart({
     [points, showRPM, showTPM],
   );
   const active = rpm > 0 || tpm > 0;
+  const titleNode = allTenantsScope ? (
+    <span className="inline-flex items-center gap-1.5">
+      <span>{title}</span>
+      <HoverTooltip content={t("dashboard.throughput_all_tenants_hint")} placement="top">
+        <button
+          type="button"
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full text-amber-500 transition-colors hover:bg-amber-50 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
+          aria-label={t("dashboard.throughput_all_tenants_hint")}
+        >
+          <CircleAlert size={14} strokeWidth={2.25} />
+        </button>
+      </HoverTooltip>
+    </span>
+  ) : (
+    title
+  );
 
   return (
     <Card
       className={PANEL_SURFACE}
-      title={title}
+      title={titleNode}
       actions={
         <div
           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -438,9 +458,12 @@ function ThroughputTrendChart({
 export function DashboardPage() {
   const { t } = useTranslation();
   const { notify } = useToast();
-  const { can } = useAuth();
+  const {
+    can,
+    state: { principal },
+  } = useAuth();
   // Host-level system monitor is gated by platform permission (and thus menus/roles).
-  // Throughput trends stay on dashboard.read and are always tenant-scoped via dashboard-summary.
+  // Throughput: platform super-admins see all tenants; others stay tenant-scoped.
   const canViewSystemMonitor = can("system.status.read");
   const { stats, connected } = useSystemStats(5, canViewSystemMonitor);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -497,10 +520,12 @@ export function DashboardPage() {
     () => trends?.throughput_series ?? [],
     [trends?.throughput_series],
   );
-  // Latest minute from tenant-scoped series (not host-wide system-stats RPM/TPM).
+  // Latest minute from dashboard-summary series (tenant or all-tenants for platform admin).
   const latestThroughput = throughputSeries[throughputSeries.length - 1];
   const tenantRpm = latestThroughput?.rpm ?? 0;
   const tenantTpm = latestThroughput?.tpm ?? 0;
+  const throughputAllTenants =
+    meta.throughput_scope === "all_tenants" || Boolean(principal?.platform_admin);
 
   const totalRequestOption = useMemo(
     () => createSparklineOption(trends?.request_volume ?? [], "#2563eb"),
@@ -679,6 +704,7 @@ export function DashboardPage() {
         connected={false}
         showRPM={throughputLegend.rpm}
         showTPM={throughputLegend.tpm}
+        allTenantsScope={throughputAllTenants}
         onToggle={(key) =>
           setThroughputLegend((prev) => ({ ...prev, [key]: !prev[key as "rpm" | "tpm"] }))
         }

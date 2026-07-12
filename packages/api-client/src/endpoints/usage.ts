@@ -518,6 +518,8 @@ export interface DashboardSummary {
   };
   meta?: {
     generated_at?: string;
+    /** "tenant" for normal users; "all_tenants" for platform super-admins. */
+    throughput_scope?: "tenant" | "all_tenants" | string;
   };
   counts: {
     api_keys: number;

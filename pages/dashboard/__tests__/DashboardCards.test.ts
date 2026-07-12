@@ -23,6 +23,8 @@ describe("dashboard card composition", () => {
     expect(source).toContain("rpm={tenantRpm}");
     expect(source).toContain("tpm={tenantTpm}");
     expect(source).toContain("canViewSystemMonitor");
+    expect(source).toContain("allTenantsScope");
+    expect(source).toContain("throughput_all_tenants_hint");
     expect(source).toContain("meta.generated_at");
     expect(source).toContain('<EChart option={option} className="h-10" overflowVisible />');
     expect(source).toContain("}, 5000);");
