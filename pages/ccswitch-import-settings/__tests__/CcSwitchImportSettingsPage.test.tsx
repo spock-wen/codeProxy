@@ -277,7 +277,7 @@ describe("CcSwitchImportSettingsPage", () => {
       ]),
     );
 
-    expect(screen.getByText(/1 saved preset/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 saved CC Switch config preset/i)).toBeInTheDocument();
   });
 
   test("hides the Gemini CLI client from the CC Switch config modal", async () => {

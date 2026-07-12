@@ -231,7 +231,9 @@ const LEGACY_SERVICE_MENUS: MenuIdentity[] = [
     component: "ccswitch-import-settings",
     label_key: "shell.nav_ccswitch_import_settings",
     icon: "arrow-down-to-line",
-    permission_code: "system.config.read",
+    // Tenant-scoped: matches /ccswitch-import-configs API auth (routing.read/write).
+    // Must not use platform system.config.read, or ordinary tenants never see this menu.
+    permission_code: "routing.read",
     sort_order: 50,
   }),
   menu({
