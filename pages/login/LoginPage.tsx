@@ -2,10 +2,15 @@ import { useCallback, useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, KeyRound, Lock, UserRound } from "lucide-react";
-import { detectApiBaseFromLocation } from "@code-proxy/api-client";
+import {
+  detectApiBaseFromLocation,
+  extractApiErrorCode,
+  isApiClientError,
+} from "@code-proxy/api-client";
 import { useAuth } from "@app/providers/AuthProvider";
 import { PageBackground, Reveal, TextInput, ThemeToggleButton, useToast } from "@code-proxy/ui";
 import { OpenAILogo, GeminiLogo, ClaudeLogo, VertexLogo } from "@code-proxy/assets";
+import { resolveLoginErrorMessage } from "./loginErrors";
 
 interface RedirectState {
   from?: { pathname?: string };
@@ -52,22 +57,40 @@ export function LoginPage() {
   const handleSubmit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      if (!username.trim() || !password) {
-        notify({ type: "error", message: t("login.error_required") });
+      const trimmedUsername = username.trim();
+      if (!trimmedUsername) {
+        notify({ type: "error", message: t("login.error_username_required") });
+        return;
+      }
+      if (!password) {
+        notify({ type: "error", message: t("login.error_password_required") });
         return;
       }
       setLoading(true);
       try {
-        const principal = await login({ apiBase, username, password, rememberPassword });
+        const principal = await login({
+          apiBase,
+          username: trimmedUsername,
+          password,
+          rememberPassword,
+        });
         notify({ type: "success", message: t("login.login_success") });
         navigate(principal.user.must_change_password ? "/change-password" : redirect, {
           replace: true,
           viewTransition: true,
         });
       } catch (error) {
+        const code = isApiClientError(error) ? extractApiErrorCode(error.payload) : "";
+        const status = isApiClientError(error) ? error.status : 0;
         notify({
           type: "error",
-          message: error instanceof Error ? error.message : t("login.error_invalid"),
+          message: resolveLoginErrorMessage({
+            t,
+            code,
+            status,
+            isTimeout: isApiClientError(error) ? error.isTimeout : false,
+            fallbackMessage: error instanceof Error ? error.message : "",
+          }),
         });
       } finally {
         setLoading(false);
