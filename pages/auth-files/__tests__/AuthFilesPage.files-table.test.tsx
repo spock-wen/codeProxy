@@ -4983,7 +4983,10 @@ describe("AuthFilesPage files table", () => {
     fireEvent.click(
       within(screen.getByTestId("auth-files-cards")).getByRole("button", { name: "Refresh" }),
     );
-    expect(await screen.findByText("Request failed")).toBeInTheDocument();
+    const errorBadge = await screen.findByTestId("auth-file-quota-error-badge");
+    expect(errorBadge).toHaveTextContent("Error");
+    fireEvent.mouseEnter(errorBadge);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Request failed");
   });
 
   test("group overview summarizes current filtered results from shared quota state", async () => {

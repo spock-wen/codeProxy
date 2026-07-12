@@ -654,11 +654,11 @@ interface AuthFilesFilesTabProps {
   ) => { success: number; failure: number };
   toggleFileSelection: (name: string, checked: boolean) => void;
   formatPlanTypeLabel: (planType: string) => string;
-  translateQuotaText: (text: string) => string;
   renderRestrictionBadges: (file: AuthFileItem) => ReactNode | null;
   renderClaudeOAuthHealthBadges: (file: AuthFileItem) => ReactNode | null;
   renderSubscriptionBadge: (file: AuthFileItem) => ReactNode | null;
   renderQuotaBar: (label: string, item: QuotaItem | null) => ReactNode;
+  renderQuotaErrorBadge: (errorText: string) => ReactNode;
   openTagsEditor: (file: AuthFileItem) => void;
   openDetail: (file: AuthFileItem) => Promise<void>;
   downloadAuthFile: (file: AuthFileItem) => Promise<void>;
@@ -735,11 +735,11 @@ export function AuthFilesFilesTab({
   resolveAuthFileStats,
   toggleFileSelection,
   formatPlanTypeLabel,
-  translateQuotaText,
   renderRestrictionBadges,
   renderClaudeOAuthHealthBadges,
   renderSubscriptionBadge,
   renderQuotaBar,
+  renderQuotaErrorBadge,
   openTagsEditor,
   openDetail,
   downloadAuthFile,
@@ -1744,11 +1744,11 @@ export function AuthFilesFilesTab({
                       >
                         {provider &&
                         (state.status === "error" || state.error) ? (
-                          <p className="truncate text-xs font-semibold text-rose-700 dark:text-rose-200">
-                            {translateQuotaText(
+                          <div className="mb-2 min-w-0">
+                            {renderQuotaErrorBadge(
                               state.error ?? t("common.error"),
                             )}
-                          </p>
+                          </div>
                         ) : null}
 
                         {!provider && slots.length === 0 ? (

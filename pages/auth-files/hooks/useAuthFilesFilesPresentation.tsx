@@ -508,6 +508,40 @@ export function useAuthFilesFilesPresentation({
     [formatQuotaResetTextCompact, t, translateQuotaText],
   );
 
+  const resolveQuotaErrorBadgeLabel = useCallback(
+    (errorText: string) => {
+      const translated = translateQuotaText(errorText);
+      const statusMatch = translated.match(/^(\d{3})\b/);
+      if (statusMatch) {
+        return t("auth_files.restriction_http_label", { status: statusMatch[1] });
+      }
+      return t("common.error");
+    },
+    [t, translateQuotaText],
+  );
+
+  const renderQuotaErrorBadge = useCallback(
+    (errorText: string): ReactNode => {
+      const detail = translateQuotaText(errorText || t("common.error"));
+      const label = resolveQuotaErrorBadgeLabel(detail);
+      return (
+        <HoverTooltip content={detail} placement="top" className="max-w-full">
+          <span
+            data-testid="auth-file-quota-error-badge"
+            className={[
+              "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-semibold tabular-nums",
+              RESTRICTION_TONE_CLASSES.danger,
+            ].join(" ")}
+          >
+            <AlertTriangle size={11} className="shrink-0" />
+            <span className="min-w-0 truncate">{label}</span>
+          </span>
+        </HoverTooltip>
+      );
+    },
+    [resolveQuotaErrorBadgeLabel, t, translateQuotaText],
+  );
+
   const renderQuotaHoverContent = useCallback(
     (state: QuotaState, options?: { suppressItemMeta?: boolean }) => {
       const items = Array.isArray(state.items) ? (state.items as QuotaItem[]) : [];
@@ -516,7 +550,7 @@ export function useAuthFilesFilesPresentation({
       return (
         <div className="space-y-1">
           {hasError ? (
-            <p className="max-w-80 truncate text-xs font-semibold text-rose-700 dark:text-rose-200">
+            <p className="max-w-80 whitespace-pre-wrap break-words text-xs font-semibold text-rose-700 dark:text-rose-200">
               {translateQuotaText(state.error ?? t("common.error"))}
             </p>
           ) : null}
@@ -886,20 +920,20 @@ export function useAuthFilesFilesPresentation({
             );
           };
 
+          if (hasError && items.length === 0) {
+            return renderQuotaErrorBadge(state.error ?? t("common.error"));
+          }
+
           return (
             <HoverTooltip
-              disabled={!hasError && items.length === 0}
+              disabled={items.length === 0}
               className="w-full min-w-0"
               content={renderQuotaHoverContent(displayState, {
                 suppressItemMeta: provider === "antigravity",
               })}
             >
               <div className="w-full min-w-0">
-                {hasError && items.length === 0 ? (
-                  <p className="truncate text-xs font-semibold text-rose-700 dark:text-rose-200">
-                    {translateQuotaText(state.error ?? t("common.error"))}
-                  </p>
-                ) : items.length === 0 ? (
+                {items.length === 0 ? (
                   <span className="text-xs text-slate-400 dark:text-white/40">--</span>
                 ) : (
                   renderQuotaLinePreview(pickQuotaPreviewItem(items, quotaPreviewMode) ?? items[0])
@@ -1053,6 +1087,7 @@ export function useAuthFilesFilesPresentation({
     quotaProgressCircle,
     refreshQuota,
     requestResetCredit,
+    renderQuotaErrorBadge,
     renderRestrictionBadges,
     renderClaudeOAuthHealthBadges,
     renderSubscriptionBadge,
@@ -1077,6 +1112,7 @@ export function useAuthFilesFilesPresentation({
     renderClaudeOAuthHealthBadges,
     renderSubscriptionBadge,
     renderQuotaBar,
+    renderQuotaErrorBadge,
     renderFilesViewModeTabs,
     fileColumns,
   };

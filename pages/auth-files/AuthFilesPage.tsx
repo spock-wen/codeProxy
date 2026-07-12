@@ -786,12 +786,12 @@ export function AuthFilesPage() {
       ) ?? null)
     : null;
   const {
-    translateQuotaText,
     formatPlanTypeLabel,
     renderRestrictionBadges,
     renderClaudeOAuthHealthBadges,
     renderSubscriptionBadge,
     renderQuotaBar,
+    renderQuotaErrorBadge,
     renderFilesViewModeTabs,
     fileColumns,
   } = useAuthFilesFilesPresentation({
@@ -893,11 +893,11 @@ export function AuthFilesPage() {
         resolveAuthFileStats={resolveAuthFileStats}
         toggleFileSelection={toggleFileSelection}
         formatPlanTypeLabel={formatPlanTypeLabel}
-        translateQuotaText={translateQuotaText}
         renderRestrictionBadges={renderRestrictionBadges}
         renderClaudeOAuthHealthBadges={renderClaudeOAuthHealthBadges}
         renderSubscriptionBadge={renderSubscriptionBadge}
         renderQuotaBar={renderQuotaBar}
+        renderQuotaErrorBadge={renderQuotaErrorBadge}
         openTagsEditor={(file) => setTagsEditorFileName(file.name)}
         openDetail={openDetailWithQuotaRefresh}
         downloadAuthFile={downloadAuthFile}
