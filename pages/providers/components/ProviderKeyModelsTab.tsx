@@ -13,7 +13,6 @@ import {
   type ModelEntryDraft,
 } from "../ModelInputList";
 import { ExcludedModelsEditor } from "./ExcludedModelsEditor";
-import { OpenAIModelDiscoveryPanel } from "./OpenAIModelDiscoveryPanel";
 
 type ModelAccessRow = { id: string; owned_by?: string };
 
@@ -51,13 +50,6 @@ interface ProviderKeyModelsTabProps {
   setKeyDraft: React.Dispatch<React.SetStateAction<ProviderKeyDraft>>;
   editKeyExcludedCount: number;
   editKeyEnabledToggle: (checked: boolean) => void;
-  /** Live /models discovery for Claude & Codex provider keys (aligned with OpenAI). */
-  discovering?: boolean;
-  discoverModels?: () => Promise<void>;
-  applyDiscoveredModels?: () => void;
-  discoveredModels?: { id: string; owned_by?: string }[];
-  discoverSelected?: Set<string>;
-  setDiscoverSelected?: (value: React.SetStateAction<Set<string>>) => void;
 }
 
 export function ProviderKeyModelsTab({
@@ -88,21 +80,10 @@ export function ProviderKeyModelsTab({
   setKeyDraft,
   editKeyExcludedCount,
   editKeyEnabledToggle,
-  discovering = false,
-  discoverModels,
-  applyDiscoveredModels,
-  discoveredModels = [],
-  discoverSelected = new Set(),
-  setDiscoverSelected,
 }: ProviderKeyModelsTabProps) {
   const { t } = useTranslation();
   const isOllamaCloud = editKeyType === "ollama-cloud";
   const isModelAccessProvider = isOpenCodeGo || isCline || isOllamaCloud;
-  const supportsLiveDiscovery =
-    editKeyType === "claude" &&
-    typeof discoverModels === "function" &&
-    typeof applyDiscoveredModels === "function" &&
-    typeof setDiscoverSelected === "function";
   const modelAccessTitle = isCline
     ? t("providers.cline_models_title")
     : isOllamaCloud
@@ -372,22 +353,6 @@ export function ProviderKeyModelsTab({
           </p>
         )}
       </SectionCard>
-
-      {supportsLiveDiscovery ? (
-        <SectionCard>
-          <OpenAIModelDiscoveryPanel
-            discovering={discovering}
-            discoverModels={discoverModels!}
-            applyDiscoveredModels={applyDiscoveredModels!}
-            discoveredModels={discoveredModels}
-            discoverSelected={discoverSelected}
-            setDiscoverSelected={setDiscoverSelected!}
-          />
-          <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
-            {t("providers.claude_models_discovery_hint")}
-          </p>
-        </SectionCard>
-      ) : null}
 
       <ExcludedModelsEditor
         count={editKeyExcludedCount}

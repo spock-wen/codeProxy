@@ -2,7 +2,6 @@ import { describe, expect, test } from "vitest";
 import {
   buildOpenAIDraft,
   buildProviderKeyDraft,
-  buildProviderModelsEndpoint,
   maskApiKey,
   normalizeDiscoveredModels,
 } from "@pages/providers/providers-helpers";
@@ -111,23 +110,6 @@ describe("providers helpers", () => {
         ],
       }),
     ).toEqual([{ id: "gpt-4.1", owned_by: "openai" }, { id: "gpt-4o-mini" }]);
-  });
-
-  test("normalizes Claude payloads via models field", () => {
-    expect(
-      normalizeDiscoveredModels({
-        models: [{ id: "claude-sonnet-4-5", display_name: "Sonnet" }],
-      }),
-    ).toEqual([{ id: "claude-sonnet-4-5" }]);
-  });
-
-  test("builds Claude /models endpoints with defaults", () => {
-    expect(buildProviderModelsEndpoint("claude", "")).toBe(
-      "https://api.anthropic.com/v1/models",
-    );
-    expect(buildProviderModelsEndpoint("claude", "https://gw.example/v1")).toBe(
-      "https://gw.example/v1/models",
-    );
   });
 
   test("normalizes discovered models from a JSON string payload", () => {
