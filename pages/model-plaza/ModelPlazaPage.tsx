@@ -426,17 +426,14 @@ export function ModelPlazaPage() {
       {vendorStats.length > 0 && !loading ? (
         <div
           data-testid="model-plaza-tabs-sticky"
-          className="sticky top-0 z-20 -mx-4 bg-[var(--pl-bg)] px-4 py-2.5 sm:-mx-6 sm:px-6"
+          className="sticky top-0 z-20 py-2.5"
         >
           <Tabs
             value={tabValue}
             onValueChange={(next) => setSelectedVendor(next as VendorFilter)}
             size="sm"
           >
-            <TabsList
-              aria-label={t("model_plaza.vendor_tabs")}
-              className="max-w-full !bg-transparent dark:!bg-transparent"
-            >
+            <TabsList aria-label={t("model_plaza.vendor_tabs")} className="max-w-full">
               <TabsTrigger value="all">
                 <Layers size={12} aria-hidden="true" />
                 {t("common.all", { defaultValue: "All" })}

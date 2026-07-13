@@ -262,11 +262,15 @@ describe("ModelPlazaPage", () => {
     const sticky = screen.getByTestId("model-plaza-tabs-sticky");
     expect(sticky.className).toMatch(/(?:^|\s)sticky(?:\s|$)/);
     expect(sticky.className).toMatch(/(?:^|\s)top-0(?:\s|$)/);
-    expect(sticky.className).toMatch(/bg-\[var\(--pl-bg\)\]/);
+    // no full-width outer chrome bar (border / solid page paint / blur)
     expect(sticky.className).not.toMatch(/border-b/);
     expect(sticky.className).not.toMatch(/backdrop-blur/);
+    expect(sticky.className).not.toMatch(/bg-\[var\(--pl-bg\)\]/);
+    expect(sticky.className).not.toMatch(/bg-white/);
+    // TabsList keeps its default gray pill track
     const tabList = screen.getByRole("tablist", { name: /filter by vendor/i });
-    expect(tabList.className).toMatch(/!bg-transparent/);
+    expect(tabList.className).not.toMatch(/!bg-transparent/);
+    expect(tabList.className).toMatch(/bg-\[#EBEBEC\]/);
     // overflow-x-hidden on an ancestor computes overflow-y as auto and breaks sticky
     expect(container.firstElementChild?.className ?? "").not.toMatch(/overflow-x-hidden/);
   });
