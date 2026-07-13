@@ -88,8 +88,9 @@ export const authFilesApi = {
     options?: { force?: boolean },
   ): Promise<{ id: string; display_name?: string; type?: string; owned_by?: string }[]> => {
     const params: Record<string, string> = { name };
-    // refresh=1 asks the backend to re-fetch live upstream /models for
-    // claude/codex (and other live-capable providers) and update the registry.
+    // refresh=1 asks the backend to re-fetch live upstream /models for discovery.
+    // xai/antigravity may update the registry; claude/codex return upstream lists
+    // without replacing the static registry catalog.
     if (options?.force) {
       params.refresh = "1";
     }
