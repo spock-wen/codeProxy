@@ -18,9 +18,13 @@ describe("dashboard card composition", () => {
     expect(source).toContain("ChartLegend");
     expect(source).toContain("useInterval");
     expect(source).toContain("summary?.trends");
-    expect(source).toContain("const { stats, connected } = useSystemStats(5)");
-    expect(source).toContain("rpm={stats?.total_rpm ?? 0}");
-    expect(source).toContain("tpm={stats?.total_tpm ?? 0}");
+    expect(source).toContain('can("system.status.read")');
+    expect(source).toContain("useSystemStats(5, canViewSystemMonitor)");
+    expect(source).toContain("rpm={tenantRpm}");
+    expect(source).toContain("tpm={tenantTpm}");
+    expect(source).toContain("canViewSystemMonitor");
+    expect(source).toContain("allTenantsScope");
+    expect(source).toContain("throughput_all_tenants_hint");
     expect(source).toContain("meta.generated_at");
     expect(source).toContain('<EChart option={option} className="h-10" overflowVisible />');
     expect(source).toContain("}, 5000);");

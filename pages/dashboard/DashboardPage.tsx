@@ -10,6 +10,7 @@ import {
 import { Trans, useTranslation } from "react-i18next";
 import {
   Activity,
+  CircleAlert,
   Database,
   DollarSign,
   RefreshCw,
@@ -32,6 +33,7 @@ import {
   getCompactNumberParts,
   type CompactNumberOptions,
 } from "@code-proxy/domain";
+import { useAuth } from "@app/providers/AuthProvider";
 import { SystemMonitorSection } from "./SystemMonitorSection";
 import { useSystemStats } from "./useSystemStats";
 import { AnimatedNumber } from "@code-proxy/ui";
@@ -128,7 +130,7 @@ const formatThroughputValue = (value: number) =>
   throughputNumberFormatter.format(Number.isFinite(value) ? value : 0);
 const formatRate = (rate: number) => `${rate.toFixed(2)}%`;
 const PANEL_SURFACE =
-  "rounded-[18px] border border-slate-200/85 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.05)] dark:border-neutral-800 dark:bg-neutral-950/85 dark:shadow-[0_10px_26px_rgba(0,0,0,0.28)]";
+  "rounded-2xl border border-slate-200/85 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.05)] dark:border-neutral-800 dark:bg-neutral-950/85 dark:shadow-[0_10px_26px_rgba(0,0,0,0.28)]";
 
 const formatThroughputTooltip = (params: any) => {
   const items = Array.isArray(params) ? params : [params];
@@ -152,7 +154,7 @@ function createSparklineOption(points: DashboardTrendPoint[], color: string): EC
       trigger: "axis",
       borderWidth: 0,
       backgroundColor: "rgba(15, 23, 42, 0.9)",
-      textStyle: { color: "#fff", fontSize: 11 },
+      textStyle: { color: "#fff", fontSize: 12 },
       formatter: (params: any) => {
         const first = Array.isArray(params) ? params[0] : params;
         return `${first?.axisValueLabel ?? ""}<br/>${formatDashboardTooltipNumber(Number(first?.data ?? 0))}`;
@@ -325,17 +327,17 @@ function DashboardKpiCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-[14px] ${accent.iconWrap}`}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-2xl ${accent.iconWrap}`}
         >
           <Icon size={16} className={accent.iconColor} />
         </div>
       </div>
       <div className="mt-3">
         <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{title}</p>
-        <div className="mt-2 text-[2rem] font-semibold leading-none tracking-tight text-slate-950 dark:text-white">
+        <div className="mt-2 text-3xl font-semibold leading-none tracking-tight text-slate-950 dark:text-white">
           {value}
         </div>
-        <p className="mt-2 text-[11px] text-slate-500 dark:text-white/45">{hint}</p>
+        <p className="mt-2 text-xs text-slate-500 dark:text-white/45">{hint}</p>
       </div>
       <div className="mt-auto pt-3">
         <EChart option={option} className="h-10" overflowVisible />
@@ -353,6 +355,7 @@ function ThroughputTrendChart({
   showRPM,
   showTPM,
   onToggle,
+  allTenantsScope = false,
 }: {
   title: string;
   points: DashboardThroughputPoint[];
@@ -362,6 +365,8 @@ function ThroughputTrendChart({
   showRPM: boolean;
   showTPM: boolean;
   onToggle: (key: string) => void;
+  /** Platform super-admin: series aggregates every tenant. */
+  allTenantsScope?: boolean;
 }) {
   const { t } = useTranslation();
   const option = useMemo(
@@ -369,14 +374,30 @@ function ThroughputTrendChart({
     [points, showRPM, showTPM],
   );
   const active = rpm > 0 || tpm > 0;
+  const titleNode = allTenantsScope ? (
+    <span className="inline-flex items-center gap-1.5">
+      <span>{title}</span>
+      <HoverTooltip content={t("dashboard.throughput_all_tenants_hint")} placement="top">
+        <button
+          type="button"
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full text-amber-500 transition-colors hover:bg-amber-50 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
+          aria-label={t("dashboard.throughput_all_tenants_hint")}
+        >
+          <CircleAlert size={14} strokeWidth={2.25} />
+        </button>
+      </HoverTooltip>
+    </span>
+  ) : (
+    title
+  );
 
   return (
     <Card
       className={PANEL_SURFACE}
-      title={title}
+      title={titleNode}
       actions={
         <div
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
             connected
               ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300"
               : "bg-slate-100 text-slate-400 dark:bg-neutral-800 dark:text-white/45"
@@ -393,16 +414,16 @@ function ThroughputTrendChart({
       padding="compact"
     >
       <div className="mb-3 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-[14px] bg-slate-50 px-3 py-2 dark:bg-neutral-900/70 dark:ring-1 dark:ring-white/8">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+        <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-neutral-900/70 dark:ring-1 dark:ring-white/8">
+          <div className="text-2xs font-semibold uppercase tracking-[0.18em] text-slate-400">
             RPM
           </div>
           <div className="mt-1 text-xl font-semibold tabular-nums text-blue-600 dark:text-blue-400">
             <DashboardMetricValue value={rpm} />
           </div>
         </div>
-        <div className="rounded-[14px] bg-slate-50 px-3 py-2 dark:bg-neutral-900/70 dark:ring-1 dark:ring-white/8">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+        <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-neutral-900/70 dark:ring-1 dark:ring-white/8">
+          <div className="text-2xs font-semibold uppercase tracking-[0.18em] text-slate-400">
             TPM
           </div>
           <div className="mt-1 text-xl font-semibold tabular-nums text-violet-600 dark:text-violet-400">
@@ -437,7 +458,14 @@ function ThroughputTrendChart({
 export function DashboardPage() {
   const { t } = useTranslation();
   const { notify } = useToast();
-  const { stats, connected } = useSystemStats(5);
+  const {
+    can,
+    state: { principal },
+  } = useAuth();
+  // Host-level system monitor is gated by platform permission (and thus menus/roles).
+  // Throughput: platform super-admins see all tenants; others stay tenant-scoped.
+  const canViewSystemMonitor = can("system.status.read");
+  const { stats, connected } = useSystemStats(5, canViewSystemMonitor);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const summaryRef = useRef<DashboardSummary | null>(null);
   const [range, setRange] = useState<DashboardRange>(7);
@@ -492,6 +520,12 @@ export function DashboardPage() {
     () => trends?.throughput_series ?? [],
     [trends?.throughput_series],
   );
+  // Latest point is a rolling last-60s window from the API (not an empty new calendar minute).
+  const latestThroughput = throughputSeries[throughputSeries.length - 1];
+  const tenantRpm = latestThroughput?.rpm ?? 0;
+  const tenantTpm = latestThroughput?.tpm ?? 0;
+  const throughputAllTenants =
+    meta.throughput_scope === "all_tenants" || Boolean(principal?.platform_admin);
 
   const totalRequestOption = useMemo(
     () => createSparklineOption(trends?.request_volume ?? [], "#2563eb"),
@@ -519,13 +553,13 @@ export function DashboardPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-[2rem] font-semibold tracking-tight text-slate-950 text-balance dark:text-white">
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-950 text-balance dark:text-white">
             {t("dashboard.heading")}
           </h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-white/55">
             {t("dashboard.hero_subtitle")}
           </p>
-          <p className="mt-2 text-[11px] text-slate-400 dark:text-white/40">
+          <p className="mt-2 text-xs text-slate-400 dark:text-white/40">
             {t("dashboard.overview_hint", { time: generatedAt })}
           </p>
         </div>
@@ -653,20 +687,24 @@ export function DashboardPage() {
         />
       </div>
 
-      <SystemMonitorSection
-        stats={stats}
-        connected={connected}
-        apiKeyCount={summary?.counts.api_keys ?? 0}
-      />
+      {canViewSystemMonitor ? (
+        <SystemMonitorSection
+          stats={stats}
+          connected={connected}
+          apiKeyCount={summary?.counts?.api_keys ?? 0}
+        />
+      ) : null}
 
       <ThroughputTrendChart
         title={t("dashboard.throughput_title")}
         points={throughputSeries}
-        rpm={stats?.total_rpm ?? 0}
-        tpm={stats?.total_tpm ?? 0}
-        connected={connected}
+        rpm={tenantRpm}
+        tpm={tenantTpm}
+        // Series from dashboard-summary polling; latest point is rolling 60s RPM/TPM.
+        connected={false}
         showRPM={throughputLegend.rpm}
         showTPM={throughputLegend.tpm}
+        allTenantsScope={throughputAllTenants}
         onToggle={(key) =>
           setThroughputLegend((prev) => ({ ...prev, [key]: !prev[key as "rpm" | "tpm"] }))
         }

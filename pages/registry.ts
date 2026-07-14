@@ -9,6 +9,7 @@ import { authFilesRoute } from "./auth-files/route";
 import { apiKeysRoute } from "./api-keys/route";
 import { apiKeyPermissionsRoute } from "./api-key-permissions/route";
 import { modelsRoute } from "./models/route";
+import { modelPlazaRoute } from "./model-plaza/route";
 import { channelGroupsRoute } from "./channel-groups/route";
 import { configRoute } from "./config/route";
 import { logsRoute } from "./logs/route";
@@ -18,6 +19,12 @@ import { identityFingerprintRoute } from "./identity-fingerprint/route";
 import { imageGenerationRoute } from "./image-generation/route";
 import { ccswitchImportSettingsRoute } from "./ccswitch-import-settings/route";
 import { apiKeyLookupRoute } from "./api-key-lookup/route";
+import { tenantsRoute } from "./tenants/route";
+import { usersRoute } from "./users/route";
+import { rolesRoute } from "./roles/route";
+import { changePasswordRoute } from "./change-password/route";
+import { auditLogsRoute } from "./audit-logs/route";
+import { menuManagementRoute } from "./menu-management/route";
 
 export interface PageRoute {
   path: string;
@@ -28,10 +35,19 @@ export interface PageRoute {
   redirects?: Array<{ from: string; to: string }>;
   hasWildcard?: boolean;
   preload?: () => Promise<unknown>;
+  requiredPermission?: string;
+  /** Stable key for dynamic menu component binding */
+  component?: string;
 }
 
 export const pageRoutes: PageRoute[] = [
   loginRoute,
+  changePasswordRoute,
+  tenantsRoute,
+  usersRoute,
+  rolesRoute,
+  auditLogsRoute,
+  menuManagementRoute,
   dashboardRoute,
   monitorRoute,
   requestLogsRoute,
@@ -41,6 +57,7 @@ export const pageRoutes: PageRoute[] = [
   apiKeysRoute,
   apiKeyPermissionsRoute,
   modelsRoute,
+  modelPlazaRoute,
   channelGroupsRoute,
   configRoute,
   logsRoute,

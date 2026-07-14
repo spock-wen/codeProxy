@@ -4,7 +4,9 @@ import {
   buildProviderKeyDraft,
   maskApiKey,
   normalizeDiscoveredModels,
-  validateProviderModelOwnership,
+  buildProviderModelsEndpoint,
+  DEFAULT_CLAUDE_MODELS_BASE,
+  DEFAULT_CODEX_MODELS_BASE,
 } from "@pages/providers/providers-helpers";
 import {
   buildCandidateUsageSourceIds,
@@ -130,33 +132,6 @@ describe("providers helpers", () => {
     ]);
   });
 
-  test("validates OpenCode Go and ClinePass model ownership", () => {
-    expect(
-      validateProviderModelOwnership("opencode-go", {
-        models: [{ name: "cline-pass/glm-5.2" }],
-      }),
-    ).toContain("OpenCode Go models cannot use cline-pass model IDs");
-    expect(
-      validateProviderModelOwnership("opencode-go", {
-        models: [{ name: "glm-5.2" }],
-        excludedModels: ["*"],
-        visionFallbackModel: "qwen3.5-plus",
-      }),
-    ).toBeNull();
-    expect(
-      validateProviderModelOwnership("cline", {
-        models: [{ name: "glm-5.2" }],
-      }),
-    ).toContain("ClinePass models must use cline-pass model IDs");
-    expect(
-      validateProviderModelOwnership("cline", {
-        models: [{ name: "cline-pass/glm-5.2" }],
-        excludedModels: ["*", "cline-pass/minimax-m3"],
-        visionFallbackModel: "cline-pass/mimo-v2.5-pro",
-      }),
-    ).toBeNull();
-  });
-
   test("normalizes usage sources and matches raw plus masked api key candidates", () => {
     const masked = maskApiKey("sk-openai-provider-1234567890");
     const normalized = normalizeUsageSourceId(
@@ -175,4 +150,35 @@ describe("providers helpers", () => {
     expect(candidates.some((entry) => entry === normalized)).toBe(true);
     expect(normalizeUsageSourceId(masked, maskApiKey)).toBe(`m:${masked}`);
   });
+
+  test("builds Claude and Codex /models endpoints with defaults", () => {
+    expect(buildProviderModelsEndpoint("claude", "")).toBe(
+      `${DEFAULT_CLAUDE_MODELS_BASE}/v1/models`,
+    );
+    expect(buildProviderModelsEndpoint("codex", "")).toBe(
+      `${DEFAULT_CODEX_MODELS_BASE}/v1/models`,
+    );
+    expect(buildProviderModelsEndpoint("claude", "https://proxy.example/v1")).toBe(
+      "https://proxy.example/v1/models",
+    );
+    expect(buildProviderModelsEndpoint("codex", "https://gateway.example")).toBe(
+      "https://gateway.example/v1/models",
+    );
+  });
+
+  test("normalizes discovered models from id and slug payloads", () => {
+    expect(
+      normalizeDiscoveredModels({
+        models: [
+          { slug: "gpt-5.6-sol", owned_by: "openai" },
+          { id: "claude-sonnet-4", owned_by: "anthropic" },
+          { id: "gpt-5.6-sol" },
+        ],
+      }),
+    ).toEqual([
+      { id: "gpt-5.6-sol", owned_by: "openai" },
+      { id: "claude-sonnet-4", owned_by: "anthropic" },
+    ]);
+  });
+
 });

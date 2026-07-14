@@ -14,6 +14,7 @@ export type ModelVendorKey =
   | "glm"
   | "gpt"
   | "grok"
+  | "hunyuan"
   | "iflow"
   | "kiro"
   | "kimi"
@@ -104,6 +105,11 @@ export const MODEL_VENDOR_COLORS: Record<ModelVendorKey, ModelVendorTone> = {
     bg: "bg-slate-50 dark:bg-slate-900/30",
     text: "text-slate-700 dark:text-slate-300",
     border: "border-slate-200/60 dark:border-slate-700/30",
+  },
+  hunyuan: {
+    bg: "bg-blue-50 dark:bg-blue-950/20",
+    text: "text-blue-700 dark:text-blue-300",
+    border: "border-blue-200/60 dark:border-blue-800/30",
   },
   kimi: {
     bg: "bg-slate-50 dark:bg-slate-900/30",
@@ -227,6 +233,16 @@ const MODEL_VENDOR_DEFINITIONS: ModelVendorDefinition[] = [
     matches: (modelId) => startsWithAny(modelId, ["grok", "xai"]),
   },
   {
+    key: "hunyuan",
+    label: "hunyuan",
+    // Tencent Hunyuan: hunyuan-*, hy3-preview, tencent/hunyuan-*, etc.
+    matches: (modelId) =>
+      startsWithAny(modelId, ["hunyuan", "hy3", "tencent-hunyuan"]) ||
+      modelId.includes("/hunyuan") ||
+      modelId.includes("/hy3") ||
+      /^hy\d/.test(modelId),
+  },
+  {
     key: "kiro",
     label: "kiro",
     matches: (modelId) => startsWithAny(modelId, ["kiro"]),
@@ -265,11 +281,11 @@ const MODEL_VENDOR_DEFINITIONS: ModelVendorDefinition[] = [
 
 const MODEL_TAG_SIZE_CLASSES = {
   xs: {
-    wrapper: "gap-1 rounded-md px-1.5 py-0.5 text-[10px]",
+    wrapper: "gap-1 rounded-md px-1.5 py-0.5 text-2xs",
     icon: 11,
   },
   sm: {
-    wrapper: "gap-1.5 rounded-md px-2 py-0.5 text-[11px]",
+    wrapper: "gap-1.5 rounded-md px-2 py-0.5 text-xs",
     icon: 12,
   },
   md: {
@@ -427,7 +443,7 @@ export function ModelVendorStatBadge({
 }) {
   const tone = getModelVendorColor(vendorKey);
   const className = cn(
-    "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold",
+    "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-2xs font-semibold",
     tone.bg,
     active ? "ring-2 ring-indigo-500/35 ring-offset-1 ring-offset-white dark:ring-indigo-300/40 dark:ring-offset-neutral-950" : "",
     onClick ? "cursor-pointer transition hover:shadow-sm" : "",

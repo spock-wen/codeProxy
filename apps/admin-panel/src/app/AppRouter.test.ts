@@ -18,30 +18,38 @@ describe("AppRouter", () => {
     const apiKeyPermissionsRoute = readRepoModule("pages/api-key-permissions/route.tsx");
 
     expect(source).toContain("pageRoutes");
-    expect(modelsRoute).toMatch(/path:\s*"\/models"/);
-    expect(modelsRoute).toContain('redirects: [{ from: "/manage/models", to: "/models" }]');
+    expect(modelsRoute).toMatch(/path:\s*"\/models\/catalog"/);
+    expect(modelsRoute).toContain('{ from: "/manage/models", to: "/models/catalog" }');
     expect(source).not.toContain('to="/manage/models" replace');
 
-    expect(accountSecurityRoute).toMatch(/path:\s*"\/account-security"/);
+    expect(accountSecurityRoute).toMatch(/path:\s*"\/access\/ai-accounts"/);
     expect(accountSecurityRoute).toContain(
-      '{ from: "/manage/identity-fingerprint", to: "/account-security" }',
+      '{ from: "/manage/identity-fingerprint", to: "/access/ai-accounts" }',
+    );
+    expect(accountSecurityRoute).toContain(
+      '{ from: "/system/account-security", to: "/access/ai-accounts" }',
     );
 
     expect(identityRoute).toMatch(/path:\s*"\/identity-fingerprint"/);
     expect(identityRoute).toContain(
-      'redirects: [{ from: "/manage/identity-fingerprint", to: "/account-security" }]',
+      'redirects: [{ from: "/manage/identity-fingerprint", to: "/access/ai-accounts" }]',
     );
 
     expect(ccSwitchRoute).toContain("CcSwitchImportSettingsPage");
-    expect(ccSwitchRoute).toMatch(/path:\s*"\/ccswitch-import-settings"/);
+    expect(ccSwitchRoute).toMatch(/path:\s*"\/access\/ccswitch-import-settings"/);
     expect(ccSwitchRoute).toContain(
-      'redirects: [{ from: "/manage/ccswitch-import-settings", to: "/ccswitch-import-settings" }]',
+      '{ from: "/manage/ccswitch-import-settings", to: "/access/ccswitch-import-settings" }',
     );
+    // Tenant-scoped: ordinary tenants have routing.read, not platform system.config.read.
+    expect(ccSwitchRoute).toContain('requiredPermission: "routing.read"');
 
     expect(apiKeyPermissionsRoute).toContain("ApiKeyPermissionsPage");
-    expect(apiKeyPermissionsRoute).toMatch(/path:\s*"\/api-key-permissions"/);
+    expect(apiKeyPermissionsRoute).toMatch(/path:\s*"\/access\/api-key-permissions"/);
     expect(apiKeyPermissionsRoute).toContain(
-      'redirects: [{ from: "/manage/api-key-permissions", to: "/api-key-permissions" }]',
+      '{ from: "/manage/api-key-permissions", to: "/access/api-key-permissions" }',
+    );
+    expect(apiKeyPermissionsRoute).toContain(
+      '{ from: "/system/api-key-permissions", to: "/access/api-key-permissions" }',
     );
   });
 
@@ -53,7 +61,10 @@ describe("AppRouter", () => {
 
     expect(mainSource).toContain("dismissAppLoader(true)");
     expect(manageEntrySource).toContain("dismissAppLoader(true)");
+    expect(mainSource).toContain("installChunkLoadRecoveryHandlers()");
+    expect(manageEntrySource).toContain("installChunkLoadRecoveryHandlers()");
     expect(routerSource).toContain("const RouteFallback = () => null");
+    expect(routerSource).toContain("ChunkLoadErrorBoundary");
     expect(routerSource).not.toContain("PageLoader");
     expect(routerSource).not.toContain('variant="initial"');
     expect(routerSource).not.toContain('variant="inline"');

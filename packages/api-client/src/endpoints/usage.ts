@@ -128,6 +128,69 @@ const isStringRecord = (value: unknown): value is Record<string, string> =>
   !Array.isArray(value) &&
   Object.values(value).every((entry) => typeof entry === "string");
 
+function asTrimmedString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/** Normalize backend channel_options; fall back to legacy plain channel names. */
+export function normalizeChannelOptions(
+  rawOptions: unknown,
+  legacyChannels?: unknown,
+): UsageChannelFilterOption[] {
+  const options: UsageChannelFilterOption[] = [];
+  const seen = new Set<string>();
+
+  if (Array.isArray(rawOptions)) {
+    for (const entry of rawOptions) {
+      if (!entry || typeof entry !== "object") continue;
+      const record = entry as Record<string, unknown>;
+      const value =
+        asTrimmedString(record.value) ||
+        asTrimmedString(record.auth_index) ||
+        asTrimmedString(record.label);
+      const label =
+        asTrimmedString(record.label) ||
+        asTrimmedString(record.value) ||
+        value;
+      if (!value || !label) continue;
+      const dedupeKey = value.toLowerCase();
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      const authTypeRaw = asTrimmedString(record.auth_type).toLowerCase();
+      const authType =
+        authTypeRaw === "oauth"
+          ? "oauth"
+          : authTypeRaw === "api" ||
+              authTypeRaw === "api_key" ||
+              authTypeRaw === "apikey"
+            ? "api"
+            : authTypeRaw || undefined;
+      options.push({
+        value,
+        label,
+        provider: asTrimmedString(record.provider) || undefined,
+        auth_type: authType,
+        auth_index: asTrimmedString(record.auth_index) || undefined,
+      });
+    }
+  }
+
+  if (options.length > 0) return options;
+
+  if (Array.isArray(legacyChannels)) {
+    for (const channel of legacyChannels) {
+      const label = asTrimmedString(channel);
+      if (!label) continue;
+      const dedupeKey = label.toLowerCase();
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      options.push({ value: label, label });
+    }
+  }
+
+  return options;
+}
+
 export const usageApi = {
   async getUsage(): Promise<UsageData> {
     const response = await apiClient.get<
@@ -341,6 +404,7 @@ export const usageApi = {
         api_key_names: isStringRecord(filters?.api_key_names) ? filters.api_key_names : {},
         models: Array.isArray(filters?.models) ? filters.models : [],
         channels: Array.isArray(filters?.channels) ? filters.channels : [],
+        channel_options: normalizeChannelOptions(filters?.channel_options, filters?.channels),
         statuses: Array.isArray(filters?.statuses) ? filters.statuses : ["success", "failed"],
       },
       stats: {
@@ -352,6 +416,7 @@ export const usageApi = {
       },
     };
   },
+
 
   clearUsageLogs(
     payload: ClearUsageLogsPayload,
@@ -464,6 +529,8 @@ export interface DashboardSummary {
   };
   meta?: {
     generated_at?: string;
+    /** "tenant" for normal users; "all_tenants" for platform super-admins. */
+    throughput_scope?: "tenant" | "all_tenants" | string;
   };
   counts: {
     api_keys: number;
@@ -489,6 +556,14 @@ export interface DashboardThroughputPoint {
   tpm: number;
 }
 
+export interface UsageChannelFilterOption {
+  value: string;
+  label: string;
+  provider?: string;
+  auth_type?: "oauth" | "api" | string;
+  auth_index?: string;
+}
+
 export interface UsageLogItem {
   id: number;
   timestamp: string;
@@ -499,6 +574,8 @@ export interface UsageLogItem {
   vision_fallback_model?: string;
   source: string;
   channel_name: string;
+  provider?: string;
+  auth_type?: "oauth" | "api" | string;
   auth_index: string;
   failed: boolean;
   streaming?: boolean;
@@ -523,6 +600,7 @@ export interface UsageLogsResponse {
     api_key_names: Record<string, string>;
     models: string[];
     channels: string[];
+    channel_options: UsageChannelFilterOption[];
     statuses: string[];
   };
   stats: {
@@ -539,8 +617,10 @@ type UsageLogsFilterPayload = {
   api_key_names?: unknown;
   models?: unknown;
   channels?: unknown;
+  channel_options?: unknown;
   statuses?: unknown;
 };
+
 
 type UsageLogsPayload = {
   items?: UsageLogItem[] | null;

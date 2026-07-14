@@ -6,7 +6,15 @@ export { Reveal } from "./feedback/Reveal";
 export { ToastProvider, useToast } from "./feedback/ToastProvider";
 
 export { DataTable } from "./data-table/DataTable";
-export type { DataTableColumn, DataTableProps } from "./data-table/DataTable.types";
+export type {
+  DataTableColumn,
+  DataTableColumnSort,
+  DataTableProps,
+  DataTableRowsChangeAction,
+  DataTableSortDirection,
+  DataTableSortState,
+  DataTableSortValue,
+} from "./data-table/DataTable.types";
 export {
   TableCellOverflowTooltip,
   extractTableCellTextContent,
@@ -28,6 +36,7 @@ export type {
 } from "./navigation/PaginationBar";
 
 export { ConfirmModal } from "./overlays/ConfirmModal";
+export { Drawer } from "./overlays/Drawer";
 export { ImagePreviewOverlay } from "./overlays/ImagePreviewOverlay";
 export { Modal } from "./overlays/Modal";
 export {
@@ -43,7 +52,19 @@ export { Button, buttonClassName } from "./primitives/Button";
 export { Card } from "./primitives/Card";
 export { Checkbox } from "./primitives/Checkbox";
 export { DateTimePicker } from "./primitives/DateTimePicker";
+export { DropdownMenu } from "./primitives/DropdownMenu";
+export type { DropdownMenuRootProps } from "./primitives/DropdownMenu";
 export { Fieldset } from "./primitives/Fieldset";
+export { Form, FormField, FormLabel, FormControl, FormDescription, FormError } from "./primitives/Form";
+export type {
+  FormProps,
+  FormFieldProps,
+  FormFieldOrientation,
+  FormLabelProps,
+  FormControlProps,
+  FormDescriptionProps,
+  FormErrorProps,
+} from "./primitives/Form";
 export { TextInput } from "./primitives/Input";
 export { MultiSelect } from "./primitives/MultiSelect";
 export type { MultiSelectOption } from "./primitives/MultiSelect";
@@ -58,6 +79,8 @@ export type { SearchableSelectOption, SearchableSelectProps } from "./primitives
 export { Select } from "./primitives/Select";
 export type { SelectOption, SelectProps } from "./primitives/Select";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./primitives/Tabs";
+export { Textarea } from "./primitives/Textarea";
+export type { TextareaProps } from "./primitives/Textarea";
 export { ToggleSwitch } from "./primitives/ToggleSwitch";
 
 export { ThemeProvider, useTheme, ThemeToggleButton } from "./theme/ThemeProvider";
@@ -77,6 +100,7 @@ export {
 } from "./utils/controlStyles";
 export {
   cn,
+  floatingPanelSurface,
   getSelectTriggerBase,
   selectTriggerBase,
   selectTriggerOpen,

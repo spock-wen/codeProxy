@@ -6,7 +6,13 @@ import type {
   OAuthStartResponse,
 } from "../dto/types";
 
-const WEBUI_SUPPORTED: OAuthProvider[] = ["codex", "anthropic", "antigravity", "gemini-cli"];
+const WEBUI_SUPPORTED: OAuthProvider[] = [
+  "codex",
+  "anthropic",
+  "antigravity",
+  "xai",
+  "gemini-cli",
+];
 const CALLBACK_PROVIDER_MAP: Partial<Record<OAuthProvider, string>> = {
   "gemini-cli": "gemini",
 };
@@ -14,9 +20,20 @@ const CALLBACK_PROVIDER_MAP: Partial<Record<OAuthProvider, string>> = {
 export interface OAuthProxyOptions {
   projectId?: string;
   proxyId?: string;
+  usingApi?: boolean;
 }
 
-const normalizeString = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
+export type OAuthCallbackSubmission =
+  | string
+  | {
+      redirectUrl?: string;
+      code?: string;
+      state?: string;
+      error?: string;
+    };
+
+const normalizeString = (value: unknown): string =>
+  typeof value === "string" ? value.trim() : "";
 
 export const oauthApi = {
   startAuth: (provider: OAuthProvider, options?: OAuthProxyOptions) => {
@@ -29,25 +46,46 @@ export const oauthApi = {
     if (provider === "gemini-cli" && projectId) {
       params.project_id = projectId;
     }
+    if (provider === "xai") {
+      params.using_api = options?.usingApi === true;
+    }
     if (proxyId) {
       params.proxy_id = proxyId;
     }
-    return apiClient.get<OAuthStartResponse>(`/${provider}-auth-url`, { params });
+    return apiClient.get<OAuthStartResponse>(`/${provider}-auth-url`, {
+      params,
+    });
   },
   getAuthStatus: (state: string) =>
-    apiClient.get<{ status: "ok" | "wait" | "error"; error?: string }>("/get-auth-status", {
-      params: { state },
-    }),
+    apiClient.get<{ status: "ok" | "wait" | "error"; error?: string }>(
+      "/get-auth-status",
+      {
+        params: { state },
+      },
+    ),
   submitCallback: (
     provider: OAuthProvider,
-    redirectUrl: string,
+    callback: OAuthCallbackSubmission,
     options?: { proxyId?: string },
   ) => {
     const callbackProvider = CALLBACK_PROVIDER_MAP[provider] ?? provider;
     const proxyId = normalizeString(options?.proxyId);
+    const redirectUrl =
+      typeof callback === "string"
+        ? callback.trim()
+        : normalizeString(callback.redirectUrl);
+    const code =
+      typeof callback === "string" ? "" : normalizeString(callback.code);
+    const state =
+      typeof callback === "string" ? "" : normalizeString(callback.state);
+    const error =
+      typeof callback === "string" ? "" : normalizeString(callback.error);
     return apiClient.post<OAuthCallbackResponse>("/oauth-callback", {
       provider: callbackProvider,
-      redirect_url: redirectUrl,
+      ...(redirectUrl ? { redirect_url: redirectUrl } : {}),
+      ...(code ? { code } : {}),
+      ...(state ? { state } : {}),
+      ...(error ? { error } : {}),
       ...(proxyId ? { proxy_id: proxyId } : {}),
     });
   },

@@ -72,6 +72,47 @@ describe("ApiClient request standardization", () => {
     expect(headers.get("X-Request-Source")).toBe("unit-test");
   });
 
+  test("parses authenticated JSON server-sent events", async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(": keep-alive\n\nid: 7\nevent: update\n"));
+        controller.enqueue(encoder.encode('data: {"run_id":3,"status":"running"}\n\n'));
+        controller.close();
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(stream, {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      }),
+    );
+    globalThis.fetch = fetchMock;
+
+    const client = new ApiClient();
+    client.setConfig({ apiBase: "http://localhost:8317", managementKey: "test-key" });
+    const events: Array<{
+      id?: string;
+      event?: string;
+      data: { run_id: number; status: string };
+    }> = [];
+    await client.streamSSE<{ run_id: number; status: string }>("/update/events", (event) =>
+      events.push(event),
+    );
+
+    expect(events).toEqual([
+      {
+        id: "7",
+        event: "update",
+        data: { run_id: 3, status: "running" },
+      },
+    ]);
+    const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    const headers = new Headers(requestInit?.headers);
+    expect(headers.get("Authorization")).toBe("Bearer test-key");
+    expect(headers.get("Accept")).toBe("text/event-stream");
+  });
+
   test("rejects absolute request paths before they can be fetched", async () => {
     const fetchMock = vi.fn();
     globalThis.fetch = fetchMock;
@@ -176,6 +217,33 @@ describe("ApiClient authentication failure handling", () => {
         "Management session is no longer valid",
       );
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener("unauthorized", onUnauthorized);
+    }
+  });
+
+  test("suspends an expired tenant session and exposes the server error code", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { code: "tenant_expired", message: "tenant expired" },
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    const client = new ApiClient();
+    client.setConfig({ apiBase: "http://localhost:8317", managementKey: "cps_test" });
+    let code = "";
+    const onUnauthorized = (event: Event) => {
+      code = (event as CustomEvent<{ code?: string }>).detail?.code ?? "";
+    };
+    window.addEventListener("unauthorized", onUnauthorized);
+    try {
+      await expect(client.get("/dashboard-summary")).rejects.toThrow("tenant expired");
+      expect(code).toBe("tenant_expired");
+      await expect(client.get("/auth-files")).rejects.toThrow(
+        "Management session is no longer valid",
+      );
     } finally {
       window.removeEventListener("unauthorized", onUnauthorized);
     }

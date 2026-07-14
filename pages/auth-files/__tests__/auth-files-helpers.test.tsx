@@ -6,6 +6,7 @@ import {
   AUTH_FILES_DATA_CACHE_KEY,
   AUTH_FILES_UI_STATE_KEY,
   buildUsageIndex,
+  DEFAULT_CACHE_TENANT_ID,
   pickQuotaPreviewItem,
   readAuthFilesDataCache,
   readAuthFilesUiState,
@@ -21,7 +22,10 @@ import {
   resolveFileType,
   resolveAuthFileStats,
   sanitizeAuthFilesForCache,
+  setActiveCacheTenantId,
+  setCacheTenantResolver,
   shouldShowAuthFileDisplayTag,
+  shouldShowAuthFilePlanBadge,
   writeAuthFilesDataCache,
   writeAuthFilesUiState,
 } from "@code-proxy/domain";
@@ -67,6 +71,8 @@ describe("Auth Files helper coverage", () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
+    setCacheTenantResolver(null);
+    setActiveCacheTenantId(DEFAULT_CACHE_TENANT_ID);
     mocks.getOauthExcludedModels.mockReset();
     mocks.getOauthModelAlias.mockReset();
     mocks.downloadText.mockReset();
@@ -87,6 +93,50 @@ describe("Auth Files helper coverage", () => {
   afterEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
+    setCacheTenantResolver(null);
+    setActiveCacheTenantId(DEFAULT_CACHE_TENANT_ID);
+  });
+
+  test("keeps auth-files UI state isolated per tenant and migrates legacy unscoped payload", () => {
+    // Legacy unscoped v3 shape migrates into the default tenant only.
+    window.localStorage.setItem(
+      AUTH_FILES_UI_STATE_KEY,
+      JSON.stringify({ tab: "files", filter: "xai", search: "old", page: 2 }),
+    );
+    setActiveCacheTenantId(DEFAULT_CACHE_TENANT_ID);
+    expect(readAuthFilesUiState()).toEqual({
+      tab: "files",
+      filter: "xai",
+      search: "old",
+      page: 2,
+    });
+    setActiveCacheTenantId("tenant-b");
+    expect(readAuthFilesUiState()).toBeNull();
+
+    writeAuthFilesUiState(
+      { tab: "files", filter: "codex", search: "tenant-a", page: 1 },
+      "tenant-a",
+    );
+    writeAuthFilesUiState(
+      { tab: "files", filter: "qwen", search: "tenant-b", page: 4 },
+      "tenant-b",
+    );
+    expect(readAuthFilesUiState("tenant-a")).toEqual({
+      tab: "files",
+      filter: "codex",
+      search: "tenant-a",
+      page: 1,
+    });
+    expect(readAuthFilesUiState("tenant-b")).toEqual({
+      tab: "files",
+      filter: "qwen",
+      search: "tenant-b",
+      page: 4,
+    });
+    // Writing for one tenant must not clobber the other bucket.
+    writeAuthFilesUiState({ filter: "gemini", page: 1 }, "tenant-a");
+    expect(readAuthFilesUiState("tenant-b")?.filter).toBe("qwen");
+    expect(readAuthFilesUiState("tenant-a")?.filter).toBe("gemini");
   });
 
   test("round-trips ui state and sanitized session cache", () => {
@@ -96,6 +146,7 @@ describe("Auth Files helper coverage", () => {
       search: "oauth",
       page: 3,
     });
+    expect(window.localStorage.getItem(AUTH_FILES_UI_STATE_KEY)).toContain('"byTenant"');
     expect(window.localStorage.getItem(AUTH_FILES_UI_STATE_KEY)).toContain('"filter":"codex"');
     expect(readAuthFilesUiState()).toEqual({
       tab: "files",
@@ -294,6 +345,7 @@ describe("Auth Files helper coverage", () => {
     expect(JSON.stringify(sanitized)).not.toContain("should-not-persist");
 
     writeAuthFilesDataCache({
+      tenantId: "tenant-a",
       savedAtMs: 123,
       files: sanitized,
       quotaByFileName: {
@@ -306,7 +358,9 @@ describe("Auth Files helper coverage", () => {
       },
     });
     expect(window.localStorage.getItem(AUTH_FILES_DATA_CACHE_KEY)).toContain('"savedAtMs":123');
-    expect(readAuthFilesDataCache()).toEqual({
+    expect(window.localStorage.getItem(AUTH_FILES_DATA_CACHE_KEY)).toContain("byTenant");
+    expect(readAuthFilesDataCache("tenant-a")).toEqual({
+      tenantId: "tenant-a",
       savedAtMs: 123,
       files: sanitized,
       quotaByFileName: {
@@ -317,6 +371,41 @@ describe("Auth Files helper coverage", () => {
           items: [{ key: "code_5h", label: "m_quota.code_5h", percent: 42, resetAtMs: 789 }],
         },
       },
+    });
+    // Different tenant must not see tenant-a's list/quota payload.
+    expect(readAuthFilesDataCache("tenant-b")).toBeNull();
+  });
+
+  test("keeps xAI identity fingerprint summary in sanitized cache", () => {
+    const [file] = sanitizeAuthFilesForCache([
+      {
+        name: "xai.json",
+        type: "xai",
+        provider: "xai",
+        auth_index: "xai-auth",
+        identity_fingerprint_summary: {
+          provider: "xai",
+          account_key: "xai-account",
+          enabled: true,
+          primary_source: "learned",
+          learned: true,
+          learned_fields: 2,
+          effective_fields: 2,
+          source_counts: { learned: 2 },
+          client_product: "grok-cli",
+          version: "0.3.1",
+        },
+      } as AuthFileItem,
+    ]);
+
+    expect(file?.identity_fingerprint_summary).toMatchObject({
+      provider: "xai",
+      account_key: "xai-account",
+      enabled: true,
+      learned_fields: 2,
+      effective_fields: 2,
+      client_product: "grok-cli",
+      version: "0.3.1",
     });
   });
 
@@ -390,6 +479,54 @@ describe("Auth Files helper coverage", () => {
         "codex",
       ),
     ).toBe(true);
+  });
+
+  test("always shows quota-derived plan badges even when display tags omit them", () => {
+    // xAI SuperGrok is resolved from monthly credits, not auth-file default tags.
+    expect(
+      shouldShowAuthFilePlanBadge(
+        {
+          name: "xai.json",
+          type: "xai",
+          default_tags: ["xai"],
+          display_tags: ["xai"],
+        } as AuthFileItem,
+        "supergrok",
+      ),
+    ).toBe(true);
+    expect(
+      shouldShowAuthFilePlanBadge(
+        {
+          name: "xai.json",
+          type: "xai",
+          default_tags: ["xai"],
+          display_tags: [],
+        } as AuthFileItem,
+        "supergrok-heavy",
+      ),
+    ).toBe(true);
+    // Codex plan tags still respect display_tags / hidden defaults.
+    expect(
+      shouldShowAuthFilePlanBadge(
+        {
+          name: "codex.json",
+          default_tags: ["codex", "pro"],
+          display_tags: ["codex"],
+        } as AuthFileItem,
+        "pro",
+      ),
+    ).toBe(false);
+    expect(
+      shouldShowAuthFilePlanBadge(
+        {
+          name: "codex.json",
+          default_tags: ["codex", "pro"],
+          display_tags: ["codex", "pro"],
+        } as AuthFileItem,
+        "pro",
+      ),
+    ).toBe(true);
+    expect(shouldShowAuthFilePlanBadge({ name: "xai.json" } as AuthFileItem, null)).toBe(false);
   });
 
   test("drops stale display tags that no longer match current default or custom tags", () => {
@@ -469,7 +606,32 @@ describe("Auth Files helper coverage", () => {
     );
   });
 
-  test("shows auth-level quota recovery records as 429 restriction badges", () => {
+  
+  test("shows a clear reason for 429 badges without status_message", () => {
+    const file = {
+      name: "xai.json",
+      restrictions: [
+        {
+          scope: "auth",
+          http_status: 429,
+          quota_exceeded: true,
+          reason: "quota",
+          status: "error",
+          unavailable: true,
+        },
+      ],
+    } as AuthFileItem;
+
+    expect(resolveAuthFileRestrictionBadges(file, Date.now())).toEqual([
+      expect.objectContaining({
+        label: "429 Error",
+        reason: "rate limited (HTTP 429)",
+        quotaLimited: true,
+      }),
+    ]);
+  });
+
+test("shows auth-level quota recovery records as 429 restriction badges", () => {
     const file = {
       name: "codex.json",
       restrictions: [
@@ -494,6 +656,7 @@ describe("Auth Files helper coverage", () => {
         quotaWindow: "5h",
         quotaWindowMinutes: 300,
         reason: "usage limit",
+        quotaLimited: true,
         recoverAtMs: Date.parse("2026-05-06T13:00:00.000Z"),
       }),
     ]);

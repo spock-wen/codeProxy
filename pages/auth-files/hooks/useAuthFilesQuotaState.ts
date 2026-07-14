@@ -8,7 +8,13 @@ import {
   type SetStateAction,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { authFilesApi, quotaApi, usageApi } from "@code-proxy/api-client";
+import {
+  authFilesApi,
+  extractApiErrorCode,
+  isApiClientError,
+  quotaApi,
+  usageApi,
+} from "@code-proxy/api-client";
 import type { AuthFileItem } from "@code-proxy/api-client";
 import { useInterval, useLocalStorage } from "@code-proxy/ui";
 import {
@@ -25,6 +31,7 @@ import {
   AUTH_FILES_FILES_VIEW_MODE_KEY,
   AUTH_FILES_QUOTA_AUTO_REFRESH_KEY,
   AUTH_FILES_QUOTA_PREVIEW_KEY,
+  getActiveCacheTenantId,
   normalizeAuthIndexValue,
   normalizeQuotaAutoRefreshMs,
   parseAdditionalQuotaWindowLabel,
@@ -44,6 +51,21 @@ interface UseAuthFilesQuotaStateOptions {
   refreshUsageDataForFiles?: (files: AuthFileItem[]) => Promise<unknown>;
 }
 
+/** Auth / tenant-scope failures that must stop quota auto-refresh storms. */
+export function isFatalQuotaRefreshError(error: unknown): boolean {
+  if (!isApiClientError(error)) return false;
+  if (error.status === 401 || error.status === 403) return true;
+  if (error.isAuthError) return true;
+  const code = extractApiErrorCode(error.payload);
+  return (
+    code === "permission_denied" ||
+    code === "tenant_resource_scope_unavailable" ||
+    code === "session_expired" ||
+    code === "session_revoked" ||
+    code === "invalid_credentials"
+  );
+}
+
 export function useAuthFilesQuotaState({
   tab,
   pageItems,
@@ -54,7 +76,12 @@ export function useAuthFilesQuotaState({
   refreshUsageDataForFiles,
 }: UseAuthFilesQuotaStateOptions) {
   const { t } = useTranslation();
-  const initialDataCache = useMemo(() => readAuthFilesDataCache(), []);
+  const cacheTenantId = getActiveCacheTenantId();
+  const initialDataCache = useMemo(
+    () => readAuthFilesDataCache(cacheTenantId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-seed only
+    [],
+  );
 
   const [connectivityState, setConnectivityState] = useState<
     Map<string, { loading: boolean; latencyMs: number | null; error: boolean }>
@@ -67,6 +94,9 @@ export function useAuthFilesQuotaState({
   const quotaByFileNameRef = useRef<Record<string, QuotaState>>(quotaByFileName);
   const quotaWarmupAttemptRef = useRef<Map<string, number>>(new Map());
   const visibleScopeKeyRef = useRef<string | null>(null);
+  // After 401/403 (missing providers.test or tenant scope), stop auto-refresh to avoid storms.
+  const [quotaRefreshHalted, setQuotaRefreshHalted] = useState(false);
+  const quotaRefreshHaltedRef = useRef(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const [quotaPreviewMode, setQuotaPreviewMode] = useLocalStorage<QuotaPreviewMode>(
@@ -85,12 +115,23 @@ export function useAuthFilesQuotaState({
     () => normalizeQuotaAutoRefreshMs(quotaAutoRefreshMsRaw),
     [quotaAutoRefreshMsRaw],
   );
+  const effectiveQuotaAutoRefreshMs = quotaRefreshHalted ? 0 : quotaAutoRefreshMs;
+
+  const haltQuotaAutoRefresh = useCallback(() => {
+    if (quotaRefreshHaltedRef.current) return;
+    quotaRefreshHaltedRef.current = true;
+    setQuotaRefreshHalted(true);
+    // Persist off so a reload does not immediately resume the 403 storm.
+    setQuotaAutoRefreshMsRaw(0);
+  }, [setQuotaAutoRefreshMsRaw]);
 
   useInterval(
     () => {
       setNowMs(Date.now());
     },
-    tab === "files" && quotaAutoRefreshMs > 0 ? Math.min(10_000, quotaAutoRefreshMs) : null,
+    tab === "files" && effectiveQuotaAutoRefreshMs > 0
+      ? Math.min(10_000, effectiveQuotaAutoRefreshMs)
+      : null,
   );
 
   useEffect(() => {
@@ -100,10 +141,14 @@ export function useAuthFilesQuotaState({
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const timer = window.setTimeout(() => {
-      const current = readAuthFilesDataCache();
-      if (!current?.files?.length) return;
+      const tenantId = getActiveCacheTenantId();
+      const current = readAuthFilesDataCache(tenantId);
+      // Persist quota for this tenant even when the list is empty (warm empty remount).
+      // Still require a list bucket so we never invent a cross-tenant files snapshot.
+      if (!current || !Array.isArray(current.files)) return;
       writeAuthFilesDataCache({
         ...current,
+        tenantId,
         savedAtMs: Date.now(),
         quotaByFileName,
       });
@@ -129,6 +174,25 @@ export function useAuthFilesQuotaState({
 
   const resolveQuotaCardSlots = useCallback(
     (provider: QuotaProvider, items: QuotaItem[]) => {
+      const translateXaiQuotaText = (text: string) => {
+        const separatorIndex = text.indexOf("::");
+        const key = separatorIndex >= 0 ? text.slice(0, separatorIndex) : text;
+        const value = separatorIndex >= 0 ? text.slice(separatorIndex + 2) : "";
+        if (key === "xai_quota.product_usage_named" && value) {
+          return t(key, { product: value });
+        }
+        if (key === "xai_quota.used_percent" && value) {
+          return t(key, { percent: value });
+        }
+        if (key === "xai_quota.remaining_percent" && value) {
+          return t(key, { percent: value });
+        }
+        if (key === "xai_quota.reset_at" && value) {
+          return t(key, { time: value });
+        }
+        return t(text);
+      };
+
       const translateQuotaLabel = (text: string) => {
         if (!text) return text;
         if (text.startsWith("m_quota.")) return t(text);
@@ -140,6 +204,7 @@ export function useAuthFilesQuotaState({
         }
         if (text.startsWith("claude_quota.")) return t(text);
         if (text.startsWith("antigravity_quota.")) return t(text);
+        if (text.startsWith("xai_quota.")) return translateXaiQuotaText(text);
         return text;
       };
 
@@ -154,6 +219,14 @@ export function useAuthFilesQuotaState({
       if (provider === "antigravity") {
         return filterAntigravityQuotaItems(items).map((item, index) => ({
           id: item.key ?? item.label ?? `antigravity-${index + 1}`,
+          label: translateQuotaLabel(item.label),
+          item,
+        }));
+      }
+
+      if (provider === "xai") {
+        return items.map((item, index) => ({
+          id: item.key ?? item.label ?? `xai-${index + 1}`,
           label: translateQuotaLabel(item.label),
           item,
         }));
@@ -359,6 +432,9 @@ export function useAuthFilesQuotaState({
           await refreshUsageDataAfterQuota([file]);
         }
       } catch (err: unknown) {
+        if (isFatalQuotaRefreshError(err)) {
+          haltQuotaAutoRefresh();
+        }
         const message = err instanceof Error ? err.message : t("auth_files.unknown_error");
         setQuotaByFileName((prev) => ({
           ...prev,
@@ -376,7 +452,7 @@ export function useAuthFilesQuotaState({
         quotaInFlightRef.current.delete(name);
       }
     },
-    [patchAuthFileByName, refreshUsageDataAfterQuota, resolveQuotaCardSlots, t],
+    [haltQuotaAutoRefresh, patchAuthFileByName, refreshUsageDataAfterQuota, resolveQuotaCardSlots, t],
   );
 
   const checkAuthFileConnectivity = useCallback(
@@ -510,6 +586,7 @@ export function useAuthFilesQuotaState({
   useEffect(() => {
     if (tab !== "files") return;
     if (loading) return;
+    if (quotaRefreshHalted) return;
 
     const previousVisibleScopeKey = visibleScopeKeyRef.current;
     visibleScopeKeyRef.current = visibleScopeKey;
@@ -517,7 +594,7 @@ export function useAuthFilesQuotaState({
     const firstVisibleScope = previousVisibleScopeKey === null;
     const initialVisibleScope = firstVisibleScope;
     const switchedVisibleScope = !firstVisibleScope && previousVisibleScopeKey !== visibleScopeKey;
-    if (!initialVisibleScope && !switchedVisibleScope && quotaAutoRefreshMs <= 0) return;
+    if (!initialVisibleScope && !switchedVisibleScope && effectiveQuotaAutoRefreshMs <= 0) return;
 
     const toFetch =
       initialVisibleScope || switchedVisibleScope
@@ -545,10 +622,11 @@ export function useAuthFilesQuotaState({
     };
   }, [
     collectQuotaFetchTargets,
+    effectiveQuotaAutoRefreshMs,
     loading,
     markQuotaTargetsLoading,
     pageItems,
-    quotaAutoRefreshMs,
+    quotaRefreshHalted,
     resolveQuotaTargets,
     runQuotaRefreshBatch,
     tab,
@@ -602,7 +680,7 @@ export function useAuthFilesQuotaState({
     () => {
       void refreshCurrentPageQuota();
     },
-    tab === "files" && quotaAutoRefreshMs > 0 ? quotaAutoRefreshMs : null,
+    tab === "files" && effectiveQuotaAutoRefreshMs > 0 ? effectiveQuotaAutoRefreshMs : null,
   );
 
   return {
@@ -612,8 +690,15 @@ export function useAuthFilesQuotaState({
     nowMs,
     quotaPreviewMode,
     setQuotaPreviewMode,
-    quotaAutoRefreshMs,
-    setQuotaAutoRefreshMsRaw,
+    quotaAutoRefreshMs: effectiveQuotaAutoRefreshMs,
+    setQuotaAutoRefreshMsRaw: (value: number) => {
+      // Manual re-enable clears the halt latch.
+      if (value > 0) {
+        quotaRefreshHaltedRef.current = false;
+        setQuotaRefreshHalted(false);
+      }
+      setQuotaAutoRefreshMsRaw(value);
+    },
     filesViewMode,
     setFilesViewMode,
     resolveQuotaCardSlots,

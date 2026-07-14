@@ -1,5 +1,7 @@
 import {
   createContext,
+  type FocusEvent,
+  type KeyboardEvent,
   type MouseEvent,
   type PropsWithChildren,
   use,
@@ -12,26 +14,35 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  Activity,
-  ArrowDownToLine,
-  Bot,
-  Cpu,
-  Image,
-  Layers,
+  Building2,
+  ChevronDown,
   LayoutDashboard,
-  FileText,
-  Info,
   LogOut,
-  Network,
-  PanelLeftClose,
-  PanelLeftOpen,
-  ScrollText,
+  PanelLeft,
   Settings,
   ShieldCheck,
-  Sparkles,
+  type LucideIcon,
 } from "lucide-react";
-import { LanguageSelector, PageBackground, ScrollArea, ThemeToggleButton } from "@code-proxy/ui";
+import {
+  DropdownMenu,
+  LanguageSelector,
+  floatingPanelSurface,
+  PageBackground,
+  ScrollArea,
+  SearchableSelect,
+  type SearchableSelectOption,
+  ThemeToggleButton,
+} from "@code-proxy/ui";
 import { preloadPageRoute } from "@pages/registry";
+import { recoverFromChunkLoadError } from "@pages/chunkLoadRecovery";
+import {
+  identityApi,
+  IDENTITY_TENANTS_UPDATED_EVENT,
+  type MenuIdentity,
+  type TenantIdentity,
+} from "@code-proxy/api-client";
+import { useOptionalAuth } from "@app/providers/AuthProvider";
+import { resolveMenuIcon } from "@app/navigation/menuIconMap";
 
 interface ShellContextState {
   state: {
@@ -48,60 +59,168 @@ const SIDEBAR_MOBILE_MEDIA = "(max-width: 767px)";
 const ROUTE_PROGRESS_MIN_MS = 680;
 const ROUTE_PROGRESS_HIDE_MS = 360;
 
-const NAV_ITEMS = [
-  { to: "/dashboard", i18nKey: "shell.nav_dashboard", icon: LayoutDashboard },
-  { to: "/monitor", i18nKey: "shell.nav_monitor", icon: Activity },
-  { to: "/monitor/request-logs", i18nKey: "shell.nav_request_logs", icon: ScrollText },
-  { to: "/ai-providers", i18nKey: "shell.nav_ai_providers", icon: Bot },
-  { to: "/account-security", i18nKey: "shell.nav_account_security", icon: ShieldCheck },
-  { to: "/api-keys", i18nKey: "shell.nav_api_keys", icon: Sparkles },
-  { to: "/api-key-permissions", i18nKey: "shell.nav_api_key_permissions", icon: ShieldCheck },
-  {
-    to: "/ccswitch-import-settings",
-    i18nKey: "shell.nav_ccswitch_import_settings",
-    icon: ArrowDownToLine,
-  },
-  { to: "/image-generation", i18nKey: "shell.nav_image_generation", icon: Image },
-  { to: "/channel-groups", i18nKey: "shell.nav_channel_groups", icon: Layers },
-  { to: "/models", i18nKey: "shell.nav_models", icon: Cpu },
-  { to: "/proxies", i18nKey: "shell.nav_proxies", icon: Network },
-  { to: "/config", i18nKey: "shell.nav_config", icon: Settings },
-  { to: "/system", i18nKey: "shell.nav_system", icon: Info },
-  { to: "/logs", i18nKey: "shell.nav_logs", icon: FileText },
-] as const;
+const tenantDisplayName = (tenant: TenantIdentity, systemTenantLabel: string) =>
+  tenant.type === "system" ? systemTenantLabel : tenant.name;
 
-const getPageTitleKey = (pathname: string): string => {
+interface SidebarNavItem {
+  menuCode: string;
+  to: string;
+  i18nKey: string;
+  icon: LucideIcon;
+  permission: string;
+  sortOrder: number;
+  external?: boolean;
+}
+
+interface SidebarNavGroup {
+  id: string;
+  menuCode: string;
+  i18nKey: string;
+  icon: LucideIcon;
+  sortOrder: number;
+  items: readonly SidebarNavItem[];
+}
+
+type SidebarNavEntry =
+  | { kind: "item"; item: SidebarNavItem }
+  | { kind: "group"; group: SidebarNavGroup };
+
+const isSidebarLeaf = (menu: MenuIdentity) =>
+  (menu.type === "menu" || menu.type === "embed" || menu.type === "link") &&
+  !menu.hide_menu &&
+  Boolean(menu.path);
+
+const menuLabelKey = (menu: MenuIdentity) => menu.label_key || menu.title || menu.code;
+
+const toSidebarItem = (menu: MenuIdentity): SidebarNavItem => ({
+  menuCode: menu.code,
+  to: menu.type === "link" ? menu.link_url || menu.path : menu.path,
+  i18nKey: menuLabelKey(menu),
+  icon: resolveMenuIcon(menu.icon),
+  permission: menu.permission_code || "",
+  sortOrder: menu.sort_order,
+  external: menu.type === "link",
+});
+
+const FALLBACK_NAV_GROUPS: readonly SidebarNavGroup[] = [
+  {
+    id: "group.system",
+    menuCode: "group.system",
+    i18nKey: "shell.nav_group_system",
+    icon: resolveMenuIcon("settings"),
+    sortOrder: 60,
+    items: [
+      {
+        menuCode: "system.menus",
+        to: "/system/menu-management",
+        i18nKey: "shell.nav_menu_management",
+        icon: resolveMenuIcon("menu"),
+        permission: "platform.menus.read",
+        sortOrder: 20,
+      },
+    ],
+  },
+];
+
+const FALLBACK_DASHBOARD_ITEM: SidebarNavItem = {
+  menuCode: "dashboard",
+  to: "/dashboard",
+  i18nKey: "shell.nav_dashboard",
+  icon: resolveMenuIcon("layout-dashboard"),
+  permission: "dashboard.read",
+  sortOrder: 10,
+};
+
+function buildSidebarFromMenus(menus: MenuIdentity[]): {
+  primaryItems: SidebarNavItem[];
+  groups: SidebarNavGroup[];
+} {
+  const byParent = new Map<string, MenuIdentity[]>();
+  for (const menu of menus) {
+    const parent = menu.parent_code || "";
+    byParent.set(parent, [...(byParent.get(parent) ?? []), menu]);
+  }
+  for (const siblings of byParent.values()) {
+    siblings.sort((a, b) => a.sort_order - b.sort_order || a.code.localeCompare(b.code));
+  }
+
+  const primaryItems: SidebarNavItem[] = [];
+  const groups: SidebarNavGroup[] = [];
+  for (const root of byParent.get("") ?? []) {
+    if (root.type === "directory") {
+      const items = (byParent.get(root.code) ?? [])
+        .filter(isSidebarLeaf)
+        .map(toSidebarItem);
+      if (items.length === 0) continue;
+      groups.push({
+        id: root.code,
+        menuCode: root.code,
+        i18nKey: menuLabelKey(root),
+        icon: resolveMenuIcon(root.icon),
+        sortOrder: root.sort_order,
+        items,
+      });
+      continue;
+    }
+    if (isSidebarLeaf(root)) primaryItems.push(toSidebarItem(root));
+  }
+  return { primaryItems, groups };
+}
+
+function mergeSidebarEntries(
+  primaryItems: readonly SidebarNavItem[],
+  groups: readonly SidebarNavGroup[],
+): SidebarNavEntry[] {
+  const entries: SidebarNavEntry[] = [
+    ...primaryItems.map((item): SidebarNavEntry => ({ kind: "item", item })),
+    ...groups.map((group): SidebarNavEntry => ({ kind: "group", group })),
+  ];
+  entries.sort((a, b) => {
+    const orderA = a.kind === "item" ? a.item.sortOrder : a.group.sortOrder;
+    const orderB = b.kind === "item" ? b.item.sortOrder : b.group.sortOrder;
+    if (orderA !== orderB) return orderA - orderB;
+    const codeA = a.kind === "item" ? a.item.menuCode : a.group.menuCode;
+    const codeB = b.kind === "item" ? b.item.menuCode : b.group.menuCode;
+    return codeA.localeCompare(codeB);
+  });
+  return entries;
+}
+
+const getPageTitleKey = (pathname: string, menus?: MenuIdentity[] | null): string => {
+  if (menus?.length) {
+    const ranked = menus
+      .filter((menu) => menu.path)
+      .sort((a, b) => b.path.length - a.path.length);
+    const hit = ranked.find(
+      (menu) => pathname === menu.path || pathname.startsWith(`${menu.path}/`),
+    );
+    if (hit) return menuLabelKey(hit);
+  }
   if (pathname.startsWith("/dashboard")) return "shell.nav_dashboard";
-  if (pathname.startsWith("/monitor/request-logs")) return "shell.nav_request_logs";
-  if (pathname.startsWith("/monitor")) return "shell.nav_monitor";
-  if (pathname.startsWith("/ai-providers")) return "shell.nav_ai_providers";
-  if (pathname.startsWith("/account-security") || pathname.startsWith("/auth-files"))
-    return "shell.nav_account_security";
-  if (pathname.startsWith("/api-keys")) return "shell.page_api_keys";
   if (
-    pathname.startsWith("/api-key-permissions") ||
-    pathname.startsWith("/manage/api-key-permissions")
-  )
-    return "shell.page_api_key_permissions";
+    pathname.startsWith("/access/ai-accounts") ||
+    pathname.startsWith("/system/account-security") ||
+    pathname.startsWith("/account-security") ||
+    pathname.startsWith("/auth-files")
+  ) {
+    return "shell.nav_ai_accounts";
+  }
   if (
-    pathname.startsWith("/ccswitch-import-settings") ||
-    pathname.startsWith("/manage/ccswitch-import-settings")
-  )
-    return "shell.nav_ccswitch_import_settings";
-  if (pathname.startsWith("/image-generation")) return "shell.nav_image_generation";
-  if (pathname.startsWith("/channel-groups")) return "shell.page_channel_groups";
+    pathname.startsWith("/access/api-key-permissions") ||
+    pathname.startsWith("/system/api-key-permissions") ||
+    pathname.startsWith("/api-key-permissions")
+  ) {
+    return "shell.nav_api_key_permissions";
+  }
   if (
-    pathname.startsWith("/identity-fingerprint") ||
-    pathname.startsWith("/manage/identity-fingerprint")
-  )
-    return "shell.nav_account_security";
-  if (pathname.startsWith("/models") || pathname.startsWith("/manage/models"))
-    return "shell.nav_models";
-  if (pathname.startsWith("/proxies") || pathname.startsWith("/manage/proxies"))
-    return "shell.nav_proxies";
-  if (pathname.startsWith("/config")) return "shell.nav_config";
-  if (pathname.startsWith("/system")) return "shell.nav_system";
-  if (pathname.startsWith("/logs")) return "shell.nav_logs";
+    pathname.startsWith("/system/menu-management") ||
+    pathname.startsWith("/menu-management")
+  ) {
+    return "shell.nav_menu_management";
+  }
+  if (pathname.startsWith("/system/config") || pathname.startsWith("/config")) {
+    return "shell.nav_config";
+  }
   return "shell.page_home";
 };
 
@@ -118,13 +237,394 @@ function ShellFrame({ children }: PropsWithChildren) {
   return <PageBackground variant="app">{children}</PageBackground>;
 }
 
+function SidebarChildLink({
+  item,
+  active,
+  label,
+  onClick,
+  onWarm,
+  tabIndex,
+  role,
+  onSelect,
+}: {
+  item: SidebarNavItem;
+  active: boolean;
+  label: string;
+  onClick: (event: MouseEvent<HTMLAnchorElement>, to: string) => void;
+  onWarm: (to: string) => void;
+  tabIndex?: number;
+  role?: "menuitem";
+  onSelect?: () => void;
+}) {
+  const Icon = item.icon;
+  const className =
+    "flex h-9 min-w-0 items-center gap-3 rounded-xl px-3 text-sm whitespace-nowrap transition-colors duration-150 " +
+    (active
+      ? "bg-slate-100 font-semibold text-slate-950 dark:bg-white/10 dark:text-white"
+      : "font-medium text-slate-600 hover:bg-slate-100/80 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white");
+  if (item.external) {
+    return (
+      <a
+        href={item.to}
+        target="_blank"
+        rel="noreferrer"
+        tabIndex={tabIndex}
+        role={role}
+        onClick={() => onSelect?.()}
+        className={className}
+      >
+        <Icon size={15} className="shrink-0 opacity-80" />
+        <span className="min-w-0 truncate">{label}</span>
+      </a>
+    );
+  }
+  return (
+    <Link
+      to={item.to}
+      viewTransition
+      tabIndex={tabIndex}
+      role={role}
+      aria-current={active ? "page" : undefined}
+      onClick={(event) => {
+        onSelect?.();
+        onClick(event, item.to);
+      }}
+      onMouseEnter={() => onWarm(item.to)}
+      onFocus={() => onWarm(item.to)}
+      className={className}
+    >
+      <Icon size={15} className="shrink-0 opacity-80" />
+      <span className="min-w-0 truncate">{label}</span>
+    </Link>
+  );
+}
+
+function SidebarPrimaryLink({
+  item,
+  active,
+  collapsed,
+  labelVisible,
+  label,
+  onClick,
+  onWarm,
+}: {
+  item: SidebarNavItem;
+  active: boolean;
+  collapsed: boolean;
+  labelVisible: boolean;
+  label: string;
+  onClick: (event: MouseEvent<HTMLAnchorElement>, to: string) => void;
+  onWarm: (to: string) => void;
+}) {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.to}
+      viewTransition
+      aria-label={collapsed ? label : undefined}
+      aria-current={active ? "page" : undefined}
+      data-tooltip={collapsed ? label : undefined}
+      data-tooltip-placement="right"
+      onClick={(event) => onClick(event, item.to)}
+      onMouseEnter={() => onWarm(item.to)}
+      onFocus={() => onWarm(item.to)}
+      className={
+        "mx-2 flex h-10 w-[calc(100%-1rem)] items-center overflow-hidden rounded-xl whitespace-nowrap transition-colors duration-150 " +
+        (active
+          ? "bg-slate-100 font-semibold text-slate-950 dark:bg-white/10 dark:text-white"
+          : "font-medium text-slate-600 hover:bg-slate-100/80 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white")
+      }
+    >
+      <span className="ml-1 grid h-10 w-10 shrink-0 place-items-center">
+        <Icon size={16} className="opacity-80" />
+      </span>
+      <span
+        className={
+          "min-w-0 truncate pr-3 text-sm transition-[opacity,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] " +
+          (labelVisible
+            ? "translate-x-0 opacity-100 delay-100"
+            : "-translate-x-1 opacity-0 delay-0")
+        }
+      >
+        {label}
+      </span>
+    </Link>
+  );
+}
+
+function SidebarToggle({
+  label,
+  onToggle,
+  alwaysVisible,
+}: {
+  label: string;
+  onToggle: () => void;
+  alwaysVisible: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      data-tooltip-managed="true"
+      data-sidebar-toggle="true"
+      className={
+        "absolute right-[15px] top-3 z-50 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-transparent text-slate-500 transition-[background-color,color,opacity] duration-120 hover:bg-slate-100 hover:text-slate-950 focus-visible:bg-slate-100 focus-visible:text-slate-950 focus-visible:outline-none dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white " +
+        (alwaysVisible
+          ? "opacity-100"
+          : "opacity-0 group-hover/sidebar:opacity-100 focus-visible:opacity-100")
+      }
+    >
+      <PanelLeft size={15} />
+    </button>
+  );
+}
+
+function SidebarGroupFlyout({
+  group,
+  activeTo,
+  label,
+  open,
+  onClick,
+  onWarm,
+  onSelect,
+}: {
+  group: SidebarNavGroup;
+  activeTo: string | null;
+  label: string;
+  open: boolean;
+  onClick: (event: MouseEvent<HTMLAnchorElement>, to: string) => void;
+  onWarm: (to: string) => void;
+  onSelect: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="menu"
+      aria-hidden={!open}
+      data-sidebar-flyout={group.id}
+      data-open={open ? "true" : "false"}
+      className={
+        floatingPanelSurface +
+        " absolute left-[calc(100%+8px)] top-0 z-50 w-52 origin-top-left p-2 transition-[opacity,transform,visibility] duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] before:absolute before:-left-3 before:top-0 before:h-full before:w-3 " +
+        (open
+          ? "visible pointer-events-auto translate-x-0 scale-100 opacity-100"
+          : "invisible pointer-events-none -translate-x-1 scale-[0.98] opacity-0")
+      }
+    >
+      <div className="px-3 pb-1.5 pt-1 text-xs font-semibold tracking-wide text-slate-400">
+        {label}
+      </div>
+      <div className="space-y-0.5">
+        {group.items.map((item) => (
+          <SidebarChildLink
+            key={item.to}
+            item={item}
+            active={activeTo === item.to}
+            label={t(item.i18nKey, { defaultValue: item.i18nKey })}
+            onClick={onClick}
+            onWarm={onWarm}
+            onSelect={onSelect}
+            tabIndex={open ? undefined : -1}
+            role="menuitem"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SidebarMenuGroup({
+  group,
+  activeTo,
+  active,
+  inlineOpen,
+  railCollapsed,
+  visualRailCollapsed,
+  labelsVisible,
+  mode,
+  onToggle,
+  onClick,
+  onWarm,
+}: {
+  group: SidebarNavGroup;
+  activeTo: string | null;
+  active: boolean;
+  inlineOpen: boolean;
+  railCollapsed: boolean;
+  visualRailCollapsed: boolean;
+  labelsVisible: boolean;
+  mode: "desktop" | "mobile";
+  onToggle: () => void;
+  onClick: (event: MouseEvent<HTMLAnchorElement>, to: string) => void;
+  onWarm: (to: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [flyoutOpen, setFlyoutOpen] = useState(false);
+  const suppressUntilPointerLeave = useRef(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const GroupIcon = group.icon;
+  const groupLabel = t(group.i18nKey, { defaultValue: group.i18nKey });
+  const contentId = `sidebar-${mode}-${group.id}`;
+  const showInlineItems = inlineOpen && labelsVisible && !visualRailCollapsed;
+
+  useEffect(() => {
+    if (visualRailCollapsed) return;
+    setFlyoutOpen(false);
+    suppressUntilPointerLeave.current = false;
+  }, [visualRailCollapsed]);
+
+  const closeAndSuppress = useCallback(() => {
+    suppressUntilPointerLeave.current = true;
+    setFlyoutOpen(false);
+  }, []);
+
+  const handlePointerEnter = useCallback(() => {
+    if (visualRailCollapsed && !suppressUntilPointerLeave.current) setFlyoutOpen(true);
+  }, [visualRailCollapsed]);
+
+  const handlePointerLeave = useCallback(() => {
+    setFlyoutOpen(false);
+    suppressUntilPointerLeave.current = false;
+  }, []);
+
+  const handleFocus = useCallback(() => {
+    if (visualRailCollapsed && !suppressUntilPointerLeave.current) setFlyoutOpen(true);
+  }, [visualRailCollapsed]);
+
+  const handleBlur = useCallback((event: FocusEvent<HTMLDivElement>) => {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return;
+    setFlyoutOpen(false);
+    suppressUntilPointerLeave.current = false;
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== "Escape" || !flyoutOpen) return;
+      event.preventDefault();
+      suppressUntilPointerLeave.current = true;
+      setFlyoutOpen(false);
+      triggerRef.current?.focus({ preventScroll: true });
+      queueMicrotask(() => {
+        suppressUntilPointerLeave.current = false;
+      });
+    },
+    [flyoutOpen],
+  );
+
+  const handleTriggerClick = useCallback(() => {
+    if (!visualRailCollapsed) {
+      onToggle();
+      return;
+    }
+    if (flyoutOpen) closeAndSuppress();
+    else {
+      suppressUntilPointerLeave.current = false;
+      setFlyoutOpen(true);
+    }
+  }, [closeAndSuppress, flyoutOpen, onToggle, visualRailCollapsed]);
+
+  return (
+    <div
+      className="relative"
+      data-tooltip-managed="true"
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
+      onFocusCapture={handleFocus}
+      onBlurCapture={handleBlur}
+      onKeyDown={handleKeyDown}
+    >
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label={railCollapsed ? groupLabel : undefined}
+        aria-expanded={visualRailCollapsed ? flyoutOpen : inlineOpen}
+        aria-controls={visualRailCollapsed ? undefined : contentId}
+        aria-haspopup={visualRailCollapsed ? "menu" : undefined}
+        onClick={handleTriggerClick}
+        className={
+          "mx-2 flex h-10 w-[calc(100%-1rem)] items-center overflow-hidden rounded-xl text-left whitespace-nowrap transition-colors duration-150 " +
+          (active
+            ? "text-slate-950 dark:text-white"
+            : "text-slate-500 hover:bg-slate-100/80 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-200")
+        }
+      >
+        <span className="ml-1 grid h-10 w-10 shrink-0 place-items-center">
+          <GroupIcon size={16} className="opacity-80" />
+        </span>
+        <span
+          className={
+            "min-w-0 flex-1 truncate text-sm font-semibold transition-[opacity,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] " +
+            (labelsVisible
+              ? "translate-x-0 opacity-100 delay-100"
+              : "-translate-x-1 opacity-0 delay-0")
+          }
+        >
+          {groupLabel}
+        </span>
+        <ChevronDown
+          size={14}
+          className={
+            "mr-3 shrink-0 transition-[opacity,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] " +
+            (labelsVisible ? "opacity-55 delay-100" : "opacity-0 delay-0") +
+            (inlineOpen ? " rotate-0" : " -rotate-90")
+          }
+        />
+      </button>
+      <div
+        id={contentId}
+        aria-hidden={!showInlineItems}
+        className={
+          "grid transition-[grid-template-rows] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] " +
+          (showInlineItems ? "grid-rows-[1fr]" : "grid-rows-[0fr]")
+        }
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div
+            className={
+              "space-y-0.5 pb-1 pl-8 pr-3 pt-0.5 transition-[opacity,transform] duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] " +
+              (showInlineItems
+                ? "translate-y-0 opacity-100 delay-75"
+                : "-translate-y-1 opacity-0 delay-0")
+            }
+          >
+            {group.items.map((item) => (
+              <SidebarChildLink
+                key={item.to}
+                item={item}
+                active={activeTo === item.to}
+                label={t(item.i18nKey, { defaultValue: item.i18nKey })}
+                onClick={onClick}
+                onWarm={onWarm}
+                tabIndex={showInlineItems ? undefined : -1}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+      <SidebarGroupFlyout
+        group={group}
+        activeTo={activeTo}
+        label={groupLabel}
+        open={visualRailCollapsed && flyoutOpen}
+        onClick={onClick}
+        onWarm={onWarm}
+        onSelect={closeAndSuppress}
+      />
+    </div>
+  );
+}
+
 function ShellSidebar({
   collapsed,
   mode,
+  onToggleSidebar,
   onNavigate,
 }: {
   collapsed: boolean;
   mode: "desktop" | "mobile";
+  onToggleSidebar: () => void;
   onNavigate?: () => void;
 }) {
   const location = useLocation();
@@ -133,6 +633,71 @@ function ShellSidebar({
   const {
     actions: { logout },
   } = useShell();
+  const auth = useOptionalAuth();
+  const can = auth?.can ?? (() => true);
+  const principal = auth?.state.principal ?? null;
+  const menuByCode = useMemo(
+    () => (principal?.menus ? new Map(principal.menus.map((menu) => [menu.code, menu])) : null),
+    [principal?.menus],
+  );
+  const menuIsVisible = useCallback(
+    (code: string) => {
+      if (!menuByCode) return true;
+      let current = menuByCode.get(code);
+      while (current) {
+        if (!current.enabled || !current.visible || current.hide_menu) return false;
+        current = current.parent_code ? menuByCode.get(current.parent_code) : undefined;
+      }
+      return true;
+    },
+    [menuByCode],
+  );
+  const builtNav = useMemo(() => {
+    if (principal?.menus?.length) return buildSidebarFromMenus(principal.menus);
+    return { primaryItems: [FALLBACK_DASHBOARD_ITEM], groups: [...FALLBACK_NAV_GROUPS] };
+  }, [principal?.menus]);
+  const visiblePrimaryItems = useMemo(
+    () =>
+      builtNav.primaryItems.filter(
+        (item) => (!item.permission || can(item.permission)) && menuIsVisible(item.menuCode),
+      ),
+    [builtNav.primaryItems, can, menuIsVisible],
+  );
+  const visibleNavGroups = useMemo(
+    () =>
+      builtNav.groups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter(
+            (item) => (!item.permission || can(item.permission)) && menuIsVisible(item.menuCode),
+          ),
+        }))
+        .filter((group) => menuIsVisible(group.menuCode) && group.items.length > 0),
+    [builtNav.groups, can, menuIsVisible],
+  );
+  // Interleave top-level leaves and groups by sort_order so a primary leaf
+  // (e.g. 系统信息 at 70) can sit below every directory group.
+  const visibleNavEntries = useMemo(
+    () => mergeSidebarEntries(visiblePrimaryItems, visibleNavGroups),
+    [visibleNavGroups, visiblePrimaryItems],
+  );
+  const visibleNavItems = useMemo(
+    () => [...visiblePrimaryItems, ...visibleNavGroups.flatMap((group) => group.items)],
+    [visibleNavGroups, visiblePrimaryItems],
+  );
+  const accountName = principal?.user.role_codes?.includes("platform_super_admin")
+    ? t("identity_admin.super_administrator")
+    : principal?.user.display_name || principal?.user.username || "Admin";
+  const accountTenant = principal
+    ? tenantDisplayName(principal.effective_tenant, t("shell.system_tenant"))
+    : t("shell.sidebar_account_role");
+  const accountInitials =
+    accountName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "AD";
   // Track the clicked nav target so the highlight updates instantly on click,
   // without waiting for lazy chunks to load & location to update.
   const [pendingTo, setPendingTo] = useState("");
@@ -146,22 +711,77 @@ function ShellSidebar({
     progressTimers.current = [];
   }, []);
 
-  const resolveActiveTo = useCallback((pathname: string) => {
-    const sorted = [...NAV_ITEMS].sort((a, b) => b.to.length - a.to.length);
-    return (
-      sorted.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))?.to ?? null
-    );
-  }, []);
+  const resolveActiveTo = useCallback(
+    (pathname: string) => {
+      const sorted = [...visibleNavItems].sort((a, b) => b.to.length - a.to.length);
+      return (
+        sorted.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))?.to ??
+        null
+      );
+    },
+    [visibleNavItems],
+  );
 
   const activeTo = useMemo(
     () => resolveActiveTo(pendingTo || location.pathname),
     [pendingTo, location.pathname, resolveActiveTo],
   );
+  const activeGroupId = useMemo(
+    () => visibleNavGroups.find((group) => group.items.some((item) => item.to === activeTo))?.id,
+    [activeTo, visibleNavGroups],
+  );
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(["group.runtime"]));
+
+  useEffect(() => {
+    if (!activeGroupId) return;
+    setOpenGroups((current) => {
+      if (current.has(activeGroupId)) return current;
+      return new Set([...current, activeGroupId]);
+    });
+  }, [activeGroupId]);
+
+  const toggleGroup = useCallback((groupId: string) => {
+    setOpenGroups((current) => {
+      const next = new Set(current);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
+    });
+  }, []);
 
   const isMobile = mode === "mobile";
+  const railCollapsed = !isMobile && collapsed;
+  const [visualRailCollapsed, setVisualRailCollapsed] = useState(railCollapsed);
+  const [sidebarLabelsVisible, setSidebarLabelsVisible] = useState(!railCollapsed);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const sidebarTransitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const accountLogoutLabel = t("shell.logout_button");
+  const sidebarLabel = collapsed ? t("shell.expand_sidebar") : t("shell.collapse_sidebar");
+
+  useEffect(() => {
+    if (sidebarTransitionTimer.current) clearTimeout(sidebarTransitionTimer.current);
+
+    if (railCollapsed) {
+      setSidebarLabelsVisible(false);
+      sidebarTransitionTimer.current = setTimeout(() => {
+        setVisualRailCollapsed(true);
+        sidebarTransitionTimer.current = null;
+      }, 90);
+    } else {
+      setVisualRailCollapsed(false);
+      sidebarTransitionTimer.current = setTimeout(() => {
+        setSidebarLabelsVisible(true);
+        sidebarTransitionTimer.current = null;
+      }, 170);
+    }
+
+    return () => {
+      if (sidebarTransitionTimer.current) clearTimeout(sidebarTransitionTimer.current);
+    };
+  }, [railCollapsed]);
 
   const warmPageRoute = useCallback((to: string) => {
+    // Hover warm-up: ignore failures; click path handles chunk recovery.
     void preloadPageRoute(to).catch(() => undefined);
   }, []);
 
@@ -190,19 +810,32 @@ function ShellSidebar({
         progressTimers.current.push(timer);
       });
 
-      void Promise.all([preloadPageRoute(to).catch(() => undefined), minimumProgress]).then(() => {
-        if (navigationRequestId.current !== requestId) return;
-        setProgressDone(true);
-
-        const navigateTimer = setTimeout(() => {
+      // Do not swallow chunk-load failures: stale post-deploy assets must hard-reload
+      // instead of navigating into an empty Suspense tree.
+      void Promise.all([preloadPageRoute(to), minimumProgress])
+        .then(() => {
           if (navigationRequestId.current !== requestId) return;
-          navigate(to, { viewTransition: true });
+          setProgressDone(true);
+
+          const navigateTimer = setTimeout(() => {
+            if (navigationRequestId.current !== requestId) return;
+            navigate(to, { viewTransition: true });
+            setPendingTo("");
+            setProgressDone(false);
+            progressTimers.current = [];
+          }, ROUTE_PROGRESS_HIDE_MS);
+          progressTimers.current.push(navigateTimer);
+        })
+        .catch((error: unknown) => {
+          if (navigationRequestId.current !== requestId) return;
+          clearProgressTimers();
           setPendingTo("");
           setProgressDone(false);
-          progressTimers.current = [];
-        }, ROUTE_PROGRESS_HIDE_MS);
-        progressTimers.current.push(navigateTimer);
-      });
+          if (recoverFromChunkLoadError(error)) return;
+          // Non-chunk failure: fall back to navigation so Suspense can surface
+          // the error boundary on render rather than stranding the progress bar.
+          navigate(to, { viewTransition: true });
+        });
     },
     [clearProgressTimers, location.pathname, navigate, onNavigate],
   );
@@ -215,116 +848,241 @@ function ShellSidebar({
     [clearProgressTimers],
   );
 
+  const handleLogout = useCallback(() => {
+    navigate("/login", { replace: true, viewTransition: true });
+    logout();
+  }, [logout, navigate]);
+
   return (
     <>
-      {pendingTo && (
-        <div className={progressDone ? "rp rp-done" : "rp"} />
-      )}
+      {pendingTo && <div className={progressDone ? "rp rp-done" : "rp"} />}
       <aside
+        data-collapsed={railCollapsed ? "true" : "false"}
         className={[
-          "shrink-0 overflow-hidden bg-white/94 dark:bg-neutral-950/88",
-          isMobile ? "fixed inset-y-0 left-0 z-40 w-56" : "h-[100dvh]",
+          "group/sidebar shrink-0 overflow-visible bg-white/94 dark:bg-neutral-950/88",
+          isMobile ? "fixed inset-y-0 left-0 z-40 w-60" : "relative z-30 h-[100dvh]",
           "border-r border-slate-200 shadow-[12px_0_28px_rgba(15,23,42,0.04)] dark:border-neutral-800",
-          "motion-reduce:transition-none motion-safe:transition-[width,transform,background-color,border-color] motion-safe:duration-300 motion-safe:ease-out",
+          "motion-reduce:transition-none motion-safe:transition-[width,transform,background-color,border-color] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]",
           isMobile
             ? collapsed
               ? "-translate-x-full"
               : "translate-x-0"
-            : collapsed
-              ? "w-0 border-r-0"
-              : "w-56",
+            : visualRailCollapsed
+              ? "w-16"
+              : "w-60",
         ].join(" ")}
-        aria-hidden={collapsed}
+        aria-hidden={isMobile && collapsed}
       >
-      <div
-        className={[
-          "flex h-full w-56 flex-col",
-          "motion-reduce:transition-none motion-safe:transition-[transform,opacity] motion-safe:duration-300 motion-safe:ease-out",
-          collapsed ? "pointer-events-none opacity-0 -translate-x-6" : "opacity-100 translate-x-0",
-        ].join(" ")}
-      >
-        <div className="flex h-[72px] items-center gap-3 px-5 pt-5 text-slate-900 transition-colors duration-200 ease-out dark:text-white whitespace-nowrap">
-          <span className="grid h-9 w-9 place-items-center rounded-[14px] bg-blue-600 text-white shadow-[0_10px_20px_rgba(37,99,235,0.22)]">
-            <LayoutDashboard size={18} />
-          </span>
-          <span className="leading-tight">
-            <span className="block text-lg font-semibold tracking-tight">{t("shell.console")}</span>
-            <span className="block text-[10px] font-medium tracking-normal text-slate-400">
-              CLI Proxy
+        <SidebarToggle
+          label={sidebarLabel}
+          onToggle={onToggleSidebar}
+          alwaysVisible={isMobile || !visualRailCollapsed}
+        />
+        <div className="flex h-full w-full flex-col">
+          <div className="flex h-14 shrink-0 items-center overflow-hidden text-slate-900 whitespace-nowrap dark:text-white">
+            <span
+              className={
+                "grid h-14 w-16 shrink-0 place-items-center transition-opacity duration-120 " +
+                (visualRailCollapsed ? "opacity-100 group-hover/sidebar:opacity-0" : "opacity-100")
+              }
+            >
+              <span
+                data-sidebar-logo="true"
+                className="grid h-8 w-8 place-items-center rounded-xl bg-blue-600 text-white"
+              >
+                <LayoutDashboard size={17} />
+              </span>
             </span>
-          </span>
-        </div>
-        <ScrollArea
-          className="flex-1 [&_[data-scroll-area-scrollbar='y']]:right-1 [&_[data-scroll-area-scrollbar='y']]:w-5"
-          scrollbarVisibility="track-hover"
-          scrollbarTrackInset={16}
-        >
-          <nav className="space-y-1 px-3 pb-4 pt-4">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const active = activeTo === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  viewTransition
-                  onClick={(event) => handleNavClick(event, item.to)}
-                  onMouseEnter={() => warmPageRoute(item.to)}
-                  onFocus={() => warmPageRoute(item.to)}
+            <span
+              className={
+                "min-w-0 flex-1 overflow-hidden leading-tight transition-[opacity,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] " +
+                (sidebarLabelsVisible
+                  ? "translate-x-0 opacity-100 delay-100"
+                  : "-translate-x-1 opacity-0 delay-0")
+              }
+            >
+              <span className="block truncate text-base font-semibold tracking-tight">
+                {t("shell.console")}
+              </span>
+              <span className="block text-2xs font-medium text-slate-400">CLI Proxy</span>
+            </span>
+          </div>
+          <ScrollArea
+            className="min-h-0 flex-1 [&_[data-scroll-area-scrollbar='y']]:right-1 [&_[data-scroll-area-scrollbar='y']]:w-5"
+            viewportClassName={visualRailCollapsed ? "overflow-visible" : undefined}
+            scrollbarVisibility="track-hover"
+            scrollbarTrackInset={16}
+          >
+            <nav className="space-y-1 pb-4 pt-3">
+              {visibleNavEntries.map((entry) =>
+                entry.kind === "item" ? (
+                  <SidebarPrimaryLink
+                    key={entry.item.menuCode}
+                    item={entry.item}
+                    active={activeTo === entry.item.to}
+                    collapsed={visualRailCollapsed}
+                    labelVisible={sidebarLabelsVisible}
+                    label={t(entry.item.i18nKey, { defaultValue: entry.item.i18nKey })}
+                    onClick={handleNavClick}
+                    onWarm={warmPageRoute}
+                  />
+                ) : (
+                  <SidebarMenuGroup
+                    key={entry.group.id}
+                    group={entry.group}
+                    activeTo={activeTo}
+                    active={entry.group.id === activeGroupId}
+                    inlineOpen={openGroups.has(entry.group.id)}
+                    railCollapsed={railCollapsed}
+                    visualRailCollapsed={visualRailCollapsed}
+                    labelsVisible={sidebarLabelsVisible}
+                    mode={mode}
+                    onToggle={() => toggleGroup(entry.group.id)}
+                    onClick={handleNavClick}
+                    onWarm={warmPageRoute}
+                  />
+                ),
+              )}
+            </nav>
+          </ScrollArea>
+          <div className="shrink-0 overflow-visible px-0 pb-2 pt-1">
+            <div
+              className="group/account relative h-[60px] overflow-visible"
+              data-tooltip-managed="true"
+            >
+              <DropdownMenu.Root
+                open={!visualRailCollapsed && accountMenuOpen}
+                onOpenChange={(open) => setAccountMenuOpen(visualRailCollapsed ? false : open)}
+              >
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    aria-label={accountName}
+                    className={
+                      "mx-2 flex h-14 w-[calc(100%-1rem)] items-center overflow-hidden rounded-2xl text-left transition-[background-color,box-shadow] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none " +
+                      (visualRailCollapsed
+                        ? "hover:bg-slate-100/80 dark:hover:bg-white/[0.06]"
+                        : "hover:bg-slate-100/85 hover:shadow-[0_8px_24px_rgba(15,23,42,0.10)] data-[state=open]:bg-slate-100/85 data-[state=open]:shadow-[0_8px_24px_rgba(15,23,42,0.10)] dark:hover:bg-white/[0.08] dark:hover:shadow-black/30 dark:data-[state=open]:bg-white/[0.08] dark:data-[state=open]:shadow-black/30")
+                    }
+                  >
+                    <span className="grid h-14 w-12 shrink-0 place-items-center">
+                      <span
+                        data-sidebar-account-avatar="true"
+                        className="relative grid h-9 w-9 place-items-center rounded-full bg-blue-600 text-xs font-semibold text-white"
+                      >
+                        {accountInitials}
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-neutral-950" />
+                      </span>
+                    </span>
+                    <span
+                      className={
+                        "min-w-0 flex-1 overflow-hidden pl-2 pr-3 leading-tight transition-[opacity,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] " +
+                        (sidebarLabelsVisible
+                          ? "translate-x-0 opacity-100 delay-100"
+                          : "-translate-x-1 opacity-0 delay-0")
+                      }
+                    >
+                      <span className="block truncate text-sm font-semibold text-slate-950 dark:text-white">
+                        {accountName}
+                      </span>
+                      <span className="mt-0.5 block truncate text-2xs text-slate-400">
+                        {accountTenant}
+                      </span>
+                    </span>
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    data-sidebar-account-menu="true"
+                    side="top"
+                    align="start"
+                    sideOffset={8}
+                    collisionPadding={8}
+                    className="w-[var(--radix-dropdown-menu-trigger-width)] p-2"
+                  >
+                    <div className="flex items-center gap-3 px-2 py-2">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+                        {accountInitials}
+                      </div>
+                      <div className="min-w-0 flex-1 leading-tight">
+                        <div className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                          {accountName}
+                        </div>
+                        <div className="mt-0.5 truncate text-2xs text-slate-400">
+                          {accountTenant}
+                        </div>
+                      </div>
+                    </div>
+                    <DropdownMenu.Separator />
+                    <DropdownMenu.Item
+                      onSelect={() => navigate("/change-password", { viewTransition: true })}
+                      className="py-2.5"
+                    >
+                      <ShieldCheck size={16} />
+                      {t("identity_admin.change_password")}
+                    </DropdownMenu.Item>
+                    {can("system.config.read") ? (
+                      <DropdownMenu.Item
+                        onSelect={() => navigate("/system/config", { viewTransition: true })}
+                        className="py-2.5"
+                      >
+                        <Settings size={16} />
+                        {t("shell.nav_config")}
+                      </DropdownMenu.Item>
+                    ) : null}
+                    <DropdownMenu.Separator />
+                    <DropdownMenu.Item
+                      onSelect={handleLogout}
+                      className="py-2.5 text-rose-600 focus:text-rose-700 dark:text-rose-300"
+                    >
+                      <LogOut size={16} />
+                      {accountLogoutLabel}
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+              {visualRailCollapsed ? (
+                <div
                   className={
-                    "flex min-w-0 items-center gap-3 rounded-[14px] px-3.5 py-2.5 text-[13px] transition-colors duration-200 ease-out whitespace-nowrap " +
-                    (active
-                      ? "bg-gradient-to-r from-blue-600 to-blue-500 font-semibold text-white shadow-[0_12px_24px_rgba(37,99,235,0.22)]"
-                      : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white")
+                    floatingPanelSurface +
+                    " invisible absolute bottom-1 left-[calc(100%+8px)] z-50 w-52 translate-x-1 p-2 opacity-0 transition-[opacity,transform,visibility] duration-180 ease-out before:absolute before:-left-3 before:top-0 before:h-full before:w-3 group-hover/account:visible group-hover/account:translate-x-0 group-hover/account:opacity-100 group-focus-within/account:visible group-focus-within/account:translate-x-0 group-focus-within/account:opacity-100"
                   }
                 >
-                  <Icon
-                    size={15}
-                    className="shrink-0 opacity-90 transition-colors duration-200 ease-out"
-                  />
-                  <span className="min-w-0 truncate">{t(item.i18nKey)}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </ScrollArea>
-        <div className="space-y-3 px-3 pb-4">
-          <div className="flex items-center gap-3 rounded-[18px] bg-slate-50/80 p-3 dark:bg-white/[0.04]">
-            <div className="grid h-10 w-10 place-items-center rounded-[14px] bg-gradient-to-br from-blue-600 to-sky-500 text-white shadow-[0_10px_22px_rgba(37,99,235,0.2)]">
-              <ShieldCheck size={18} />
+                  <div className="flex items-center gap-3 px-2 py-2">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+                      AD
+                    </div>
+                    <div className="min-w-0 flex-1 leading-tight">
+                      <div className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                        {accountName}
+                      </div>
+                      <div className="mt-0.5 truncate text-2xs text-slate-400">{accountTenant}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      aria-label={accountLogoutLabel}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors duration-150 hover:bg-rose-50 hover:text-rose-600 focus-visible:bg-rose-50 focus-visible:text-rose-600 focus-visible:outline-none dark:text-slate-500 dark:hover:bg-rose-400/10 dark:hover:text-rose-300"
+                    >
+                      <LogOut size={15} />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                Admin
-              </div>
-              <div className="truncate text-[11px] text-slate-400">
-                {t("shell.sidebar_account_role")}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                navigate("/login", { replace: true, viewTransition: true });
-                logout();
-              }}
-              aria-label={accountLogoutLabel}
-              title={accountLogoutLabel}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-transparent text-slate-400 transition-colors duration-200 ease-out hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/30 dark:text-slate-500 dark:hover:text-rose-300 dark:focus-visible:ring-rose-300/20"
-            >
-              <LogOut size={15} />
-            </button>
           </div>
         </div>
-      </div>
       </aside>
     </>
   );
 }
 
 function ShellHeader({
+  isMobile,
   sidebarCollapsed,
   onToggleSidebar,
 }: {
+  isMobile: boolean;
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
 }) {
@@ -332,26 +1090,113 @@ function ShellHeader({
   const {
     state: { titleKey },
   } = useShell();
+  const auth = useOptionalAuth();
+  const canSwitchTenants =
+    auth?.state.principal?.platform_admin && auth.state.principal.kind !== "service_credential";
+  const [tenants, setTenants] = useState<TenantIdentity[]>([]);
+  const [tenantSwitching, setTenantSwitching] = useState(false);
+  // Bumped on IDENTITY_TENANTS_UPDATED_EVENT so create/update/delete refresh the switcher
+  // without remounting the shell.
+  const [tenantsEpoch, setTenantsEpoch] = useState(0);
+  useEffect(() => {
+    if (!canSwitchTenants) {
+      setTenants([]);
+      return;
+    }
+    let cancelled = false;
+    void identityApi
+      .tenants()
+      .then((response) => {
+        if (cancelled) return;
+        setTenants(
+          (response.items ?? []).filter(
+            (tenant) => tenant.type === "system" || tenant.effective_status === "active",
+          ),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setTenants([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [canSwitchTenants, tenantsEpoch]);
 
-  const SidebarIcon = sidebarCollapsed ? PanelLeftOpen : PanelLeftClose;
+  useEffect(() => {
+    if (!canSwitchTenants) return;
+    const onTenantsUpdated = () => setTenantsEpoch((epoch) => epoch + 1);
+    window.addEventListener(IDENTITY_TENANTS_UPDATED_EVENT, onTenantsUpdated);
+    return () => window.removeEventListener(IDENTITY_TENANTS_UPDATED_EVENT, onTenantsUpdated);
+  }, [canSwitchTenants]);
+
+  const systemTenantLabel = t("shell.system_tenant");
+  const effectiveTenant = auth?.state.principal?.effective_tenant;
+  const effectiveTenantId = effectiveTenant?.id ?? "";
+  const tenantOptions = useMemo<SearchableSelectOption[]>(() => {
+    const byId = new Map<string, TenantIdentity>();
+    for (const tenant of tenants) byId.set(tenant.id, tenant);
+    if (effectiveTenant && !byId.has(effectiveTenant.id)) {
+      byId.set(effectiveTenant.id, effectiveTenant);
+    }
+    return Array.from(byId.values()).map((tenant) => {
+      const label = tenantDisplayName(tenant, systemTenantLabel);
+      return {
+        value: tenant.id,
+        label,
+        searchText: `${label} ${tenant.slug ?? ""} ${tenant.name}`,
+        icon: <Building2 size={16} className="shrink-0 opacity-65" />,
+      };
+    });
+  }, [effectiveTenant, systemTenantLabel, tenants]);
+
+  const handleTenantChange = useCallback(
+    (tenantId: string) => {
+      if (!auth || tenantId === effectiveTenantId || tenantSwitching) return;
+      setTenantSwitching(true);
+      void auth.actions
+        .switchTenant(tenantId)
+        .catch(() => undefined)
+        .finally(() => setTenantSwitching(false));
+    },
+    [auth, effectiveTenantId, tenantSwitching],
+  );
+
+  // Single-tenant installs have nothing to switch to — hide the control entirely
+  // (including the system-admin-only bootstrap case).
+  const showTenantSwitcher =
+    Boolean(canSwitchTenants && auth?.state.principal) && tenantOptions.length > 1;
+
   const sidebarLabel = sidebarCollapsed ? t("shell.expand_sidebar") : t("shell.collapse_sidebar");
 
   return (
     <header className="z-20 shrink-0 border-b border-slate-200 bg-white/75 backdrop-blur-xl motion-reduce:transition-none motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out dark:border-neutral-800 dark:bg-neutral-950/60">
       <h1 className="sr-only">{t(titleKey)}</h1>
       <div className="flex h-14 items-center justify-between gap-3 px-3 sm:px-6">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            aria-label={sidebarLabel}
-            title={sidebarLabel}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border-0 bg-transparent text-slate-500 shadow-none transition-[color,transform] duration-150 ease-out hover:-translate-y-0.5 hover:text-slate-900 active:translate-y-0 active:scale-95 dark:text-slate-400 dark:hover:text-white"
-          >
-            <SidebarIcon size={16} />
-          </button>
+        <div className="flex h-9 w-9 items-center">
+          {isMobile ? (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              aria-label={sidebarLabel}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              <PanelLeft size={18} />
+            </button>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          {showTenantSwitcher ? (
+            <SearchableSelect
+              value={effectiveTenantId}
+              onChange={handleTenantChange}
+              options={tenantOptions}
+              disabled={tenantSwitching}
+              aria-label={t("shell.switch_tenant")}
+              searchPlaceholder={t("shell.search_tenant")}
+              placeholder={t("shell.switch_tenant")}
+              className="hidden w-auto max-w-48 min-w-0 gap-1 border-0 bg-transparent px-2 text-slate-600 shadow-none hover:border-0 hover:bg-slate-100 hover:text-slate-950 focus-visible:border-0 focus-visible:ring-2 focus-visible:ring-blue-500/25 sm:inline-flex dark:bg-transparent dark:text-slate-300 dark:hover:border-0 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:border-0 [&>span:first-child]:flex-none [&>span:first-child]:max-w-36 [&>svg]:ml-0"
+            />
+          ) : null}
           <LanguageSelector className="inline-flex h-9 items-center justify-center gap-0.5 rounded-xl px-1.5 text-slate-500 transition-colors duration-200 ease-out hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" />
           <ThemeToggleButton className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors duration-200 ease-out hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" />
         </div>
@@ -377,7 +1222,9 @@ export function AppShell({ children, onLogout }: PropsWithChildren<{ onLogout?: 
   const { t } = useTranslation();
   const logout = onLogout ?? (() => {});
 
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia?.(SIDEBAR_MOBILE_MEDIA).matches ?? false,
+  );
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState<boolean>(() => {
     try {
@@ -394,9 +1241,13 @@ export function AppShell({ children, onLogout }: PropsWithChildren<{ onLogout?: 
     const update = () => setIsMobile(mq.matches);
     update();
 
+    window.addEventListener("resize", update);
     if (typeof mq.addEventListener === "function") {
       mq.addEventListener("change", update);
-      return () => mq.removeEventListener("change", update);
+      return () => {
+        window.removeEventListener("resize", update);
+        mq.removeEventListener("change", update);
+      };
     }
 
     const legacy = mq as unknown as {
@@ -405,7 +1256,10 @@ export function AppShell({ children, onLogout }: PropsWithChildren<{ onLogout?: 
     };
 
     legacy.addListener?.(update);
-    return () => legacy.removeListener?.(update);
+    return () => {
+      window.removeEventListener("resize", update);
+      legacy.removeListener?.(update);
+    };
   }, []);
 
   useEffect(() => {
@@ -443,16 +1297,17 @@ export function AppShell({ children, onLogout }: PropsWithChildren<{ onLogout?: 
     setDesktopSidebarCollapsed((prev) => !prev);
   }, [isMobile]);
 
+  const auth = useOptionalAuth();
   const value = useMemo<ShellContextState>(
     () => ({
       state: {
-        titleKey: getPageTitleKey(location.pathname),
+        titleKey: getPageTitleKey(location.pathname, auth?.state.principal?.menus),
       },
       actions: {
         logout,
       },
     }),
-    [location.pathname, logout],
+    [auth?.state.principal?.menus, location.pathname, logout],
   );
 
   const sidebarCollapsed = isMobile ? !mobileSidebarOpen : desktopSidebarCollapsed;
@@ -478,10 +1333,15 @@ export function AppShell({ children, onLogout }: PropsWithChildren<{ onLogout?: 
           <ShellSidebar
             collapsed={sidebarCollapsed}
             mode={isMobile ? "mobile" : "desktop"}
+            onToggleSidebar={toggleSidebar}
             onNavigate={isMobile ? () => setMobileSidebarOpen(false) : undefined}
           />
           <div className="flex min-w-0 flex-1 flex-col">
-            <ShellHeader sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
+            <ShellHeader
+              isMobile={isMobile}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+            />
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
               <ShellMain>{children}</ShellMain>
             </div>

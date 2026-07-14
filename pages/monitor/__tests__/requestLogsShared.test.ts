@@ -24,6 +24,8 @@ describe("requestLogsShared", () => {
       model: "gpt-image-2",
       source: "codex",
       channel_name: "GptPlus1",
+      provider: "codex",
+      auth_type: "oauth",
       auth_index: "auth-1",
       failed: false,
       streaming: true,
@@ -41,6 +43,35 @@ describe("requestLogsShared", () => {
     expect(row.isSystemCall).toBe(true);
     expect(row.apiKeyName).toBe("");
     expect(row.streaming).toBe(true);
+    expect(row.channelProvider).toBe("codex");
+    expect(row.channelAuthType).toBe("oauth");
+  });
+
+  test("normalizes channel auth_type aliases for table badges", () => {
+    expect(
+      toRequestLogsRow({
+        id: 2,
+        timestamp: "2026-04-23T10:00:00Z",
+        api_key: "sk-live",
+        api_key_name: "Live",
+        model: "gpt-5.4",
+        source: "openai",
+        channel_name: "Relay",
+        provider: "openai",
+        auth_type: "api_key",
+        auth_index: "auth-2",
+        failed: false,
+        latency_ms: 100,
+        first_token_ms: 0,
+        input_tokens: 1,
+        output_tokens: 1,
+        reasoning_tokens: 0,
+        cached_tokens: 0,
+        total_tokens: 2,
+        cost: 0,
+        has_content: false,
+      }).channelAuthType,
+    ).toBe("api");
   });
 
   test("deduplicates system call filter options", () => {

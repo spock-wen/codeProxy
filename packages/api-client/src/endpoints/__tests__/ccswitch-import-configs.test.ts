@@ -70,7 +70,7 @@ describe("ccSwitchImportConfigsApi", () => {
         endpointPath: "/v1",
         usageAutoInterval: 30,
         modelMappings: [
-          { requestModel: "gpt-5.5", targetModel: "gpt-5.5" },
+          { requestModel: "gpt-5.5", targetModel: "gpt-5.5", contextWindow: 272000 },
           { requestModel: "deepseek-v4-flash", targetModel: "deepseek-chat" },
         ],
         codexModelCatalogFilename: "cc-switch-model-catalog.json",
@@ -97,6 +97,14 @@ describe("ccSwitchImportConfigsApi", () => {
       expect.objectContaining({
         id: "codex-deepseek",
         "client-type": "codex",
+        "model-mappings": [
+          {
+            "request-model": "gpt-5.5",
+            "target-model": "gpt-5.5",
+            "context-window": 272000,
+          },
+          { "request-model": "deepseek-v4-flash", "target-model": "deepseek-chat" },
+        ],
         "codex-model-catalog-filename": "cc-switch-model-catalog.json",
         "codex-model-catalog": expect.objectContaining({
           models: expect.arrayContaining([
@@ -125,7 +133,7 @@ describe("ccSwitchImportConfigsApi", () => {
         "provider-name": "Pro pool + DeepSeek",
         "default-model": "gpt-5.5",
         "model-mappings": [
-          { "request-model": "gpt-5.5", "target-model": "gpt-5.5" },
+          { "request-model": "gpt-5.5", "target-model": "gpt-5.5", "context-window": 272000 },
           { "request-model": "deepseek-v4-flash", "target-model": "deepseek-chat" },
         ],
         "allowed-channel-groups": ["pro"],
@@ -150,6 +158,10 @@ describe("ccSwitchImportConfigsApi", () => {
     expect(configs).toHaveLength(1);
     expect(configs[0]).toMatchObject({
       codexModelCatalogFilename: "cc-switch-model-catalog.json",
+      modelMappings: [
+        { requestModel: "gpt-5.5", targetModel: "gpt-5.5", contextWindow: 272000 },
+        { requestModel: "deepseek-v4-flash", targetModel: "deepseek-chat" },
+      ],
       codexModelCatalog: {
         models: [
           {
@@ -160,6 +172,45 @@ describe("ccSwitchImportConfigsApi", () => {
           { slug: "deepseek-v4-flash" },
         ],
       },
+    });
+  });
+
+  test("normalizes camelCase Codex catalog context and reasoning fields", () => {
+    const configs = normalizeCcSwitchImportConfigs([
+      {
+        id: "codex-gpt56",
+        "client-type": "codex",
+        "provider-name": "GPT-5.6",
+        "default-model": "gpt-5.6-sol",
+        "model-mappings": [{ "request-model": "gpt-5.6-sol", "target-model": "gpt-5.6-sol" }],
+        "codex-model-catalog": {
+          models: [
+            {
+              slug: "gpt-5.6-sol",
+              model: "gpt-5.6-sol",
+              contextWindow: 1050000,
+              maxContextWindow: 1050000,
+              defaultReasoningLevel: "medium",
+              supportedReasoningLevels: [
+                { effort: "max", description: "Maximum" },
+                { effort: "ultra", description: "Delegated" },
+              ],
+              modelMessages: { contextWindow: 1050000, maxContextWindow: 1050000 },
+            },
+          ],
+        },
+      },
+    ]);
+
+    expect(configs[0]?.codexModelCatalog?.models[0]).toMatchObject({
+      context_window: 1050000,
+      max_context_window: 1050000,
+      default_reasoning_level: "medium",
+      supported_reasoning_levels: [
+        { effort: "max", description: "Maximum" },
+        { effort: "ultra", description: "Delegated" },
+      ],
+      model_messages: { context_window: 1050000, max_context_window: 1050000 },
     });
   });
 });

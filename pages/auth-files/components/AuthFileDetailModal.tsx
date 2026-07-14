@@ -49,6 +49,7 @@ import {
   type CodexOAuthAdmissionEditorState,
   type PrefixProxyEditorState,
 } from "@code-proxy/domain";
+import type { QuotaState } from "@features/quota-preview/quota-helpers";
 
 type DetailTab = "usage" | "identity" | "fields" | "models";
 type DetailTrendWindow = "5h" | "week";
@@ -180,7 +181,11 @@ interface AuthFileDetailModalProps {
   detailTrendError: string | null;
   identityFingerprintDetail: IdentityFingerprintAccountDetail | null;
   identityFingerprintLoading: boolean;
+  identityFingerprintSaving: boolean;
   identityFingerprintError: string | null;
+  selectIdentityFingerprintProfile: (profileKey: string) => Promise<void>;
+  useIdentityFingerprintCLIPreferred: () => Promise<void>;
+  deleteIdentityFingerprintProfile: (profileKey: string) => Promise<void>;
   refreshDetailTrend: (file?: AuthFileItem | null, options?: { silent?: boolean }) => Promise<void>;
   loadModelsForDetail: (file: AuthFileItem, options?: { force?: boolean }) => Promise<void>;
   loadModelOwnerGroups: () => Promise<void>;
@@ -192,6 +197,7 @@ interface AuthFileDetailModalProps {
   mappedModelOwnerGroup: AuthFileModelOwnerGroup | null;
   mappedModelOwnerValue: string;
   excluded: Record<string, string[]>;
+  quotaState?: QuotaState | null;
   prefixProxyEditor: PrefixProxyEditorState;
   setPrefixProxyEditor: Dispatch<SetStateAction<PrefixProxyEditorState>>;
   prefixProxyDirty: boolean;
@@ -221,7 +227,11 @@ export function AuthFileDetailModal({
   detailTrendError,
   identityFingerprintDetail,
   identityFingerprintLoading,
+  identityFingerprintSaving,
   identityFingerprintError,
+  selectIdentityFingerprintProfile,
+  useIdentityFingerprintCLIPreferred,
+  deleteIdentityFingerprintProfile,
   refreshDetailTrend,
   loadModelsForDetail,
   loadModelOwnerGroups,
@@ -233,6 +243,7 @@ export function AuthFileDetailModal({
   mappedModelOwnerGroup,
   mappedModelOwnerValue,
   excluded,
+  quotaState = null,
   prefixProxyEditor,
   setPrefixProxyEditor,
   prefixProxyDirty,
@@ -248,6 +259,7 @@ export function AuthFileDetailModal({
 }: AuthFileDetailModalProps) {
   const { t, i18n } = useTranslation();
   const isIdentityDesktopLayout = useIdentityDesktopLayout();
+  const [viewedIdentityProfileKey, setViewedIdentityProfileKey] = useState("");
   const proxyCheckState = useProxyPoolChecks(proxyPoolEntries, open && detailTab === "fields");
   const usesMappedModelOwner = Boolean(mappedModelOwnerValue);
   const visibleModelsList = usesMappedModelOwner
@@ -257,8 +269,24 @@ export function AuthFileDetailModal({
   const visibleModelsError = usesMappedModelOwner ? null : modelsError;
   const providerKey = normalizeProviderKey(modelsFileType);
   const detailProviderKey = detailFile ? normalizeProviderKey(resolveFileType(detailFile)) : "";
-  const supportsUsageTrend = detailProviderKey === "kimi" || detailProviderKey === "codex";
+  const supportsUsageTrend =
+    detailProviderKey === "kimi" || detailProviderKey === "codex" || detailProviderKey === "xai";
   const hasIdentityFingerprint = Boolean(detailFile?.identity_fingerprint_summary);
+  useEffect(() => {
+    const profiles = identityFingerprintDetail?.profiles ?? [];
+    if (profiles.length === 0) {
+      setViewedIdentityProfileKey("");
+      return;
+    }
+    setViewedIdentityProfileKey((current) => {
+      if (current && profiles.some((profile) => profile.summary.profile_key === current)) {
+        return current;
+      }
+      return (
+        identityFingerprintDetail?.selected_profile_key ?? profiles[0]?.summary.profile_key ?? ""
+      );
+    });
+  }, [identityFingerprintDetail]);
   const openedDetailFileRef = useRef<string | null>(null);
   const detailOpenCounterRef = useRef(0);
   const [detailOpenKey, setDetailOpenKey] = useState("");
@@ -267,7 +295,7 @@ export function AuthFileDetailModal({
     ? resolveAuthFileDisplayName(detailFile) || String(detailFile.name || "")
     : t("auth_files.view_auth_file");
   const claudeOAuthHealth = detailFile ? resolveClaudeOAuthHealth(detailFile) : null;
-  const detailPlanType = detailFile ? resolveAuthFilePlanType(detailFile) : null;
+  const detailPlanType = detailFile ? resolveAuthFilePlanType(detailFile, quotaState) : null;
   const detailPlanLabel = useMemo(() => {
     if (!detailPlanType) return "";
     const normalized = detailPlanType.trim().toLowerCase();
@@ -275,7 +303,15 @@ export function AuthFileDetailModal({
     if (normalized === "plus" || normalized === "team" || normalized === "free") {
       return t(`codex_quota.plan_${normalized}`);
     }
-    return normalized;
+    if (normalized === "supergrok") return t("xai_quota.plan_supergrok");
+    if (
+      normalized === "supergrok-heavy" ||
+      normalized === "supergrok_heavy" ||
+      normalized === "supergrokheavy"
+    ) {
+      return t("xai_quota.plan_supergrok_heavy");
+    }
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   }, [detailPlanType, t]);
   const excludedModels = excluded[providerKey] ?? [];
   const canRenameChannel = detailFile ? canRenameAuthFileChannel(detailFile) : false;
@@ -428,7 +464,11 @@ export function AuthFileDetailModal({
           min: 0,
           max: 100,
           offset: 46,
-          axisLabel: { color: "#64748b", formatter: "{value}%", hideOverlap: true },
+          axisLabel: {
+            color: "#64748b",
+            formatter: "{value}%",
+            hideOverlap: true,
+          },
           splitLine: { show: false },
         },
         {
@@ -568,7 +608,7 @@ export function AuthFileDetailModal({
 
   const renderHealthValue = (label: string, value: string) => (
     <div className="min-w-0">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.02em] text-slate-500 dark:text-white/45">
+      <p className="text-xs font-semibold uppercase tracking-[0.02em] text-slate-500 dark:text-white/45">
         {label}
       </p>
       <p className="mt-1 min-w-0 break-words font-mono text-xs text-slate-900 dark:text-white/85">
@@ -614,7 +654,7 @@ export function AuthFileDetailModal({
 
     return (
       <span
-        className={`inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${className}`}
+        className={`inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-xs font-semibold ${className}`}
       >
         {formatIdentitySource(source)}
       </span>
@@ -629,7 +669,7 @@ export function AuthFileDetailModal({
 
   const renderIdentitySummaryItem = (label: string, value: string) => (
     <div className="min-w-0">
-      <dt className="text-[11px] font-semibold uppercase tracking-[0.02em] text-slate-500 dark:text-white/45">
+      <dt className="text-xs font-semibold uppercase tracking-[0.02em] text-slate-500 dark:text-white/45">
         {label}
       </dt>
       <dd className="mt-1 min-w-0 break-words text-sm font-semibold text-slate-950 dark:text-white">
@@ -690,8 +730,9 @@ export function AuthFileDetailModal({
   ];
 
   const renderIdentityFingerprint = () => {
-    const summary = identityFingerprintDetail?.summary ?? detailFile?.identity_fingerprint_summary;
-    if (!summary) {
+    const accountSummary =
+      identityFingerprintDetail?.summary ?? detailFile?.identity_fingerprint_summary;
+    if (!accountSummary) {
       return (
         <EmptyState
           title={t("auth_files.identity_fingerprint_empty")}
@@ -700,9 +741,26 @@ export function AuthFileDetailModal({
       );
     }
 
+    const profiles = identityFingerprintDetail?.profiles ?? [];
+    const hasCodexProfiles = accountSummary.provider === "codex" && profiles.length > 0;
+    const viewedProfile = hasCodexProfiles
+      ? (profiles.find((profile) => profile.summary.profile_key === viewedIdentityProfileKey) ??
+        profiles.find(
+          (profile) =>
+            profile.summary.profile_key === identityFingerprintDetail?.selected_profile_key,
+        ) ??
+        profiles[0])
+      : null;
+    const summary = viewedProfile?.summary ?? accountSummary;
+    const effective = viewedProfile?.effective ?? identityFingerprintDetail?.effective;
+    const learned = viewedProfile?.learned ?? identityFingerprintDetail?.learned;
     const clientLabel =
-      [summary.client_product, summary.client_variant].filter(Boolean).join(" / ") || "--";
-    const effectiveRows = Object.entries(identityFingerprintDetail?.effective.fields ?? {})
+      [summary.client_product, summary.client_variant].filter(Boolean).join(" / ") ||
+      summary.profile_key ||
+      "--";
+    const hasMeaningfulValue = (value: unknown): boolean =>
+      typeof value === "string" ? value.trim().length > 0 : value != null && value !== "";
+    const effectiveRows = Object.entries(effective?.fields ?? {})
       .map(
         ([key, field]): IdentityFingerprintFieldRow => ({
           id: `effective:${key}`,
@@ -712,8 +770,9 @@ export function AuthFileDetailModal({
           source: field.source,
         }),
       )
+      .filter((row) => hasMeaningfulValue(row.value))
       .sort((left, right) => left.field.localeCompare(right.field));
-    const learnedRows = Object.entries(identityFingerprintDetail?.learned?.fields ?? {})
+    const learnedRows = Object.entries(learned?.fields ?? {})
       .map(
         ([key, value]): IdentityFingerprintFieldRow => ({
           id: `learned:${key}`,
@@ -723,10 +782,9 @@ export function AuthFileDetailModal({
           source: "learned",
         }),
       )
+      .filter((row) => hasMeaningfulValue(row.value))
       .sort((left, right) => left.field.localeCompare(right.field));
-    const observedHeaderRows = Object.entries(
-      identityFingerprintDetail?.learned?.observed_headers ?? {},
-    )
+    const observedHeaderRows = Object.entries(learned?.observed_headers ?? {})
       .map(
         ([key, value]): IdentityFingerprintFieldRow => ({
           id: `observed:${key}`,
@@ -736,8 +794,45 @@ export function AuthFileDetailModal({
           source: "learned",
         }),
       )
+      .filter((row) => hasMeaningfulValue(row.value))
       .sort((left, right) => left.field.localeCompare(right.field));
     const identityFieldRows = [...effectiveRows, ...learnedRows, ...observedHeaderRows];
+    const selectedProfileKey = identityFingerprintDetail?.selected_profile_key ?? "";
+    const outboundProfile = profiles.find(
+      (profile) => profile.summary.profile_key === selectedProfileKey,
+    );
+    const outboundLabel = outboundProfile
+      ? [outboundProfile.summary.client_product, outboundProfile.summary.client_variant]
+          .filter(Boolean)
+          .join(" / ") ||
+        outboundProfile.summary.profile_key ||
+        "--"
+      : [accountSummary.client_product, accountSummary.client_variant]
+          .filter(Boolean)
+          .join(" / ") ||
+        accountSummary.profile_key ||
+        "--";
+    const viewedProfileSelectable = viewedProfile?.selectable !== false;
+    const isViewedProfileSelected =
+      Boolean(summary.profile_key) && summary.profile_key === selectedProfileKey;
+    const selectionReason = identityFingerprintDetail?.selection_reason
+      ? t(`auth_files.identity_selection_reason_${identityFingerprintDetail.selection_reason}`)
+      : "--";
+
+    const deleteViewedProfile = async () => {
+      const profileKey = summary.profile_key;
+      if (!profileKey) return;
+      if (
+        !window.confirm(
+          t("auth_files.identity_profile_delete_confirm", {
+            profile: clientLabel,
+          }),
+        )
+      ) {
+        return;
+      }
+      await deleteIdentityFingerprintProfile(profileKey);
+    };
 
     return (
       <div
@@ -746,55 +841,178 @@ export function AuthFileDetailModal({
       >
         <div className="grid min-w-0 gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)] lg:grid-rows-1 lg:overflow-hidden">
           <aside
-            className="min-w-0 rounded-lg bg-slate-50/80 px-4 py-4 lg:min-h-0 lg:overflow-hidden dark:bg-white/[0.04]"
+            className="min-w-0 rounded-lg bg-slate-50/80 px-4 py-4 lg:min-h-0 lg:overflow-y-auto dark:bg-white/[0.04]"
             data-testid="auth-file-identity-summary"
           >
-            <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="min-w-0 break-words text-sm font-semibold text-slate-950 dark:text-white">
-                  {clientLabel}
-                </p>
-                <p className="mt-1 min-w-0 break-words text-xs text-slate-500 dark:text-white/55">
-                  {formatOptionalText(summary.provider)} · {formatOptionalText(summary.account_key)}
-                </p>
+            {hasCodexProfiles ? (
+              <div className="space-y-4" data-testid="auth-file-identity-profiles">
+                <div className="rounded-lg bg-white px-3 py-3 ring-1 ring-slate-200 dark:bg-neutral-950/40 dark:ring-white/10">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-white/55">
+                    {t("auth_files.identity_outbound_strategy")}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Button
+                      variant={
+                        identityFingerprintDetail?.policy?.strategy === "cli_preferred"
+                          ? "primary"
+                          : "secondary"
+                      }
+                      size="sm"
+                      disabled={identityFingerprintSaving}
+                      onClick={() => void useIdentityFingerprintCLIPreferred()}
+                    >
+                      {t("auth_files.identity_strategy_cli_preferred")}
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-white/55">
+                    {t("auth_files.identity_current_outbound")}: {formatOptionalText(outboundLabel)}
+                    <br />
+                    {t("auth_files.identity_selection_reason")}: {selectionReason}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-slate-500 dark:text-white/55">
+                    {t("auth_files.identity_profiles")}
+                  </p>
+                  <div className="space-y-2">
+                    {profiles.map((profile) => {
+                      const profileKey = profile.summary.profile_key ?? "";
+                      const outbound = profileKey !== "" && profileKey === selectedProfileKey;
+                      const viewed = profileKey !== "" && profileKey === summary.profile_key;
+                      const label =
+                        [profile.summary.client_product, profile.summary.client_variant]
+                          .filter(Boolean)
+                          .join(" / ") ||
+                        profileKey ||
+                        "--";
+                      return (
+                        <button
+                          key={profileKey || label}
+                          type="button"
+                          className={[
+                            "w-full rounded-lg px-3 py-3 text-left ring-1 transition",
+                            viewed
+                              ? "bg-blue-50 ring-blue-300 dark:bg-blue-500/10 dark:ring-blue-400/40"
+                              : "bg-white ring-slate-200 hover:ring-slate-300 dark:bg-neutral-950/40 dark:ring-white/10 dark:hover:ring-white/20",
+                          ].join(" ")}
+                          onClick={() => setViewedIdentityProfileKey(profileKey)}
+                          data-testid={`identity-profile-${profileKey}`}
+                        >
+                          <div className="flex min-w-0 items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="break-words text-sm font-semibold text-slate-950 dark:text-white">
+                                {label}
+                              </p>
+                              <p className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-white/45">
+                                {profileKey}
+                              </p>
+                            </div>
+                            {outbound ? (
+                              <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
+                                {t("auth_files.identity_outbound_active")}
+                              </span>
+                            ) : profile.selectable === false ? (
+                              <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-200">
+                                {t("auth_files.identity_profile_observe_only")}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-white/50">
+                            <span>{formatOptionalText(profile.summary.version)}</span>
+                            <span>{formatOptionalDate(profile.summary.last_seen_at)}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={isViewedProfileSelected ? "secondary" : "primary"}
+                    size="sm"
+                    disabled={
+                      identityFingerprintSaving ||
+                      isViewedProfileSelected ||
+                      !viewedProfileSelectable ||
+                      !summary.profile_key
+                    }
+                    onClick={() =>
+                      summary.profile_key
+                        ? void selectIdentityFingerprintProfile(summary.profile_key)
+                        : undefined
+                    }
+                  >
+                    {isViewedProfileSelected
+                      ? t("auth_files.identity_outbound_active")
+                      : t("auth_files.identity_set_outbound")}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    disabled={identityFingerprintSaving || !summary.profile_key}
+                    onClick={() => void deleteViewedProfile()}
+                  >
+                    {t("auth_files.identity_clear_profile")}
+                  </Button>
+                </div>
               </div>
-              <div className="shrink-0">{renderIdentitySourceBadge(summary.primary_source)}</div>
-            </div>
+            ) : null}
 
-            <dl className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              {renderIdentitySummaryItem(
-                t("auth_files.identity_fingerprint_auth_subject"),
-                formatOptionalText(summary.auth_subject_id),
-              )}
-              {renderIdentitySummaryItem(
-                t("auth_files.identity_fingerprint_version"),
-                formatOptionalText(summary.version),
-              )}
-              {renderIdentitySummaryItem(
-                t("auth_files.identity_fingerprint_updated_at"),
-                formatOptionalDate(summary.updated_at),
-              )}
-              {renderIdentitySummaryItem(
-                t("auth_files.identity_fingerprint_last_seen_at"),
-                formatOptionalDate(summary.last_seen_at),
-              )}
-            </dl>
+            <div
+              className={
+                hasCodexProfiles ? "mt-5 border-t border-slate-200 pt-4 dark:border-white/10" : ""
+              }
+            >
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="min-w-0 break-words text-sm font-semibold text-slate-950 dark:text-white">
+                    {clientLabel}
+                  </p>
+                  <p className="mt-1 min-w-0 break-words text-xs text-slate-500 dark:text-white/55">
+                    {formatOptionalText(summary.provider)} ·{" "}
+                    {formatOptionalText(summary.account_key)}
+                  </p>
+                </div>
+                <div className="shrink-0">{renderIdentitySourceBadge(summary.primary_source)}</div>
+              </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-neutral-950/40 dark:text-white/65 dark:ring-white/10">
-                {t("auth_files.identity_fingerprint_effective_count")}: {summary.effective_fields}
-              </span>
-              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-neutral-950/40 dark:text-white/65 dark:ring-white/10">
-                {t("auth_files.identity_fingerprint_learned_count")}: {summary.learned_fields}
-              </span>
-              {IDENTITY_FINGERPRINT_SOURCE_ORDER.map((source) => (
-                <span
-                  key={source}
-                  className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-neutral-950/40 dark:text-white/65 dark:ring-white/10"
-                >
-                  {formatIdentitySource(source)}: {summary.source_counts?.[source] ?? 0}
+              <dl className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                {renderIdentitySummaryItem(
+                  t("auth_files.identity_fingerprint_auth_subject"),
+                  formatOptionalText(summary.auth_subject_id),
+                )}
+                {renderIdentitySummaryItem(
+                  t("auth_files.identity_fingerprint_version"),
+                  formatOptionalText(summary.version),
+                )}
+                {renderIdentitySummaryItem(
+                  t("auth_files.identity_fingerprint_updated_at"),
+                  formatOptionalDate(summary.updated_at),
+                )}
+                {renderIdentitySummaryItem(
+                  t("auth_files.identity_fingerprint_last_seen_at"),
+                  formatOptionalDate(summary.last_seen_at),
+                )}
+              </dl>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-neutral-950/40 dark:text-white/65 dark:ring-white/10">
+                  {t("auth_files.identity_fingerprint_effective_count")}: {summary.effective_fields}
                 </span>
-              ))}
+                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-neutral-950/40 dark:text-white/65 dark:ring-white/10">
+                  {t("auth_files.identity_fingerprint_learned_count")}: {summary.learned_fields}
+                </span>
+                {IDENTITY_FINGERPRINT_SOURCE_ORDER.map((source) => (
+                  <span
+                    key={source}
+                    className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-neutral-950/40 dark:text-white/65 dark:ring-white/10"
+                  >
+                    {formatIdentitySource(source)}: {summary.source_counts?.[source] ?? 0}
+                  </span>
+                ))}
+              </div>
             </div>
           </aside>
 
@@ -827,7 +1045,9 @@ export function AuthFileDetailModal({
                     {t("auth_files.identity_fingerprint_title")}
                   </p>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-white/65">
-                    {t("auth_files.count_items", { count: identityFieldRows.length })}
+                    {t("auth_files.count_items", {
+                      count: identityFieldRows.length,
+                    })}
                   </span>
                 </div>
                 {isIdentityDesktopLayout ? (
@@ -882,10 +1102,12 @@ export function AuthFileDetailModal({
 
   const renderUsageTrend = () => {
     const isCodexDetail = detailProviderKey === "codex";
-    const summaryGridClassName = isCodexDetail
+    // xAI only has a weekly window (no Codex 5h slot); still show predicted weekly quota like Codex.
+    const showPredictedWeeklyQuota = isCodexDetail || detailProviderKey === "xai";
+    const summaryGridClassName = showPredictedWeeklyQuota
       ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
       : "grid gap-3 sm:grid-cols-2 xl:grid-cols-5";
-    const summarySkeletonCount = isCodexDetail ? 6 : 5;
+    const summarySkeletonCount = showPredictedWeeklyQuota ? 6 : 5;
 
     if (detailTrendLoading && !detailTrend) {
       const skeletonClass = "animate-pulse rounded-lg bg-slate-100/80 dark:bg-white/[0.06]";
@@ -923,10 +1145,21 @@ export function AuthFileDetailModal({
 
     const formatCount = (value: number) =>
       Number.isFinite(value) ? Math.round(value).toLocaleString() : "0";
+    // Prefer cycle totals when the backend knows the weekly cycle start; otherwise fall back
+    // so xAI cards do not show a misleading 0 before weekly_limit snapshots exist.
+    const displayCycleRequestTotal =
+      detailTrend.cycle_known === true
+        ? detailTrend.cycle_request_total
+        : detailTrend.cycle_request_total > 0
+          ? detailTrend.cycle_request_total
+          : detailTrend.request_total;
+    const displayCycleCostTotal =
+      detailTrend.cycle_known === true
+        ? detailTrend.cycle_cost_total
+        : detailTrend.cycle_cost_total;
     const cycleStart = detailTrend.cycle_start
       ? new Date(detailTrend.cycle_start).toLocaleString()
       : "--";
-    const weeklyQuotaUsed = formatPercent(detailTrend.weekly_quota_used_percent);
     const fiveHourQuotaUsedPercent = isCodexDetail
       ? latestQuotaUsedPercent(
           detailTrend.quota_series,
@@ -942,15 +1175,20 @@ export function AuthFileDetailModal({
             "code_week",
             (windowSeconds) => windowSeconds >= WEEK_WINDOW_SECONDS,
           )
-        : null);
+        : detailProviderKey === "xai"
+          ? latestQuotaUsedPercent(
+              detailTrend.quota_series,
+              "weekly_limit",
+              (windowSeconds) => windowSeconds >= WEEK_WINDOW_SECONDS,
+            )
+          : null);
+    // Prefer the backend weekly used percent; fall back to the latest weekly_limit snapshot for xAI.
+    const weeklyQuotaUsed = formatPercent(weeklyQuotaUsedPercent);
     const estimatedFiveHourQuota = estimateQuotaBudget(
       sumUsageCost(detailTrend.hourly_usage),
       fiveHourQuotaUsedPercent,
     );
-    const estimatedWeeklyQuota = estimateQuotaBudget(
-      detailTrend.cycle_cost_total,
-      weeklyQuotaUsedPercent,
-    );
+    const estimatedWeeklyQuota = estimateQuotaBudget(displayCycleCostTotal, weeklyQuotaUsedPercent);
 
     return (
       <div className="space-y-4">
@@ -965,31 +1203,27 @@ export function AuthFileDetailModal({
           ) : null}
           <div className={SUMMARY_CARD_CLASS_NAME}>
             <p className={SUMMARY_LABEL_CLASS_NAME}>{t("auth_files.trend_current_weekly_cycle")}</p>
-            <p className={SUMMARY_VALUE_CLASS_NAME}>
-              {formatCount(detailTrend.cycle_request_total)}
-            </p>
+            <p className={SUMMARY_VALUE_CLASS_NAME}>{formatCount(displayCycleRequestTotal)}</p>
           </div>
           <div className={SUMMARY_CARD_CLASS_NAME}>
             <p className={SUMMARY_LABEL_CLASS_NAME}>{t("auth_files.trend_current_cycle_cost")}</p>
-            <p className={SUMMARY_VALUE_CLASS_NAME}>
-              {formatCurrency(detailTrend.cycle_cost_total)}
-            </p>
+            <p className={SUMMARY_VALUE_CLASS_NAME}>{formatCurrency(displayCycleCostTotal)}</p>
           </div>
           {isCodexDetail ? (
-            <>
-              <div className={SUMMARY_CARD_CLASS_NAME}>
-                <p className={SUMMARY_LABEL_CLASS_NAME}>
-                  {t("auth_files.trend_predicted_5h_window_quota")}
-                </p>
-                <p className={SUMMARY_VALUE_CLASS_NAME}>{formatCurrency(estimatedFiveHourQuota)}</p>
-              </div>
-              <div className={SUMMARY_CARD_CLASS_NAME}>
-                <p className={SUMMARY_LABEL_CLASS_NAME}>
-                  {t("auth_files.trend_predicted_week_window_quota")}
-                </p>
-                <p className={SUMMARY_VALUE_CLASS_NAME}>{formatCurrency(estimatedWeeklyQuota)}</p>
-              </div>
-            </>
+            <div className={SUMMARY_CARD_CLASS_NAME}>
+              <p className={SUMMARY_LABEL_CLASS_NAME}>
+                {t("auth_files.trend_predicted_5h_window_quota")}
+              </p>
+              <p className={SUMMARY_VALUE_CLASS_NAME}>{formatCurrency(estimatedFiveHourQuota)}</p>
+            </div>
+          ) : null}
+          {showPredictedWeeklyQuota ? (
+            <div className={SUMMARY_CARD_CLASS_NAME}>
+              <p className={SUMMARY_LABEL_CLASS_NAME}>
+                {t("auth_files.trend_predicted_week_window_quota")}
+              </p>
+              <p className={SUMMARY_VALUE_CLASS_NAME}>{formatCurrency(estimatedWeeklyQuota)}</p>
+            </div>
           ) : null}
           <div className={SUMMARY_CARD_CLASS_NAME}>
             <p className={SUMMARY_LABEL_CLASS_NAME}>{t("auth_files.trend_weekly_quota_used")}</p>
@@ -1045,7 +1279,7 @@ export function AuthFileDetailModal({
       title={detailTitle}
       titleAccessory={
         detailPlanLabel ? (
-          <span className="inline-flex shrink-0 items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
+          <span className="inline-flex shrink-0 items-center rounded-full bg-amber-50 px-2 py-0.5 text-2xs font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
             {detailPlanLabel}
           </span>
         ) : undefined
@@ -1405,7 +1639,10 @@ export function AuthFileDetailModal({
                                 value={prefixProxyEditor.prefix}
                                 onChange={(e) => {
                                   const value = e.currentTarget.value;
-                                  setPrefixProxyEditor((prev) => ({ ...prev, prefix: value }));
+                                  setPrefixProxyEditor((prev) => ({
+                                    ...prev,
+                                    prefix: value,
+                                  }));
                                 }}
                                 placeholder={t("auth_files.prefix_placeholder")}
                               />
@@ -1479,7 +1716,10 @@ export function AuthFileDetailModal({
                             value={prefixProxyEditor.proxyId}
                             entries={proxyPoolEntries}
                             onChange={(value) =>
-                              setPrefixProxyEditor((prev) => ({ ...prev, proxyId: value }))
+                              setPrefixProxyEditor((prev) => ({
+                                ...prev,
+                                proxyId: value,
+                              }))
                             }
                             label={t("auth_files.proxy_id_label")}
                             hint={t("auth_files.leave_empty_proxy_id")}
@@ -1497,7 +1737,10 @@ export function AuthFileDetailModal({
                             value={prefixProxyEditor.proxyUrl}
                             onChange={(e) => {
                               const value = e.currentTarget.value;
-                              setPrefixProxyEditor((prev) => ({ ...prev, proxyUrl: value }));
+                              setPrefixProxyEditor((prev) => ({
+                                ...prev,
+                                proxyUrl: value,
+                              }));
                             }}
                             placeholder={t("auth_files.proxy_url_placeholder")}
                           />
@@ -1530,7 +1773,9 @@ export function AuthFileDetailModal({
                   </div>
                   {!visibleModelsLoading && visibleModelsError !== "unsupported" ? (
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-white/65">
-                      {t("auth_files.count_items", { count: visibleModelsList.length })}
+                      {t("auth_files.count_items", {
+                        count: visibleModelsList.length,
+                      })}
                     </span>
                   ) : null}
                 </div>
@@ -1583,14 +1828,14 @@ export function AuthFileDetailModal({
                         </div>
                         <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                           {model.owned_by ? (
-                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-white/10 dark:text-white/65">
+                            <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-white/65">
                               {model.owned_by}
                             </span>
                           ) : null}
                           {excludedModels.some((pattern) =>
                             matchesModelPattern(model.id, pattern),
                           ) ? (
-                            <span className="rounded-full bg-rose-600/10 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
+                            <span className="rounded-full bg-rose-600/10 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
                               {t("auth_files.oauth_excluded")}
                             </span>
                           ) : null}

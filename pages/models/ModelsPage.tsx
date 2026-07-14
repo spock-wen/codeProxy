@@ -9,8 +9,16 @@ import type { SearchableSelectOption } from "@code-proxy/ui";
 import { ToggleSwitch } from "@code-proxy/ui";
 import { useToast } from "@code-proxy/ui";
 import { DataTable } from "@code-proxy/ui";
-import { apiClient } from "@code-proxy/api-client";
+import {
+  apiClient,
+  apiKeyEntriesApi,
+  detectApiBaseFromLocation,
+  normalizeApiBase,
+} from "@code-proxy/api-client";
+import { getActiveCacheTenantId } from "@code-proxy/domain";
+import { useOptionalAuth } from "@app/providers/AuthProvider";
 import { ModelFormModal } from "./components/ModelFormModal";
+import { ModelTestModal } from "./components/ModelTestModal";
 import { ModelsPageTabs } from "./components/ModelsPageTabs";
 import { ModelsStatsCards } from "./components/ModelsStatsCards";
 import { OwnerFormModal } from "./components/OwnerFormModal";
@@ -35,33 +43,56 @@ import {
   emptyForm,
   emptyOwnerForm,
   fetchModelConfigs,
+  fetchModelsPageTotalCost,
   fetchOwnerPresets,
   formatSyncTimestamp,
+  getModelsPageSnapshot,
   hasModelPricingData as hasPricing,
   mergeConfiguredModelAvailability,
   normalizeOpenRouterSyncResult,
   normalizeOpenRouterSyncState,
   normalizeOwnerPresetItems,
   normalizeOwnerValue,
+  patchModelsPageSnapshot,
   saveModelConfig,
+  setModelsPageSnapshot,
   syncIntervalHoursValue,
   syncIntervalMinutesFromHours,
   toFormState,
   toOwnerFormState,
 } from "./modelsUtils";
 
+const openRouterSyncStateByTenant = new Map<string, OpenRouterModelSyncState>();
+
+function readOpenRouterSyncCache(tenantKey: string): OpenRouterModelSyncState | null {
+  return openRouterSyncStateByTenant.get(tenantKey) ?? null;
+}
+
+function writeOpenRouterSyncCache(tenantKey: string, state: OpenRouterModelSyncState): void {
+  openRouterSyncStateByTenant.set(tenantKey, state);
+}
+
 export function ModelsPage() {
   const { t } = useTranslation();
   const { notify } = useToast();
+  const auth = useOptionalAuth();
+  const canManageOpenRouterSync = auth ? auth.can("system.config.read") : true;
+  // Stable tenant key for session caches (matches model-availability cache buckets).
+  const cacheTenantKey = getActiveCacheTenantId();
 
-  const [models, setModels] = useState<ModelItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialActiveSnapshot = getModelsPageSnapshot("active");
+  const [models, setModels] = useState<ModelItem[]>(() => initialActiveSnapshot?.models ?? []);
+  // Only block the table with skeleton when we have nothing to paint yet.
+  const [loading, setLoading] = useState(() => !initialActiveSnapshot);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
-  const [totalCost, setTotalCost] = useState(0);
+  const [totalCost, setTotalCost] = useState(() => initialActiveSnapshot?.totalCost ?? 0);
   const [form, setForm] = useState<ModelFormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<ModelPageTab>("active");
-  const [ownerPresets, setOwnerPresets] = useState<ModelOwnerPreset[]>([]);
+  const [ownerPresets, setOwnerPresets] = useState<ModelOwnerPreset[]>(
+    () => initialActiveSnapshot?.ownerPresets ?? [],
+  );
   const [ownerFilter, setOwnerFilter] = useState("");
   const [ownerSearchFilter, setOwnerSearchFilter] = useState("");
   const [ownerForm, setOwnerForm] = useState<OwnerFormState | null>(null);
@@ -70,68 +101,191 @@ export function ModelsPage() {
   const [deleteTarget, setDeleteTarget] = useState<ModelItem | null>(null);
   const [bulkDeleteTargetIds, setBulkDeleteTargetIds] = useState<string[] | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [togglingModelId, setTogglingModelId] = useState<string | null>(null);
+  const [testTarget, setTestTarget] = useState<ModelItem | null>(null);
+  const [testRunning, setTestRunning] = useState(false);
+  const [testResultText, setTestResultText] = useState<string | null>(null);
+  const [testErrorText, setTestErrorText] = useState<string | null>(null);
   const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(() => new Set());
+  const cachedOpenRouter = readOpenRouterSyncCache(cacheTenantKey);
   const [openRouterSyncState, setOpenRouterSyncState] = useState<OpenRouterModelSyncState>(
-    defaultOpenRouterSyncState,
+    () => cachedOpenRouter ?? defaultOpenRouterSyncState,
   );
+  // Only set true while fetching without a cached sync state to show.
   const [openRouterSyncLoading, setOpenRouterSyncLoading] = useState(false);
   const [openRouterSyncSaving, setOpenRouterSyncSaving] = useState(false);
   const [openRouterSyncRunning, setOpenRouterSyncRunning] = useState(false);
   const [openRouterSyncError, setOpenRouterSyncError] = useState<string | null>(null);
   const [modelIdSuggestionsOpen, setModelIdSuggestionsOpen] = useState(false);
-  const [syncIntervalHours, setSyncIntervalHours] = useState(
-    syncIntervalHoursValue(defaultOpenRouterSyncState.intervalMinutes),
+  const [syncIntervalHours, setSyncIntervalHours] = useState(() =>
+    syncIntervalHoursValue(
+      (cachedOpenRouter ?? defaultOpenRouterSyncState).intervalMinutes,
+    ),
   );
   const skipSyncIntervalBlurRef = useRef(false);
+  const loadSeqRef = useRef(0);
+  const modelsRef = useRef(models);
+  const ownerPresetsRef = useRef(ownerPresets);
+  const totalCostRef = useRef(totalCost);
+  // Keep last path-availability rows per scope so soft refresh does not drop path-only models.
+  const pathItemsByScopeRef = useRef<
+    Record<ModelScope, import("@features/model-availability").ModelPathAvailabilityItem[]>
+  >({
+    active: [],
+    library: [],
+  });
+  // After first successful paint (or warm snapshot), keep refreshes non-blocking.
+  const warmPaintByScopeRef = useRef<Record<ModelScope, boolean>>({
+    active: Boolean(initialActiveSnapshot),
+    library: Boolean(getModelsPageSnapshot("library")),
+  });
+  // Avoid re-fetching total cost on every tab switch when we already have a value this session.
+  const totalCostLoadedRef = useRef(Boolean(initialActiveSnapshot?.hasTotalCost));
+
+  useEffect(() => {
+    modelsRef.current = models;
+  }, [models]);
+  useEffect(() => {
+    ownerPresetsRef.current = ownerPresets;
+  }, [ownerPresets]);
+  useEffect(() => {
+    totalCostRef.current = totalCost;
+  }, [totalCost]);
 
   const modelScope: ModelScope = activeTab;
 
-  const loadModels = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [data, presets, availability, pathAvailability] = await Promise.all([
-        fetchModelConfigs(modelScope),
-        fetchOwnerPresets(),
-        modelScope === "active" ? loadConfiguredModelAvailability() : Promise.resolve(null),
-        loadModelPathAvailability().catch(() => null),
-      ]);
-      const pathItems = pathAvailability?.items ?? [];
-      const visibleData = mergeConfiguredModelAvailability(data, availability, pathItems);
-      setModels(visibleData);
-      setOwnerPresets(presets);
-      setOwnerFilter((current) => {
-        if (!current) return "";
-        return buildOwnerPresetDrafts(visibleData, presets).some((owner) => owner.value === current)
-          ? current
-          : "";
-      });
-      try {
-        const usageData = await apiClient.get<{ stats?: { total_cost?: number } }>(
-          "/usage/logs?days=9999&size=1",
-        );
-        setTotalCost(usageData?.stats?.total_cost ?? 0);
-      } catch {
-        setTotalCost(0);
-      }
-    } catch (err: unknown) {
-      notify({
-        type: "error",
-        message: err instanceof Error ? err.message : t("models_page.load_failed"),
-      });
-    } finally {
-      setLoading(false);
+  const applyScopeSnapshot = useCallback((scope: ModelScope) => {
+    const snapshot = getModelsPageSnapshot(scope);
+    if (!snapshot) return false;
+    setModels(snapshot.models);
+    setOwnerPresets(snapshot.ownerPresets);
+    if (snapshot.hasTotalCost) {
+      setTotalCost(snapshot.totalCost);
+      totalCostLoadedRef.current = true;
     }
-  }, [modelScope, notify, t]);
+    warmPaintByScopeRef.current[scope] = true;
+    return true;
+  }, []);
 
+  const loadModels = useCallback(
+    async (options?: { force?: boolean }) => {
+      const scope = modelScope;
+      const seq = ++loadSeqRef.current;
+      const isActive = () => loadSeqRef.current === seq;
+
+      // Soft-refresh when we already painted this scope (in-memory list or session snapshot).
+      const hasExisting =
+        warmPaintByScopeRef.current[scope] ||
+        modelsRef.current.length > 0 ||
+        Boolean(getModelsPageSnapshot(scope));
+      if (hasExisting) {
+        setRefreshing(true);
+        setLoading(false);
+      } else {
+        setLoading(true);
+        setRefreshing(false);
+      }
+
+      try {
+        // Critical path only: configs + owner presets + (active) configured availability.
+        // Path availability and usage totals are secondary and must not block first paint.
+        const [data, presets, availability] = await Promise.all([
+          fetchModelConfigs(scope),
+          fetchOwnerPresets(),
+          scope === "active" ? loadConfiguredModelAvailability() : Promise.resolve(null),
+        ]);
+        if (!isActive()) return;
+
+        // Reuse last path items for this scope during soft refresh so path-only rows do not vanish.
+        const visibleData = mergeConfiguredModelAvailability(
+          data,
+          availability,
+          pathItemsByScopeRef.current[scope],
+        );
+        setModels(visibleData);
+        setOwnerPresets(presets);
+        warmPaintByScopeRef.current[scope] = true;
+        setOwnerFilter((current) => {
+          if (!current) return "";
+          return buildOwnerPresetDrafts(visibleData, presets).some((owner) => owner.value === current)
+            ? current
+            : "";
+        });
+        setModelsPageSnapshot(scope, {
+          models: visibleData,
+          ownerPresets: presets,
+          totalCost: totalCostRef.current,
+          hasTotalCost: totalCostLoadedRef.current,
+        });
+
+        // Secondary: enrich with path-only models without blanking the table.
+        // Merge into the current list (not a stale critical snapshot) so in-flight saves/deletes win.
+        void loadModelPathAvailability()
+          .then((pathAvailability) => {
+            if (!isActive()) return;
+            const pathItems = pathAvailability?.items ?? [];
+            pathItemsByScopeRef.current[scope] = pathItems;
+            if (!pathItems.length) return;
+            const current = modelsRef.current;
+            const merged = mergeConfiguredModelAvailability(current, null, pathItems);
+            if (merged.length === current.length) return;
+            setModels(merged);
+            setModelsPageSnapshot(scope, {
+              models: merged,
+              ownerPresets: ownerPresetsRef.current,
+              totalCost: totalCostRef.current,
+              hasTotalCost: totalCostLoadedRef.current,
+            });
+          })
+          .catch(() => {
+            // Path availability is best-effort enrichment.
+          });
+
+        // Secondary: total cost card — fetch once per session unless forced refresh.
+        if (options?.force || !totalCostLoadedRef.current) {
+          void fetchModelsPageTotalCost().then((cost) => {
+            if (!isActive()) return;
+            totalCostLoadedRef.current = true;
+            setTotalCost(cost);
+            patchModelsPageSnapshot(scope, { totalCost: cost, hasTotalCost: true });
+          });
+        }
+      } catch (err: unknown) {
+        if (!isActive()) return;
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("models_page.load_failed"),
+        });
+      } finally {
+        if (isActive()) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    },
+    [modelScope, notify, t],
+  );
+
+  // When the tab changes, paint that scope's snapshot immediately (if any),
+  // then soft-refresh in the background so a warm tab does not flash empty.
+  // Cold tabs still show skeleton instead of the previous tab's rows.
   useEffect(() => {
+    const hadSnapshot = applyScopeSnapshot(modelScope);
+    if (!hadSnapshot && !warmPaintByScopeRef.current[modelScope]) {
+      setModels([]);
+      setLoading(true);
+    }
     void loadModels();
-  }, [loadModels]);
+  }, [applyScopeSnapshot, loadModels, modelScope]);
 
   const loadOpenRouterSyncState = useCallback(async () => {
-    setOpenRouterSyncLoading(true);
+    const hasCached = Boolean(readOpenRouterSyncCache(cacheTenantKey));
+    // Keep last known sync status visible; only show loading text on cold start.
+    if (!hasCached) setOpenRouterSyncLoading(true);
     setOpenRouterSyncError(null);
     try {
       const state = normalizeOpenRouterSyncState(await apiClient.get("/model-openrouter-sync"));
+      writeOpenRouterSyncCache(cacheTenantKey, state);
       setOpenRouterSyncState(state);
       setSyncIntervalHours(syncIntervalHoursValue(state.intervalMinutes));
     } catch (err: unknown) {
@@ -141,13 +295,13 @@ export function ModelsPage() {
     } finally {
       setOpenRouterSyncLoading(false);
     }
-  }, [t]);
+  }, [cacheTenantKey, t]);
 
   useEffect(() => {
-    if (activeTab === "library") {
+    if (activeTab === "library" && canManageOpenRouterSync) {
       void loadOpenRouterSyncState();
     }
-  }, [activeTab, loadOpenRouterSyncState]);
+  }, [activeTab, canManageOpenRouterSync, loadOpenRouterSyncState]);
 
   const filteredModels = useMemo(() => {
     const needle = searchFilter.trim().toLowerCase();
@@ -314,20 +468,29 @@ export function ModelsPage() {
     setSaving(true);
     try {
       const saved = await saveModelConfig(form, modelScope);
-      setModels((prev) => {
-        const existing = prev.find((model) => model.id === (form.originalId ?? saved.id));
-        const savedWithCapabilities = existing
-          ? {
-              ...saved,
-              inputModalities: existing.inputModalities,
-              outputModalities: existing.outputModalities,
-              supportsVision: existing.supportsVision,
-            }
-          : saved;
-        const withoutOriginal = prev.filter((model) => model.id !== (form.originalId ?? saved.id));
-        return [...withoutOriginal, savedWithCapabilities].sort((a, b) => a.id.localeCompare(b.id));
+      const existing = modelsRef.current.find((model) => model.id === (form.originalId ?? saved.id));
+      const savedWithCapabilities = existing
+        ? {
+            ...saved,
+            inputModalities: existing.inputModalities,
+            outputModalities: existing.outputModalities,
+            supportsVision: existing.supportsVision,
+            ...(existing.sources?.length ? { sources: existing.sources } : {}),
+          }
+        : saved;
+      const next = [
+        ...modelsRef.current.filter((model) => model.id !== (form.originalId ?? saved.id)),
+        savedWithCapabilities,
+      ].sort((a, b) => a.id.localeCompare(b.id));
+      const nextPresets = buildOwnerPresetDrafts([saved], ownerPresetsRef.current);
+      setModels(next);
+      setOwnerPresets(nextPresets);
+      setModelsPageSnapshot(modelScope, {
+        models: next,
+        ownerPresets: nextPresets,
+        totalCost: totalCostRef.current,
+        hasTotalCost: totalCostLoadedRef.current,
       });
-      setOwnerPresets((prev) => buildOwnerPresetDrafts([saved], prev));
       setForm(null);
       notify({ type: "success", message: t("models_page.config_saved") });
     } catch (err: unknown) {
@@ -340,18 +503,164 @@ export function ModelsPage() {
     }
   }, [form, modelScope, notify, t]);
 
+  const handleToggleEnabled = useCallback(
+    async (model: ModelItem) => {
+      if (togglingModelId) return;
+      setTogglingModelId(model.id);
+      try {
+        const nextForm: ModelFormState = {
+          ...toFormState(model),
+          enabled: !model.enabled,
+        };
+        const saved = await saveModelConfig(nextForm, modelScope);
+        const next = modelsRef.current.map((entry) =>
+          entry.id === model.id
+            ? {
+                ...entry,
+                enabled: saved.enabled,
+              }
+            : entry,
+        );
+        setModels(next);
+        setModelsPageSnapshot(modelScope, {
+          models: next,
+          ownerPresets: ownerPresetsRef.current,
+          totalCost: totalCostRef.current,
+          hasTotalCost: totalCostLoadedRef.current,
+        });
+        notify({
+          type: "success",
+          message: saved.enabled
+            ? t("models_page.enable_success", { model: model.id })
+            : t("models_page.disable_success", { model: model.id }),
+        });
+      } catch (err: unknown) {
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("models_page.save_failed"),
+        });
+      } finally {
+        setTogglingModelId(null);
+      }
+    },
+    [modelScope, notify, t, togglingModelId],
+  );
+
+  const openTestModel = useCallback((model: ModelItem) => {
+    setTestTarget(model);
+    setTestResultText(null);
+    setTestErrorText(null);
+  }, []);
+
+  const handleRunModelTest = useCallback(
+    async (input: { channel: string; prompt: string }) => {
+      if (!testTarget) return;
+      setTestRunning(true);
+      setTestResultText(null);
+      setTestErrorText(null);
+      try {
+        const entries = await apiKeyEntriesApi.list();
+        const channelNeedle = input.channel.trim().toLowerCase();
+        const enabledKeys = entries.filter((entry) => !entry.disabled && entry.key?.trim());
+        // Prefer keys whose allowed-channels pin the selected channel; fall back to unrestricted keys.
+        const scoreKey = (entry: (typeof enabledKeys)[number]): number => {
+          const allowed = (entry["allowed-channels"] ?? [])
+            .map((name) => name.trim().toLowerCase())
+            .filter(Boolean);
+          if (allowed.length === 0) return 1;
+          if (!allowed.includes(channelNeedle)) return -1;
+          // Exact single-channel restriction is the strongest pin available without a dedicated test API.
+          return allowed.length === 1 ? 3 : 2;
+        };
+        const matchingKey =
+          enabledKeys
+            .map((entry) => ({ entry, score: scoreKey(entry) }))
+            .filter((item) => item.score > 0)
+            .sort((a, b) => b.score - a.score)[0]?.entry ?? null;
+        if (!matchingKey) {
+          throw new Error(t("models_page.test_no_api_key"));
+        }
+
+        const base = normalizeApiBase(auth?.state.apiBase || detectApiBaseFromLocation());
+        const endpoint = `${base}/v1/chat/completions`;
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${matchingKey.key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: testTarget.id,
+            messages: [{ role: "user", content: input.prompt }],
+            stream: false,
+          }),
+        });
+        const rawText = await response.text();
+        let payload: unknown = null;
+        try {
+          payload = rawText ? JSON.parse(rawText) : null;
+        } catch {
+          payload = rawText;
+        }
+        if (!response.ok) {
+          const fallback = rawText || `HTTP ${response.status}`;
+          const message =
+            payload &&
+            typeof payload === "object" &&
+            payload !== null &&
+            "error" in payload
+              ? typeof (payload as { error: unknown }).error === "string"
+                ? (payload as { error: string }).error
+                : ((payload as { error?: { message?: string } }).error?.message ?? fallback)
+              : fallback;
+          throw new Error(message);
+        }
+
+        const content =
+          payload &&
+          typeof payload === "object" &&
+          payload !== null &&
+          Array.isArray((payload as { choices?: unknown }).choices)
+            ? (() => {
+                const choice = (payload as { choices: Array<{ message?: { content?: unknown } }> })
+                  .choices[0];
+                const text = choice?.message?.content;
+                return typeof text === "string" ? text : JSON.stringify(payload, null, 2);
+              })()
+            : typeof payload === "string"
+              ? payload
+              : JSON.stringify(payload, null, 2);
+        setTestResultText(content || t("models_page.test_empty_response"));
+      } catch (err: unknown) {
+        setTestErrorText(
+          err instanceof Error ? err.message : t("models_page.test_failed"),
+        );
+      } finally {
+        setTestRunning(false);
+      }
+    },
+    [auth?.state.apiBase, t, testTarget],
+  );
+
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
       await apiClient.delete(`/model-configs/${encodeURIComponent(deleteTarget.id)}`);
       invalidateConfiguredModelAvailability();
-      setModels((prev) => prev.filter((model) => model.id !== deleteTarget.id));
+      const next = modelsRef.current.filter((model) => model.id !== deleteTarget.id);
+      setModels(next);
+      setModelsPageSnapshot(modelScope, {
+        models: next,
+        ownerPresets: ownerPresetsRef.current,
+        totalCost: totalCostRef.current,
+        hasTotalCost: totalCostLoadedRef.current,
+      });
       setSelectedModelIds((prev) => {
         if (!prev.has(deleteTarget.id)) return prev;
-        const next = new Set(prev);
-        next.delete(deleteTarget.id);
-        return next;
+        const nextSelection = new Set(prev);
+        nextSelection.delete(deleteTarget.id);
+        return nextSelection;
       });
       setDeleteTarget(null);
       notify({ type: "success", message: t("models_page.delete_saved") });
@@ -363,7 +672,7 @@ export function ModelsPage() {
     } finally {
       setDeleting(false);
     }
-  }, [deleteTarget, notify, t]);
+  }, [deleteTarget, modelScope, notify, t]);
 
   const toggleModelSelection = useCallback((modelId: string, checked: boolean) => {
     setSelectedModelIds((current) => {
@@ -404,11 +713,18 @@ export function ModelsPage() {
       }
       invalidateConfiguredModelAvailability();
       const deletedIds = new Set(ids);
-      setModels((prev) => prev.filter((model) => !deletedIds.has(model.id)));
+      const next = modelsRef.current.filter((model) => !deletedIds.has(model.id));
+      setModels(next);
+      setModelsPageSnapshot(modelScope, {
+        models: next,
+        ownerPresets: ownerPresetsRef.current,
+        totalCost: totalCostRef.current,
+        hasTotalCost: totalCostLoadedRef.current,
+      });
       setSelectedModelIds((current) => {
-        const next = new Set(current);
-        for (const modelId of ids) next.delete(modelId);
-        return next;
+        const nextSelection = new Set(current);
+        for (const modelId of ids) nextSelection.delete(modelId);
+        return nextSelection;
       });
       setBulkDeleteTargetIds(null);
       notify({
@@ -423,7 +739,7 @@ export function ModelsPage() {
     } finally {
       setDeleting(false);
     }
-  }, [bulkDeleteTargetIds, notify, t]);
+  }, [bulkDeleteTargetIds, modelScope, notify, t]);
 
   const persistOwnerPresets = useCallback(
     async (nextPresets: ModelOwnerPreset[]) => {
@@ -432,6 +748,7 @@ export function ModelsPage() {
       try {
         await apiClient.put("/model-owner-presets", { items: deduped });
         setOwnerPresets(deduped);
+        patchModelsPageSnapshot(modelScope, { ownerPresets: deduped });
         notify({ type: "success", message: t("models_page.owner_presets_saved") });
         return true;
       } catch (err: unknown) {
@@ -444,7 +761,7 @@ export function ModelsPage() {
         setSavingOwnerPresets(false);
       }
     },
-    [notify, t],
+    [modelScope, notify, t],
   );
 
   const updateOwnerForm = useCallback((patch: Partial<OwnerFormState>) => {
@@ -500,6 +817,7 @@ export function ModelsPage() {
             interval_minutes: intervalMinutes,
           }),
         );
+        writeOpenRouterSyncCache(cacheTenantKey, state);
         setOpenRouterSyncState(state);
         setSyncIntervalHours(syncIntervalHoursValue(state.intervalMinutes));
       } catch (err: unknown) {
@@ -511,7 +829,7 @@ export function ModelsPage() {
         setOpenRouterSyncSaving(false);
       }
     },
-    [notify, syncIntervalHours, t],
+    [cacheTenantKey, notify, syncIntervalHours, t],
   );
 
   const runOpenRouterSync = useCallback(async () => {
@@ -524,7 +842,7 @@ export function ModelsPage() {
       }>("/model-openrouter-sync/run");
       const result = normalizeOpenRouterSyncResult(payload?.result);
       const state = normalizeOpenRouterSyncState(payload?.state ?? payload);
-      setOpenRouterSyncState({
+      const nextState: OpenRouterModelSyncState = {
         ...state,
         ...(result
           ? {
@@ -535,9 +853,11 @@ export function ModelsPage() {
             }
           : {}),
         running: false,
-      });
+      };
+      writeOpenRouterSyncCache(cacheTenantKey, nextState);
+      setOpenRouterSyncState(nextState);
       setSyncIntervalHours(syncIntervalHoursValue(state.intervalMinutes));
-      await loadModels();
+      await loadModels({ force: true });
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : t("models_page.openrouter_sync_run_failed");
@@ -546,7 +866,7 @@ export function ModelsPage() {
     } finally {
       setOpenRouterSyncRunning(false);
     }
-  }, [loadModels, notify, t]);
+  }, [cacheTenantKey, loadModels, notify, t]);
 
   const canDeleteModels = activeTab === "library";
 
@@ -560,6 +880,9 @@ export function ModelsPage() {
     onSelectVisibleModels: toggleVisibleModelSelection,
     onEditModel: openEditModel,
     onDeleteModel: setDeleteTarget,
+    onToggleEnabled: (model) => void handleToggleEnabled(model),
+    onTestModel: openTestModel,
+    togglingModelId,
   });
   const selectionToolbar =
     canDeleteModels && selectedModelCount > 0 ? (
@@ -629,7 +952,7 @@ export function ModelsPage() {
                 <span className="min-w-0 truncate font-medium">{t("models_page.all_owners")}</span>
                 <span
                   className={[
-                    "shrink-0 rounded-full px-2 py-0.5 text-[11px]",
+                    "shrink-0 rounded-full px-2 py-0.5 text-xs",
                     ownerFilter === ""
                       ? "bg-white/15 text-white/80 dark:bg-slate-950/10 dark:text-slate-700"
                       : "bg-white text-slate-500 dark:bg-neutral-950 dark:text-white/45",
@@ -674,11 +997,11 @@ export function ModelsPage() {
                           <span className="block truncate text-sm font-medium text-slate-900 dark:text-white">
                             {owner.label || owner.value}
                           </span>
-                          <span className="block truncate text-[11px] text-slate-500 dark:text-white/45">
+                          <span className="block truncate text-xs text-slate-500 dark:text-white/45">
                             {owner.value}
                           </span>
                         </button>
-                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500 transition-transform duration-200 ease-out group-focus-within/owner:-translate-x-16 group-hover/owner:-translate-x-16 motion-reduce:transition-none dark:bg-white/[0.08] dark:text-white/45">
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 transition-transform duration-200 ease-out group-focus-within/owner:-translate-x-16 group-hover/owner:-translate-x-16 motion-reduce:transition-none dark:bg-white/[0.08] dark:text-white/45">
                           {t("models_page.owner_model_count", { count })}
                         </span>
                         <div className="pointer-events-none absolute right-2 top-1/2 flex -translate-y-1/2 translate-x-3 items-center gap-1 opacity-0 transition-all duration-200 ease-out group-focus-within/owner:pointer-events-auto group-focus-within/owner:translate-x-0 group-focus-within/owner:opacity-100 group-hover/owner:pointer-events-auto group-hover/owner:translate-x-0 group-hover/owner:opacity-100 motion-reduce:transition-none">
@@ -740,126 +1063,131 @@ export function ModelsPage() {
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => void loadModels()}
-                    disabled={loading}
+                    onClick={() => void loadModels({ force: true })}
+                    disabled={loading || refreshing}
                     title={t("models_page.refresh")}
                     aria-label={t("models_page.refresh")}
                   >
-                    <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                    <RefreshCw
+                      size={14}
+                      className={loading || refreshing ? "animate-spin" : ""}
+                    />
                   </Button>
                 </div>
               }
             >
-              <div
-                data-testid="openrouter-sync-section"
-                className="mb-3 border-b border-slate-200 pb-3 dark:border-neutral-800"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-slate-900 dark:text-white">
-                      <span>{t("models_page.openrouter_sync_title")}</span>
-                      <span
-                        className={[
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                          openRouterSyncState.enabled
-                            ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"
-                            : "bg-slate-100 text-slate-500 dark:bg-white/[0.08] dark:text-white/45",
-                        ].join(" ")}
-                      >
-                        {openRouterSyncState.enabled
-                          ? t("models_page.openrouter_sync_auto_on")
-                          : t("models_page.openrouter_sync_auto_off")}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-white/55">
-                      <span>
-                        {t("models_page.openrouter_sync_last_sync", {
-                          value: formatSyncTimestamp(
-                            openRouterSyncState.lastSyncAt,
-                            t("models_page.openrouter_sync_never"),
-                          ),
-                        })}
-                      </span>
-                      <span>
-                        {t("models_page.openrouter_sync_result", {
-                          seen: openRouterSyncState.lastSeen,
-                          added: openRouterSyncState.lastAdded,
-                          updated: openRouterSyncState.lastUpdated,
-                          skipped: openRouterSyncState.lastSkipped,
-                        })}
-                      </span>
-                      {openRouterSyncLoading ? <span>{t("models_page.loading")}</span> : null}
-                    </div>
-                    {openRouterSyncState.lastError || openRouterSyncError ? (
-                      <div className="mt-2 text-xs text-rose-600 dark:text-rose-300">
-                        {t("models_page.openrouter_sync_error", {
-                          error: openRouterSyncError || openRouterSyncState.lastError,
-                        })}
+              {canManageOpenRouterSync ? (
+                <div
+                  data-testid="openrouter-sync-section"
+                  className="mb-3 border-b border-slate-200 pb-3 dark:border-neutral-800"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-slate-900 dark:text-white">
+                        <span>{t("models_page.openrouter_sync_title")}</span>
+                        <span
+                          className={[
+                            "rounded-full px-2 py-0.5 text-2xs font-semibold",
+                            openRouterSyncState.enabled
+                              ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"
+                              : "bg-slate-100 text-slate-500 dark:bg-white/[0.08] dark:text-white/45",
+                          ].join(" ")}
+                        >
+                          {openRouterSyncState.enabled
+                            ? t("models_page.openrouter_sync_auto_on")
+                            : t("models_page.openrouter_sync_auto_off")}
+                        </span>
                       </div>
-                    ) : null}
-                  </div>
-
-                  <div className="flex flex-wrap items-end gap-3">
-                    <div className="w-28">
-                      <label
-                        htmlFor="openrouter-sync-interval"
-                        className="mb-1 block text-xs font-medium text-slate-600 dark:text-white/60"
-                      >
-                        {t("models_page.openrouter_sync_interval")}
-                      </label>
-                      <TextInput
-                        id="openrouter-sync-interval"
-                        type="number"
-                        value={syncIntervalHours}
-                        onChange={(e) => setSyncIntervalHours(e.target.value)}
-                        onBlur={() => {
-                          if (skipSyncIntervalBlurRef.current) {
-                            skipSyncIntervalBlurRef.current = false;
-                            return;
-                          }
-                          void saveOpenRouterSyncSettings(openRouterSyncState.enabled);
-                        }}
-                        min={1}
-                        step={1}
-                        size="sm"
-                      />
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-white/55">
+                        <span>
+                          {t("models_page.openrouter_sync_last_sync", {
+                            value: formatSyncTimestamp(
+                              openRouterSyncState.lastSyncAt,
+                              t("models_page.openrouter_sync_never"),
+                            ),
+                          })}
+                        </span>
+                        <span>
+                          {t("models_page.openrouter_sync_result", {
+                            seen: openRouterSyncState.lastSeen,
+                            added: openRouterSyncState.lastAdded,
+                            updated: openRouterSyncState.lastUpdated,
+                            skipped: openRouterSyncState.lastSkipped,
+                          })}
+                        </span>
+                        {openRouterSyncLoading ? <span>{t("models_page.loading")}</span> : null}
+                      </div>
+                      {openRouterSyncState.lastError || openRouterSyncError ? (
+                        <div className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                          {t("models_page.openrouter_sync_error", {
+                            error: openRouterSyncError || openRouterSyncState.lastError,
+                          })}
+                        </div>
+                      ) : null}
                     </div>
-                    <div
-                      onMouseDownCapture={() => {
-                        skipSyncIntervalBlurRef.current = true;
-                      }}
-                      className="flex flex-wrap items-end gap-3"
-                    >
-                      <ToggleSwitch
-                        checked={openRouterSyncState.enabled}
-                        onCheckedChange={(enabled) => void saveOpenRouterSyncSettings(enabled)}
-                        label={t("models_page.openrouter_sync_auto")}
-                        disabled={openRouterSyncSaving}
-                      />
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => void runOpenRouterSync()}
-                        disabled={
-                          openRouterSyncRunning ||
-                          openRouterSyncState.running ||
-                          openRouterSyncLoading
-                        }
-                      >
-                        <RefreshCw
-                          size={14}
-                          className={
-                            openRouterSyncRunning || openRouterSyncState.running
-                              ? "animate-spin"
-                              : ""
-                          }
+
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="w-28">
+                        <label
+                          htmlFor="openrouter-sync-interval"
+                          className="mb-1 block text-xs font-medium text-slate-600 dark:text-white/60"
+                        >
+                          {t("models_page.openrouter_sync_interval")}
+                        </label>
+                        <TextInput
+                          id="openrouter-sync-interval"
+                          type="number"
+                          value={syncIntervalHours}
+                          onChange={(e) => setSyncIntervalHours(e.target.value)}
+                          onBlur={() => {
+                            if (skipSyncIntervalBlurRef.current) {
+                              skipSyncIntervalBlurRef.current = false;
+                              return;
+                            }
+                            void saveOpenRouterSyncSettings(openRouterSyncState.enabled);
+                          }}
+                          min={1}
+                          step={1}
+                          size="sm"
                         />
-                        {t("models_page.openrouter_sync_now")}
-                      </Button>
+                      </div>
+                      <div
+                        onMouseDownCapture={() => {
+                          skipSyncIntervalBlurRef.current = true;
+                        }}
+                        className="flex flex-wrap items-end gap-3"
+                      >
+                        <ToggleSwitch
+                          checked={openRouterSyncState.enabled}
+                          onCheckedChange={(enabled) => void saveOpenRouterSyncSettings(enabled)}
+                          label={t("models_page.openrouter_sync_auto")}
+                          disabled={openRouterSyncSaving}
+                        />
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => void runOpenRouterSync()}
+                          disabled={
+                            openRouterSyncRunning ||
+                            openRouterSyncState.running ||
+                            openRouterSyncLoading
+                          }
+                        >
+                          <RefreshCw
+                            size={14}
+                            className={
+                              openRouterSyncRunning || openRouterSyncState.running
+                                ? "animate-spin"
+                                : ""
+                            }
+                          />
+                          {t("models_page.openrouter_sync_now")}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : null}
 
               <DataTable<ModelItem>
                 tableId="models-library"
@@ -907,12 +1235,12 @@ export function ModelsPage() {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => void loadModels()}
-                disabled={loading}
+                onClick={() => void loadModels({ force: true })}
+                disabled={loading || refreshing}
                 title={t("models_page.refresh")}
                 aria-label={t("models_page.refresh")}
               >
-                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                <RefreshCw size={14} className={loading || refreshing ? "animate-spin" : ""} />
               </Button>
             </div>
           }
@@ -993,6 +1321,20 @@ export function ModelsPage() {
         busy={deleting}
         onClose={() => setBulkDeleteTargetIds(null)}
         onConfirm={() => void handleBulkDelete()}
+      />
+
+      <ModelTestModal
+        model={testTarget}
+        running={testRunning}
+        resultText={testResultText}
+        errorText={testErrorText}
+        onClose={() => {
+          if (testRunning) return;
+          setTestTarget(null);
+          setTestResultText(null);
+          setTestErrorText(null);
+        }}
+        onRun={(input) => void handleRunModelTest(input)}
       />
     </section>
   );

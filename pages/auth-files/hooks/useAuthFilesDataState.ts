@@ -7,6 +7,7 @@ import { useToast } from "@code-proxy/ui";
 import {
   buildAuthFileSourceCandidates,
   buildUsageIndex,
+  getActiveCacheTenantId,
   normalizeAuthIndexValue,
   readAuthFilesDataCache,
   sanitizeAuthFilesForCache,
@@ -68,13 +69,29 @@ const buildEntityStatsScopeForFiles = (targetFiles: AuthFileItem[]): EntityStats
 const isRequestCancelled = (err: unknown, signal?: AbortSignal) =>
   signal?.aborted || (err instanceof Error && err.message === "Request was cancelled");
 
+/**
+ * Warm paint = this effective-tenant bucket already has a list snapshot
+ * (including empty lists). Empty must not force skeleton on remount.
+ */
+const hasWarmAuthFilesCache = (tenantId: string): boolean =>
+  readAuthFilesDataCache(tenantId) != null;
+
 export function useAuthFilesDataState() {
   const { t } = useTranslation();
   const { notify } = useToast();
-  const initialDataCache = useMemo(() => readAuthFilesDataCache(), []);
+  // Seed from the active effective-tenant bucket only. DashboardLayout remounts on
+  // tenant switch, so a one-shot read at mount is enough to avoid cross-tenant paint.
+  const cacheTenantId = getActiveCacheTenantId();
+  const initialDataCache = useMemo(
+    () => readAuthFilesDataCache(cacheTenantId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-seed only
+    [],
+  );
+  // Bucket presence (not files.length) decides cold skeleton vs SWR refresh.
+  const initialWarm = initialDataCache != null;
 
   const [files, setFiles] = useState<AuthFileItem[]>(() => initialDataCache?.files ?? []);
-  const [loading, setLoading] = useState(() => !((initialDataCache?.files?.length ?? 0) > 0));
+  const [loading, setLoading] = useState(() => !initialWarm);
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageData, setUsageData] = useState<EntityStatsResponse | null>(
@@ -83,8 +100,15 @@ export function useAuthFilesDataState() {
 
   const filesRef = useRef<AuthFileItem[]>(files);
   const usageDataRef = useRef<EntityStatsResponse | null>(usageData);
+  const cacheTenantIdRef = useRef(cacheTenantId);
+  // After a successful load (or warm seed), keep subsequent refreshes non-blocking.
+  const warmPaintRef = useRef(initialWarm);
   const mountedRef = useRef(true);
   const loadSeqRef = useRef(0);
+
+  useEffect(() => {
+    cacheTenantIdRef.current = cacheTenantId;
+  }, [cacheTenantId]);
   const { index: usageIndex } = useMemo(() => buildUsageIndex(usageData), [usageData]);
 
   const loadAll = useCallback(
@@ -93,7 +117,12 @@ export function useAuthFilesDataState() {
       const signal = options?.signal;
       const isActive = () =>
         mountedRef.current && loadSeqRef.current === seq && signal?.aborted !== true;
-      const hasExisting = filesRef.current.length > 0;
+      // SWR: keep cards/table when we already painted from cache or in-memory list.
+      // Re-read the tenant bucket so empty-list warm remounts still skip skeleton.
+      const hasExisting =
+        filesRef.current.length > 0 ||
+        warmPaintRef.current ||
+        hasWarmAuthFilesCache(cacheTenantIdRef.current);
       if (hasExisting) setRefreshingAll(true);
       else setLoading(true);
       if (!hasExisting) setUsageLoading(true);
@@ -103,6 +132,7 @@ export function useAuthFilesDataState() {
         const list = Array.isArray(filesRes?.files) ? filesRes.files : [];
         filesRef.current = list;
         setFiles(list);
+        warmPaintRef.current = true;
 
         const scope = buildEntityStatsScopeForFiles(list);
         const hasUsageScope =
@@ -220,6 +250,7 @@ export function useAuthFilesDataState() {
     if (typeof window === "undefined") return undefined;
     const timer = window.setTimeout(() => {
       writeAuthFilesDataCache({
+        tenantId: cacheTenantIdRef.current,
         savedAtMs: Date.now(),
         files: sanitizeAuthFilesForCache(files),
         usageData,
@@ -231,6 +262,7 @@ export function useAuthFilesDataState() {
   useEffect(() => {
     return () => {
       writeAuthFilesDataCache({
+        tenantId: cacheTenantIdRef.current,
         savedAtMs: Date.now(),
         files: sanitizeAuthFilesForCache(filesRef.current),
         usageData: usageDataRef.current,

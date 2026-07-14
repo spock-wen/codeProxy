@@ -1,5 +1,6 @@
 import {
   getCcSwitchClientConfig,
+  normalizeCcSwitchCodexInlineModelCatalog,
   type CcSwitchClaudeModelRole,
   type CcSwitchClientType,
 } from "./ccswitchImport";
@@ -15,6 +16,7 @@ export interface CcSwitchModelMapping {
   requestModel: string;
   targetModel: string;
   role?: CcSwitchClaudeModelRole;
+  contextWindow?: number;
 }
 
 export interface CcSwitchImportCodexModelCatalog {
@@ -71,6 +73,12 @@ const normalizeClaudeRole = (value: unknown): CcSwitchClaudeModelRole | undefine
     : undefined;
 };
 
+const normalizeContextWindow = (value: unknown): number | undefined => {
+  const parsed = typeof value === "number" ? value : Number(String(value ?? ""));
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return Math.round(parsed);
+};
+
 const normalizeModelMappings = (value: unknown): CcSwitchModelMapping[] => {
   if (!Array.isArray(value)) return [];
   const seen = new Set<string>();
@@ -101,6 +109,11 @@ const normalizeModelMappings = (value: unknown): CcSwitchModelMapping[] => {
       ...(role ? { role } : {}),
       requestModel,
       targetModel,
+      ...(normalizeContextWindow(record["context-window"] ?? record.contextWindow) !== undefined
+        ? {
+            contextWindow: normalizeContextWindow(record["context-window"] ?? record.contextWindow),
+          }
+        : {}),
     });
   });
 
@@ -113,25 +126,8 @@ const normalizeUsageAutoInterval = (value: unknown, fallback: number) => {
   return Math.round(parsed);
 };
 
-const normalizeCodexModelCatalog = (
-  value: unknown,
-): CcSwitchImportCodexModelCatalog | undefined => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
-  if (!("models" in value)) return undefined;
-  const { models } = value;
-  if (!Array.isArray(models)) return undefined;
-
-  const entries = models.filter(
-    (entry): entry is Record<string, unknown> =>
-      entry !== null && typeof entry === "object" && !Array.isArray(entry),
-  );
-  const hasModelId = entries.some((entry) => {
-    const slug = typeof entry.slug === "string" ? entry.slug.trim() : "";
-    const model = typeof entry.model === "string" ? entry.model.trim() : "";
-    return slug || model;
-  });
-  return hasModelId ? { models: entries.map((entry) => ({ ...entry })) } : undefined;
-};
+const normalizeCodexModelCatalog = (value: unknown): CcSwitchImportCodexModelCatalog | undefined =>
+  normalizeCcSwitchCodexInlineModelCatalog(value);
 
 const createConfigId = () => {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {

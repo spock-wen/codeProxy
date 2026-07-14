@@ -41,6 +41,7 @@ import {
   resolveAuthFileSubscriptionStatus,
   resolveFileType,
   shouldShowAuthFileDisplayTag,
+  shouldShowAuthFilePlanBadge,
 } from "@code-proxy/domain";
 import { resolveQuotaProvider, type QuotaProvider } from "@features/quota-preview/quota-fetch";
 import {
@@ -56,6 +57,8 @@ const KNOWN_QUOTA_TEXT_KEYS = new Set([
   "request_failed",
   "missing_account_id",
   "parse_codex_failed",
+  "parse_xai_failed",
+  "empty_data",
   "missing_project_id",
   "parse_kiro_failed",
 ]);
@@ -188,7 +191,19 @@ export function useAuthFilesFilesPresentation({
   const translateQuotaText = useCallback(
     (text: string) => {
       if (!text) return text;
+      if (text.startsWith("xai_quota.")) {
+        const separatorIndex = text.indexOf("::");
+        const key = separatorIndex >= 0 ? text.slice(0, separatorIndex) : text;
+        const value = separatorIndex >= 0 ? text.slice(separatorIndex + 2) : "";
+        if (key === "xai_quota.product_usage_named" && value) return t(key, { product: value });
+        if (key === "xai_quota.used_percent" && value) return t(key, { percent: value });
+        if (key === "xai_quota.remaining_percent" && value) return t(key, { percent: value });
+        if (key === "xai_quota.reset_at" && value) return t(key, { time: value });
+        return t(key);
+      }
       if (text.startsWith("m_quota.")) return t(text);
+      if (text.startsWith("auth_files.")) return t(text);
+      if (text.startsWith("common.")) return t(text);
       if (text.startsWith("claude_quota.")) return t(text);
       if (text.startsWith("antigravity_quota.")) return t(text);
       if (KNOWN_QUOTA_TEXT_KEYS.has(text)) return t(`m_quota.${text}`);
@@ -209,6 +224,14 @@ export function useAuthFilesFilesPresentation({
       if (!normalized) return "";
       if (normalized === "plus" || normalized === "team" || normalized === "free") {
         return t(`codex_quota.plan_${normalized}`);
+      }
+      if (normalized === "supergrok") return t("xai_quota.plan_supergrok");
+      if (
+        normalized === "supergrok-heavy" ||
+        normalized === "supergrok_heavy" ||
+        normalized === "supergrokheavy"
+      ) {
+        return t("xai_quota.plan_supergrok_heavy");
       }
       return normalized.charAt(0).toUpperCase() + normalized.slice(1);
     },
@@ -252,13 +275,13 @@ export function useAuthFilesFilesPresentation({
   const formatRestrictionTooltip = useCallback(
     (badge: ReturnType<typeof resolveAuthFileRestrictionBadges>[number]) => {
       const quotaWindow = formatRestrictionQuotaWindowLabel(badge);
+      // Always surface the upstream reason (parsed status_message / quota reason).
+      // Hiding it for quota-limited badges left 429 chips without any error detail.
       const parts = [
         badge.quotaLimited ? t("auth_files.restriction_limited") : "",
         quotaWindow ? t("auth_files.restriction_window", { window: quotaWindow }) : "",
         badge.model ? t("auth_files.restriction_model", { model: badge.model }) : "",
-        badge.reason && !badge.quotaLimited
-          ? t("auth_files.restriction_reason", { reason: badge.reason })
-          : "",
+        badge.reason ? t("auth_files.restriction_reason", { reason: badge.reason }) : "",
       ].filter(Boolean);
       if (badge.recoverAtMs) {
         const remaining = formatAuthFileRestrictionRemaining(
@@ -290,7 +313,7 @@ export function useAuthFilesFilesPresentation({
             <HoverTooltip key={badge.key} content={formatRestrictionTooltip(badge)} placement="top">
               <span
                 className={[
-                  "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums",
+                  "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-semibold tabular-nums",
                   RESTRICTION_TONE_CLASSES[badge.tone],
                 ].join(" ")}
               >
@@ -346,7 +369,7 @@ export function useAuthFilesFilesPresentation({
             <HoverTooltip key={badge.key} content={formatBadgeTooltip(badge)} placement="top">
               <span
                 className={[
-                  "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums",
+                  "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-semibold tabular-nums",
                   CLAUDE_OAUTH_HEALTH_TONE_CLASSES[badge.tone],
                 ].join(" ")}
               >
@@ -369,7 +392,9 @@ export function useAuthFilesFilesPresentation({
       const days = Math.max(0, Math.abs(status.remainingDays));
       const label = status.expired
         ? t("auth_files.subscription_expired_short", { days })
-        : t("auth_files.subscription_remaining_short", { days });
+        : status.expiresAtMs - nowMs < 24 * 60 * 60 * 1000
+          ? t("auth_files.subscription_remaining_less_than_day")
+          : t("auth_files.subscription_remaining_short", { days });
       const title = t("auth_files.subscription_expires_at_title", {
         start: status.startedAtText,
         date: status.expiresAtText,
@@ -380,7 +405,7 @@ export function useAuthFilesFilesPresentation({
         <HoverTooltip content={title}>
           <span
             className={[
-              "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums",
+              "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-semibold tabular-nums",
               SUBSCRIPTION_TONE_CLASSES[status.tone],
             ].join(" ")}
           >
@@ -469,6 +494,54 @@ export function useAuthFilesFilesPresentation({
     );
   }, []);
 
+  const formatQuotaItemDetailText = useCallback(
+    (item: QuotaItem | null | undefined) => {
+      const meta = item?.meta ? translateQuotaText(item.meta) : null;
+      const reset = formatQuotaResetTextCompact(item?.resetAtMs);
+      const resetLabel =
+        reset && item?.label.startsWith("xai_quota.")
+          ? t("xai_quota.reset_at", { time: reset })
+          : reset;
+      const parts = [meta, resetLabel].filter(Boolean);
+      return parts.length > 0 ? parts.join(" · ") : null;
+    },
+    [formatQuotaResetTextCompact, t, translateQuotaText],
+  );
+
+  const resolveQuotaErrorBadgeLabel = useCallback(
+    (errorText: string) => {
+      const translated = translateQuotaText(errorText);
+      const statusMatch = translated.match(/^(\d{3})\b/);
+      if (statusMatch) {
+        return t("auth_files.restriction_http_label", { status: statusMatch[1] });
+      }
+      return t("common.error");
+    },
+    [t, translateQuotaText],
+  );
+
+  const renderQuotaErrorBadge = useCallback(
+    (errorText: string): ReactNode => {
+      const detail = translateQuotaText(errorText || t("common.error"));
+      const label = resolveQuotaErrorBadgeLabel(detail);
+      return (
+        <HoverTooltip content={detail} placement="top" className="max-w-full">
+          <span
+            data-testid="auth-file-quota-error-badge"
+            className={[
+              "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-semibold tabular-nums",
+              RESTRICTION_TONE_CLASSES.danger,
+            ].join(" ")}
+          >
+            <AlertTriangle size={11} className="shrink-0" />
+            <span className="min-w-0 truncate">{label}</span>
+          </span>
+        </HoverTooltip>
+      );
+    },
+    [resolveQuotaErrorBadgeLabel, t, translateQuotaText],
+  );
+
   const renderQuotaHoverContent = useCallback(
     (state: QuotaState, options?: { suppressItemMeta?: boolean }) => {
       const items = Array.isArray(state.items) ? (state.items as QuotaItem[]) : [];
@@ -477,7 +550,7 @@ export function useAuthFilesFilesPresentation({
       return (
         <div className="space-y-1">
           {hasError ? (
-            <p className="max-w-80 truncate text-[11px] font-semibold text-rose-700 dark:text-rose-200">
+            <p className="max-w-80 whitespace-pre-wrap break-words text-xs font-semibold text-rose-700 dark:text-rose-200">
               {translateQuotaText(state.error ?? t("common.error"))}
             </p>
           ) : null}
@@ -487,12 +560,14 @@ export function useAuthFilesFilesPresentation({
               {items.map((item) => {
                 const tone = resolveQuotaVisualTone(item.percent);
                 const percentText =
-                  tone.normalized === null ? "--" : `${Math.round(tone.normalized)}%`;
-                const resetText = formatQuotaResetTextCompact(item.resetAtMs);
-                const itemMeta = options?.suppressItemMeta ? undefined : item.meta;
+                  (item.value ? translateQuotaText(item.value) : undefined) ??
+                  (tone.normalized === null ? "--" : `${Math.round(tone.normalized)}%`);
+                const resetText = formatQuotaItemDetailText(item);
+                const itemMeta =
+                  options?.suppressItemMeta || resetText ? undefined : item.meta;
                 return (
                   <div key={item.label} className="contents">
-                    <span className="min-w-0 truncate text-[10px] font-semibold text-slate-600 dark:text-white/70">
+                    <span className="min-w-0 truncate text-2xs font-semibold text-slate-600 dark:text-white/70">
                       {translateQuotaText(item.label)}
                     </span>
                     <span className="flex items-center justify-center">
@@ -500,17 +575,17 @@ export function useAuthFilesFilesPresentation({
                     </span>
                     <span
                       className={[
-                        "justify-self-end whitespace-nowrap text-[10px] font-semibold tabular-nums",
+                        "justify-self-end whitespace-nowrap text-2xs font-semibold tabular-nums",
                         tone.percentClass,
                       ].join(" ")}
                     >
                       {percentText}
                     </span>
-                    <span className="whitespace-nowrap text-right text-[10px] tabular-nums text-slate-500 dark:text-white/40">
+                    <span className="whitespace-nowrap text-right text-2xs tabular-nums text-slate-500 dark:text-white/40">
                       {resetText ?? "--"}
                     </span>
                     {itemMeta ? (
-                      <span className="col-span-4 truncate text-[10px] text-slate-500 dark:text-white/55">
+                      <span className="col-span-4 truncate text-2xs text-slate-500 dark:text-white/55">
                         {itemMeta}
                       </span>
                     ) : null}
@@ -522,25 +597,28 @@ export function useAuthFilesFilesPresentation({
         </div>
       );
     },
-    [formatQuotaResetTextCompact, quotaProgressCircle, t, translateQuotaText],
+    [formatQuotaItemDetailText, quotaProgressCircle, t, translateQuotaText],
   );
 
   const renderQuotaBar = useCallback(
     (label: string, item: QuotaItem | null): ReactNode => {
       const tone = resolveQuotaVisualTone(item?.percent);
       const normalized = tone.normalized;
-      const percentText = normalized === null ? "--" : `${Math.round(normalized)}%`;
-      const resetText = formatQuotaResetTextCompact(item?.resetAtMs) ?? "--";
+      const percentText =
+        (item?.value ? translateQuotaText(item.value) : undefined) ??
+        (normalized === null ? "--" : `${Math.round(normalized)}%`);
+      // Keep a fixed-height meta row so bars stay evenly spaced; hide "--" when empty.
+      const detailText = formatQuotaItemDetailText(item);
 
       return (
         <div key={label} className="space-y-1">
           <div className="flex items-center justify-between gap-2">
-            <span className="min-w-0 truncate text-[11px] font-semibold text-slate-700 dark:text-white/80">
+            <span className="min-w-0 truncate text-xs font-semibold text-slate-700 dark:text-white/80">
               {translateQuotaText(label)}
             </span>
             <span
               className={[
-                "shrink-0 text-[11px] font-semibold tabular-nums",
+                "shrink-0 text-xs font-semibold tabular-nums",
                 tone.percentClass,
               ].join(" ")}
             >
@@ -554,13 +632,13 @@ export function useAuthFilesFilesPresentation({
               aria-hidden="true"
             />
           </div>
-          <div className="truncate text-[10px] tabular-nums text-slate-500 dark:text-white/45">
-            {resetText}
+          <div className="min-h-[14px] truncate text-2xs tabular-nums text-slate-500 dark:text-white/45">
+            {detailText ?? "\u00A0"}
           </div>
         </div>
       );
     },
-    [formatQuotaResetTextCompact, translateQuotaText],
+    [formatQuotaItemDetailText, translateQuotaText],
   );
 
   const fileColumns = useMemo<DataTableColumn<AuthFileItem>[]>(() => {
@@ -627,7 +705,7 @@ export function useAuthFilesFilesPresentation({
                   {supplementalTags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
+                      className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-2xs font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
                     >
                       {tag}
                     </span>
@@ -652,7 +730,7 @@ export function useAuthFilesFilesPresentation({
           const planType = resolveAuthFilePlanType(file, quotaByFileName[file.name]);
           const runtimeOnly = isRuntimeOnlyAuthFile(file);
           const showTypeBadge = shouldShowAuthFileDisplayTag(file, typeKey);
-          const showPlanBadge = planType ? shouldShowAuthFileDisplayTag(file, planType) : false;
+          const showPlanBadge = shouldShowAuthFilePlanBadge(file, planType);
 
           return (
             <div className="flex flex-col gap-1">
@@ -718,7 +796,7 @@ export function useAuthFilesFilesPresentation({
             <button
               type="button"
               disabled={state?.loading}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] tabular-nums text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-default disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white/60 dark:hover:border-blue-600 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs tabular-nums text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-default disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white/60 dark:hover:border-blue-600 dark:hover:bg-blue-950 dark:hover:text-blue-300"
               onClick={() => void checkAuthFileConnectivity(file.name)}
               title={t("auth_files.check_connectivity")}
               aria-label={t("auth_files.check_connectivity")}
@@ -783,7 +861,7 @@ export function useAuthFilesFilesPresentation({
         headerClassName: "text-center",
         headerRender: () => (
           <div className="flex items-center justify-center gap-2 normal-case">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-white/60">
+            <span className="text-xs font-semibold text-slate-500 dark:text-white/60">
               {t("auth_files.col_quota")}
             </span>
             <Select
@@ -814,46 +892,48 @@ export function useAuthFilesFilesPresentation({
 
           const renderQuotaLinePreview = (item: QuotaItem) => {
             const tone = resolveQuotaVisualTone(item.percent);
-            const percentText = tone.normalized === null ? "--" : `${Math.round(tone.normalized)}%`;
-            const resetText = formatQuotaResetTextCompact(item.resetAtMs) ?? "--";
+            const percentText =
+              (item.value ? translateQuotaText(item.value) : undefined) ??
+              (tone.normalized === null ? "--" : `${Math.round(tone.normalized)}%`);
+            const detailText = formatQuotaItemDetailText(item) ?? "--";
             return (
               <div
                 key={item.label}
                 className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_0.875rem_auto_3.25rem] items-center gap-1"
               >
-                <span className="min-w-0 truncate text-[10px] font-semibold text-slate-600 dark:text-white/70">
+                <span className="min-w-0 truncate text-2xs font-semibold text-slate-600 dark:text-white/70">
                   {translateQuotaText(item.label)}
                 </span>
                 {quotaProgressCircle(item.percent)}
                 <span
                   className={[
-                    "justify-self-end text-[10px] font-semibold tabular-nums",
+                    "justify-self-end text-2xs font-semibold tabular-nums",
                     tone.percentClass,
                   ].join(" ")}
                 >
                   {percentText}
                 </span>
-                <span className="min-w-0 truncate whitespace-nowrap text-right text-[10px] tabular-nums text-slate-500 dark:text-white/40">
-                  {resetText}
+                <span className="min-w-0 truncate whitespace-nowrap text-right text-2xs tabular-nums text-slate-500 dark:text-white/40">
+                  {detailText}
                 </span>
               </div>
             );
           };
 
+          if (hasError && items.length === 0) {
+            return renderQuotaErrorBadge(state.error ?? t("common.error"));
+          }
+
           return (
             <HoverTooltip
-              disabled={!hasError && items.length === 0}
+              disabled={items.length === 0}
               className="w-full min-w-0"
               content={renderQuotaHoverContent(displayState, {
                 suppressItemMeta: provider === "antigravity",
               })}
             >
               <div className="w-full min-w-0">
-                {hasError && items.length === 0 ? (
-                  <p className="truncate text-xs font-semibold text-rose-700 dark:text-rose-200">
-                    {translateQuotaText(state.error ?? t("common.error"))}
-                  </p>
-                ) : items.length === 0 ? (
+                {items.length === 0 ? (
                   <span className="text-xs text-slate-400 dark:text-white/40">--</span>
                 ) : (
                   renderQuotaLinePreview(pickQuotaPreviewItem(items, quotaPreviewMode) ?? items[0])
@@ -998,8 +1078,8 @@ export function useAuthFilesFilesPresentation({
     checkAuthFileConnectivity,
     connectivityState,
     downloadAuthFile,
+    formatQuotaItemDetailText,
     formatPlanTypeLabel,
-    formatQuotaResetTextCompact,
     openDetail,
     openTagsEditor,
     quotaByFileName,
@@ -1007,6 +1087,7 @@ export function useAuthFilesFilesPresentation({
     quotaProgressCircle,
     refreshQuota,
     requestResetCredit,
+    renderQuotaErrorBadge,
     renderRestrictionBadges,
     renderClaudeOAuthHealthBadges,
     renderSubscriptionBadge,
@@ -1031,6 +1112,7 @@ export function useAuthFilesFilesPresentation({
     renderClaudeOAuthHealthBadges,
     renderSubscriptionBadge,
     renderQuotaBar,
+    renderQuotaErrorBadge,
     renderFilesViewModeTabs,
     fileColumns,
   };

@@ -129,6 +129,8 @@ export function useApiKeyPermissionOptions() {
         geminiKeys,
         claudeKeys,
         codexKeys,
+        openCodeGoKeys,
+        clineKeys,
         ollamaCloudKeys,
         vertexKeys,
         openaiProviders,
@@ -137,6 +139,8 @@ export function useApiKeyPermissionOptions() {
         providersApi.getGeminiKeys().catch(() => []),
         providersApi.getClaudeConfigs().catch(() => []),
         providersApi.getCodexConfigs().catch(() => []),
+        providersApi.getOpenCodeGoConfigs().catch(() => []),
+        providersApi.getClineConfigs().catch(() => []),
         providersApi.getOllamaCloudConfigs().catch(() => []),
         providersApi.getVertexConfigs().catch(() => []),
         providersApi.getOpenAIProviders().catch(() => []),
@@ -156,7 +160,7 @@ export function useApiKeyPermissionOptions() {
           value: name,
           label: name,
           icon: (
-            <span className="inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:bg-neutral-800 dark:text-white/60">
+            <span className="inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-slate-600 dark:bg-neutral-800 dark:text-white/60">
               {source}
             </span>
           ),
@@ -166,6 +170,8 @@ export function useApiKeyPermissionOptions() {
       geminiKeys.forEach((item) => push(item.name || "", "API", "gemini"));
       claudeKeys.forEach((item) => push(item.name || "", "API", "claude"));
       codexKeys.forEach((item) => push(item.name || "", "API", "codex"));
+      openCodeGoKeys.forEach((item) => push(item.name || "", "API", "opencode-go"));
+      clineKeys.forEach((item) => push(item.name || "", "API", "cline"));
       ollamaCloudKeys.forEach((item) => push(item.name || "", "API", "ollama-cloud"));
       vertexKeys.forEach((item) => push(item.name || "", "API", "vertex"));
       openaiProviders.forEach((item) => push(item.name || "", "API", "openai"));

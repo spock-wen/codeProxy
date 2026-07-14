@@ -12,6 +12,7 @@ export interface CcSwitchModelMappingInput {
   requestModel: string;
   targetModel: string;
   role?: CcSwitchClaudeModelRole;
+  contextWindow?: number;
 }
 
 export const CC_SWITCH_CODEX_MODEL_CATALOG_FILENAME = "cc-switch-model-catalog.json";
@@ -20,6 +21,7 @@ export interface CcSwitchCodexCatalogModel {
   model: string;
   displayName?: string;
   contextWindow?: number;
+  maxContextWindow?: number;
   defaultReasoningLevel?: string;
   supportedReasoningLevels?: Array<
     | string
@@ -223,6 +225,9 @@ const normalizeModelMappings = (
         ...(role ? { role } : {}),
         requestModel: requestModel || targetModel,
         targetModel,
+        ...(normalizeCodexContextWindow(mapping.contextWindow) !== DEFAULT_CODEX_CONTEXT_WINDOW
+          ? { contextWindow: normalizeCodexContextWindow(mapping.contextWindow) }
+          : {}),
       };
     })
     .filter((mapping): mapping is CcSwitchModelMappingInput => Boolean(mapping));
@@ -266,13 +271,64 @@ const normalizeUsageScriptLanguage = (language: string | undefined): CcSwitchUsa
 
 const DEFAULT_CODEX_CONTEXT_WINDOW = 128_000;
 const CODEX_BASE_INSTRUCTIONS = "You are Codex, a coding agent.";
-const CODEX_SUPPORTED_REASONING_LEVELS: CcSwitchCodexModelCatalogEntry["supported_reasoning_levels"] =
+const CODEX_FALLBACK_REASONING_LEVELS: CcSwitchCodexModelCatalogEntry["supported_reasoning_levels"] =
   [
     { effort: "low", description: "Fast responses with lighter reasoning" },
     { effort: "medium", description: "Balances speed and reasoning depth for everyday tasks" },
     { effort: "high", description: "Greater reasoning depth for complex problems" },
     { effort: "xhigh", description: "Extra high reasoning depth for complex problems" },
   ];
+const CODEX_GPT56_REASONING_LEVELS: CcSwitchCodexModelCatalogEntry["supported_reasoning_levels"] = [
+  ...CODEX_FALLBACK_REASONING_LEVELS,
+  { effort: "max", description: "Maximum reasoning depth for the hardest problems" },
+  { effort: "ultra", description: "Maximum reasoning with automatic task delegation" },
+];
+
+type CodexCatalogFallbackCapability = {
+  displayName: string;
+  contextWindow: number;
+  maxContextWindow: number;
+  defaultReasoningLevel: string;
+  supportedReasoningLevels: CcSwitchCodexModelCatalogEntry["supported_reasoning_levels"];
+};
+
+const CODEX_CATALOG_FALLBACK_CAPABILITIES: Record<string, CodexCatalogFallbackCapability> = {
+  "gpt-5.6": {
+    displayName: "GPT-5.6",
+    contextWindow: 1_050_000,
+    maxContextWindow: 1_050_000,
+    defaultReasoningLevel: "medium",
+    supportedReasoningLevels: CODEX_GPT56_REASONING_LEVELS,
+  },
+  "gpt-5.6-sol": {
+    displayName: "GPT-5.6 Sol",
+    contextWindow: 1_050_000,
+    maxContextWindow: 1_050_000,
+    defaultReasoningLevel: "medium",
+    supportedReasoningLevels: CODEX_GPT56_REASONING_LEVELS,
+  },
+  "gpt-5.6-terra": {
+    displayName: "GPT-5.6 Terra",
+    contextWindow: 1_050_000,
+    maxContextWindow: 1_050_000,
+    defaultReasoningLevel: "medium",
+    supportedReasoningLevels: CODEX_GPT56_REASONING_LEVELS,
+  },
+  "gpt-5.6-luna": {
+    displayName: "GPT-5.6 Luna",
+    contextWindow: 1_050_000,
+    maxContextWindow: 1_050_000,
+    defaultReasoningLevel: "medium",
+    supportedReasoningLevels: CODEX_GPT56_REASONING_LEVELS,
+  },
+  "gpt-5.6-ultra": {
+    displayName: "GPT-5.6 Sol (Ultra compatibility alias)",
+    contextWindow: 1_050_000,
+    maxContextWindow: 1_050_000,
+    defaultReasoningLevel: "ultra",
+    supportedReasoningLevels: CODEX_GPT56_REASONING_LEVELS,
+  },
+};
 
 const normalizeCodexContextWindow = (value: number | undefined): number => {
   if (!Number.isFinite(value) || !value || value <= 0) return DEFAULT_CODEX_CONTEXT_WINDOW;
@@ -282,30 +338,31 @@ const normalizeCodexContextWindow = (value: number | undefined): number => {
 const normalizeCodexReasoningLevels = (
   levels: CcSwitchCodexCatalogModel["supportedReasoningLevels"],
 ): CcSwitchCodexModelCatalogEntry["supported_reasoning_levels"] => {
-  if (!Array.isArray(levels) || levels.length === 0) return CODEX_SUPPORTED_REASONING_LEVELS;
+  if (!Array.isArray(levels) || levels.length === 0) return CODEX_FALLBACK_REASONING_LEVELS;
 
   const normalized = levels
     .map((level) => {
       if (typeof level === "string") {
         const effort = level.trim();
         if (!effort) return null;
-        const builtIn = CODEX_SUPPORTED_REASONING_LEVELS.find((item) => item.effort === effort);
+        const builtIn = CODEX_GPT56_REASONING_LEVELS.find((item) => item.effort === effort);
         return builtIn ?? { effort, description: effort };
       }
 
       const effort = String(level.effort ?? "").trim();
       if (!effort) return null;
-      const builtIn = CODEX_SUPPORTED_REASONING_LEVELS.find((item) => item.effort === effort);
+      const builtIn = CODEX_GPT56_REASONING_LEVELS.find((item) => item.effort === effort);
       return {
         effort,
         description: String(level.description ?? builtIn?.description ?? effort),
       };
     })
-    .filter((level): level is CcSwitchCodexModelCatalogEntry["supported_reasoning_levels"][number] =>
-      Boolean(level),
+    .filter(
+      (level): level is CcSwitchCodexModelCatalogEntry["supported_reasoning_levels"][number] =>
+        Boolean(level),
     );
 
-  return normalized.length > 0 ? normalized : CODEX_SUPPORTED_REASONING_LEVELS;
+  return normalized.length > 0 ? normalized : CODEX_FALLBACK_REASONING_LEVELS;
 };
 
 const buildCodexCatalogEntry = (
@@ -313,10 +370,20 @@ const buildCodexCatalogEntry = (
   priority: number,
 ): CcSwitchCodexModelCatalogEntry => {
   const slug = model.model.trim();
-  const displayName = model.displayName?.trim() || slug;
-  const contextWindow = normalizeCodexContextWindow(model.contextWindow);
-  const defaultReasoningLevel = model.defaultReasoningLevel?.trim() || "medium";
-  const supportedReasoningLevels = normalizeCodexReasoningLevels(model.supportedReasoningLevels);
+  const capability = CODEX_CATALOG_FALLBACK_CAPABILITIES[slug.toLowerCase()];
+  const displayName = model.displayName?.trim() || capability?.displayName || slug;
+  const maxContextWindow = normalizeCodexContextWindow(
+    model.maxContextWindow ?? capability?.maxContextWindow ?? model.contextWindow,
+  );
+  const requestedContextWindow = normalizeCodexContextWindow(
+    model.contextWindow ?? capability?.contextWindow,
+  );
+  const contextWindow = Math.min(requestedContextWindow, maxContextWindow);
+  const defaultReasoningLevel =
+    model.defaultReasoningLevel?.trim() || capability?.defaultReasoningLevel || "medium";
+  const supportedReasoningLevels = normalizeCodexReasoningLevels(
+    model.supportedReasoningLevels ?? capability?.supportedReasoningLevels,
+  );
 
   return {
     slug,
@@ -347,7 +414,7 @@ const buildCodexCatalogEntry = (
       supports_parallel_tool_calls: true,
       supports_image_detail_original: true,
       context_window: contextWindow,
-      max_context_window: contextWindow,
+      max_context_window: maxContextWindow,
       effective_context_window_percent: 95,
       experimental_supported_tools: [],
       input_modalities: ["text", "image"],
@@ -364,7 +431,7 @@ const buildCodexCatalogEntry = (
     supports_parallel_tool_calls: true,
     supports_image_detail_original: true,
     context_window: contextWindow,
-    max_context_window: contextWindow,
+    max_context_window: maxContextWindow,
     effective_context_window_percent: 95,
     experimental_supported_tools: [],
     input_modalities: ["text", "image"],
@@ -372,6 +439,61 @@ const buildCodexCatalogEntry = (
     use_responses_lite: false,
   };
 };
+
+const copyCatalogRecord = (value: unknown): Record<string, unknown> | null => {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  return { ...value };
+};
+
+const setSnakeCaseCatalogField = (
+  target: Record<string, unknown>,
+  snakeCase: string,
+  camelCase: string,
+): void => {
+  if (target[snakeCase] === undefined && target[camelCase] !== undefined) {
+    target[snakeCase] = target[camelCase];
+  }
+  delete target[camelCase];
+};
+
+export function normalizeCcSwitchCodexInlineModelCatalog(
+  value: unknown,
+): CcSwitchCodexInlineModelCatalog | undefined {
+  const catalog = copyCatalogRecord(value);
+  if (!catalog || !Array.isArray(catalog.models)) return undefined;
+
+  const models = catalog.models
+    .map((entry) => {
+      const normalized = copyCatalogRecord(entry);
+      if (!normalized) return null;
+      setSnakeCaseCatalogField(normalized, "display_name", "displayName");
+      setSnakeCaseCatalogField(normalized, "default_reasoning_level", "defaultReasoningLevel");
+      setSnakeCaseCatalogField(
+        normalized,
+        "supported_reasoning_levels",
+        "supportedReasoningLevels",
+      );
+      setSnakeCaseCatalogField(normalized, "context_window", "contextWindow");
+      setSnakeCaseCatalogField(normalized, "max_context_window", "maxContextWindow");
+      setSnakeCaseCatalogField(normalized, "model_messages", "modelMessages");
+
+      const modelMessages = copyCatalogRecord(normalized.model_messages);
+      if (modelMessages) {
+        setSnakeCaseCatalogField(modelMessages, "context_window", "contextWindow");
+        setSnakeCaseCatalogField(modelMessages, "max_context_window", "maxContextWindow");
+        normalized.model_messages = modelMessages;
+      }
+      return normalized;
+    })
+    .filter((entry): entry is Record<string, unknown> => entry !== null);
+
+  const hasModelID = models.some((entry) => {
+    const slug = typeof entry.slug === "string" ? entry.slug.trim() : "";
+    const model = typeof entry.model === "string" ? entry.model.trim() : "";
+    return Boolean(slug || model);
+  });
+  return hasModelID ? { models } : undefined;
+}
 
 export const buildCcSwitchCodexModelCatalog = (
   models: readonly CcSwitchCodexCatalogModel[],
@@ -430,27 +552,40 @@ const buildCodexConfig = (input: {
     catalogModels.push(normalizedEntry);
     explicitCatalogModels.push(normalizedEntry);
   };
-  const addCatalogModel = (value: string) => {
+  const addCatalogModel = (value: string, contextWindow?: number) => {
     const normalized = value.trim();
     const key = normalized.toLowerCase();
     if (!normalized || seen.has(key)) return;
     seen.add(key);
-    catalogModels.push({
+    const capability = CODEX_CATALOG_FALLBACK_CAPABILITIES[key];
+    const modelEntry: Record<string, unknown> = {
       model: normalized,
-      defaultReasoningLevel: "medium",
-      supportedReasoningLevels: CODEX_SUPPORTED_REASONING_LEVELS,
-    });
+      defaultReasoningLevel: capability?.defaultReasoningLevel ?? "medium",
+      supportedReasoningLevels:
+        capability?.supportedReasoningLevels ?? CODEX_FALLBACK_REASONING_LEVELS,
+    };
+    const resolvedContextWindow = contextWindow ?? capability?.contextWindow;
+    if (resolvedContextWindow && resolvedContextWindow > 0) {
+      modelEntry.contextWindow = Math.min(
+        resolvedContextWindow,
+        capability?.maxContextWindow ?? resolvedContextWindow,
+      );
+      modelEntry.maxContextWindow = capability?.maxContextWindow ?? resolvedContextWindow;
+    }
+    catalogModels.push(modelEntry);
   };
 
-  for (const entry of input.codexModelCatalog?.models ?? []) {
-    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+  const normalizedExplicitCatalog = normalizeCcSwitchCodexInlineModelCatalog(
+    input.codexModelCatalog,
+  );
+  for (const entry of normalizedExplicitCatalog?.models ?? []) {
     addCatalogEntry(entry);
   }
-  addCatalogModel(model);
   for (const mapping of input.modelMappings) {
     if (mapping.role) continue;
-    addCatalogModel(mapping.requestModel);
+    addCatalogModel(mapping.requestModel, mapping.contextWindow);
   }
+  addCatalogModel(model);
 
   // Derive the default reasoning effort from the explicit catalog entry for
   // the selected model so the generated config.toml stays consistent with

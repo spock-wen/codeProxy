@@ -15,6 +15,7 @@ export {
 export {
   ApiError,
   ApiClientError,
+  extractApiErrorCode,
   extractApiErrorMessage,
   isApiClientError,
 } from "./client/errors";
@@ -24,7 +25,9 @@ export type { ApiEnvelope, ApiListPayload, ApiSuccessEnvelope } from "./client/r
 export { publicApiClient, PublicApiClient } from "./client/public-client";
 export {
   clearPersistedAuthSnapshot,
+  LEGACY_EFFECTIVE_TENANT_KEY,
   readPersistedAuthSnapshot,
+  updatePersistedEffectiveTenantId,
   writePersistedAuthSnapshot,
 } from "./client/auth-storage";
 export type * from "./dto/types";
@@ -88,3 +91,10 @@ export {
   normalizeOauthModelAlias,
   normalizeApiKeyEntries,
 } from "./endpoints/helpers";
+
+export {
+  identityApi,
+  IDENTITY_MENUS_UPDATED_EVENT,
+  IDENTITY_TENANTS_UPDATED_EVENT,
+} from "./endpoints/identity";
+export type * from "./endpoints/identity";

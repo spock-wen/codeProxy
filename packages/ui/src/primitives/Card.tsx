@@ -13,7 +13,7 @@ export function Card({
   padding = "default",
   children,
 }: PropsWithChildren<{
-  title?: string;
+  title?: ReactNode;
   description?: string;
   actions?: ReactNode;
   loading?: boolean;

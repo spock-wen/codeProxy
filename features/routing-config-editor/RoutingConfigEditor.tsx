@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CircleAlert, Pencil, Plus, Trash2, TriangleAlert, X } from "lucide-react";
+import { CircleAlert, Loader2, Pencil, Plus, Trash2, TriangleAlert, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ChannelGroupChannelDetail } from "@code-proxy/api-client/endpoints/channel-groups";
 import type {
@@ -335,7 +335,7 @@ function renderChannelTags(tags: string[]) {
       {tags.map((tag) => (
         <span
           key={tag}
-          className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
+          className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-2xs font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
         >
           {tag}
         </span>
@@ -366,7 +366,9 @@ export function RoutingConfigEditor({
     channels: string[],
     groupName?: string,
   ) => Promise<RoutingModelLoadResult[]>;
-  onChange: (values: Partial<VisualConfigValues>) => void;
+  onChange: (
+    values: Partial<VisualConfigValues>,
+  ) => void | boolean | Promise<void | boolean>;
 }) {
   const { t } = useTranslation();
   const { notify } = useToast();
@@ -376,15 +378,14 @@ export function RoutingConfigEditor({
   const [issueGroup, setIssueGroup] = useState<RoutingChannelGroupEntry | null>(null);
   const [groupDraft, setGroupDraft] = useState<GroupDraft>(() => createEmptyGroupDraft());
   const [groupEditorTab, setGroupEditorTab] = useState<"basic" | "models">("basic");
+  const [groupSaving, setGroupSaving] = useState(false);
   const [modelOptions, setModelOptions] = useState<RoutingModelOption[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState("");
   const [modelsSelectionTouched, setModelsSelectionTouched] = useState(false);
 
   const update = useCallback(
-    (patch: Partial<VisualConfigValues>) => {
-      onChange(patch);
-    },
+    (patch: Partial<VisualConfigValues>) => onChange(patch),
     [onChange],
   );
 
@@ -711,15 +712,23 @@ export function RoutingConfigEditor({
     ],
   );
 
-  const closeGroupEditor = useCallback(() => {
+  const resetGroupEditor = useCallback(() => {
     setGroupEditorOpen(false);
     setGroupEditorId(null);
     setGroupDraft(createEmptyGroupDraft());
     setGroupEditorTab("basic");
+    setGroupSaving(false);
     setModelOptions([]);
     setModelsError("");
     setModelsSelectionTouched(false);
   }, []);
+
+  const closeGroupEditor = useCallback(() => {
+    // Keep the modal open while the save request is in flight so the user can
+    // see the button loading state and is not left unsure whether it wrote.
+    if (groupSaving) return;
+    resetGroupEditor();
+  }, [groupSaving, resetGroupEditor]);
 
   const updateDraftChannels = useCallback((selectedValues: string[]) => {
     setGroupDraft((current) => ({
@@ -839,8 +848,10 @@ export function RoutingConfigEditor({
     });
   }, []);
 
-  const saveGroupDraft = useCallback(() => {
-    if (groupDraftError) return;
+  const saveGroupDraft = useCallback(async () => {
+    if (groupDraftError || groupSaving) return;
+
+    let patch: Partial<VisualConfigValues>;
     if (editingSystemDefaultGroup) {
       const allowedModels = Array.from(
         new Set(groupDraft.allowedModels.map((model) => model.trim()).filter(Boolean)),
@@ -862,7 +873,7 @@ export function RoutingConfigEditor({
       const defaultRoutes = values.routingPathRoutes.filter(
         (route) => route.group.trim().toLowerCase() === SYSTEM_DEFAULT_GROUP_NAME,
       );
-      update({
+      patch = {
         routingChannelGroups: existingDefault
           ? values.routingChannelGroups.map((group) =>
               group.id === existingDefault.id ? defaultGroup : group,
@@ -874,73 +885,92 @@ export function RoutingConfigEditor({
           ),
           ...defaultRoutes,
         ],
-      });
-      closeGroupEditor();
-      return;
-    }
-    const groupName = groupDraft.name.trim();
-    const normalizedDraft: RoutingChannelGroupEntry = {
-      id: groupEditorId ?? makeClientId(),
-      name: groupName,
-      description: groupDraft.description.trim(),
-      strategy: normalizeRoutingStrategy(groupDraft.strategy),
-      excludeFromDefault:
-        groupDraft.excludeFromDefault && groupName.toLowerCase() !== SYSTEM_DEFAULT_GROUP_NAME,
-      matchMode: groupDraft.matchMode,
-      tags: groupDraft.matchMode === "tags" ? syncDraftTags(groupDraft.tags) : [],
-      allowedModels: Array.from(
-        new Set(groupDraft.allowedModels.map((model) => model.trim()).filter(Boolean)),
-      ),
-      channels: (groupDraft.matchMode === "tags" ? resolvedDraftChannels : groupDraft.channels)
-        .map((channel) => ({
-          id: channel.id || makeClientId(),
-          name: channel.name.trim(),
-          priority: channel.priority.trim(),
-        }))
-        .filter((channel) => channel.name && (groupDraft.matchMode !== "tags" || channel.priority)),
-    };
-    const normalizedRoute = {
-      ...primaryRoute,
-      id: primaryRoute.id || makeClientId(),
-      path: normalizedPrimaryRoutePath,
-      group: groupName,
-    };
-    const normalizedRoutes = normalizedRoute.path
-      ? [
-          {
-            ...normalizedRoute,
-            group: groupName,
-          },
-        ]
-      : [];
-
-    if (groupEditorId) {
-      const previousGroup = values.routingChannelGroups.find((group) => group.id === groupEditorId);
-      const previousGroupName = previousGroup?.name.trim().toLowerCase() ?? "";
-      const otherRoutes = values.routingPathRoutes.filter(
-        (route) => route.group.trim().toLowerCase() !== previousGroupName,
-      );
-      update({
-        routingChannelGroups: values.routingChannelGroups.map((group) =>
-          group.id === groupEditorId ? normalizedDraft : group,
-        ),
-        routingPathRoutes: [...otherRoutes, ...normalizedRoutes],
-      });
+      };
     } else {
-      update({
-        routingChannelGroups: [...values.routingChannelGroups, normalizedDraft],
-        routingPathRoutes: [...values.routingPathRoutes, ...normalizedRoutes],
-      });
+      const groupName = groupDraft.name.trim();
+      const normalizedDraft: RoutingChannelGroupEntry = {
+        id: groupEditorId ?? makeClientId(),
+        name: groupName,
+        description: groupDraft.description.trim(),
+        strategy: normalizeRoutingStrategy(groupDraft.strategy),
+        excludeFromDefault:
+          groupDraft.excludeFromDefault && groupName.toLowerCase() !== SYSTEM_DEFAULT_GROUP_NAME,
+        matchMode: groupDraft.matchMode,
+        tags: groupDraft.matchMode === "tags" ? syncDraftTags(groupDraft.tags) : [],
+        allowedModels: Array.from(
+          new Set(groupDraft.allowedModels.map((model) => model.trim()).filter(Boolean)),
+        ),
+        channels: (groupDraft.matchMode === "tags" ? resolvedDraftChannels : groupDraft.channels)
+          .map((channel) => ({
+            id: channel.id || makeClientId(),
+            name: channel.name.trim(),
+            priority: channel.priority.trim(),
+          }))
+          .filter(
+            (channel) => channel.name && (groupDraft.matchMode !== "tags" || channel.priority),
+          ),
+      };
+      const normalizedRoute = {
+        ...primaryRoute,
+        id: primaryRoute.id || makeClientId(),
+        path: normalizedPrimaryRoutePath,
+        group: groupName,
+      };
+      const normalizedRoutes = normalizedRoute.path
+        ? [
+            {
+              ...normalizedRoute,
+              group: groupName,
+            },
+          ]
+        : [];
+
+      if (groupEditorId) {
+        const previousGroup = values.routingChannelGroups.find(
+          (group) => group.id === groupEditorId,
+        );
+        const previousGroupName = previousGroup?.name.trim().toLowerCase() ?? "";
+        const otherRoutes = values.routingPathRoutes.filter(
+          (route) => route.group.trim().toLowerCase() !== previousGroupName,
+        );
+        patch = {
+          routingChannelGroups: values.routingChannelGroups.map((group) =>
+            group.id === groupEditorId ? normalizedDraft : group,
+          ),
+          routingPathRoutes: [...otherRoutes, ...normalizedRoutes],
+        };
+      } else {
+        patch = {
+          routingChannelGroups: [...values.routingChannelGroups, normalizedDraft],
+          routingPathRoutes: [...values.routingPathRoutes, ...normalizedRoutes],
+        };
+      }
     }
-    closeGroupEditor();
+
+    setGroupSaving(true);
+    try {
+      // Await parent persistence when provided so the save button can show
+      // loading until the API finishes. Sync onChange (void) still resolves;
+      // async parents may return false to keep the modal open after a failed write.
+      const result = await Promise.resolve(update(patch));
+      if (result === false) {
+        setGroupSaving(false);
+        return;
+      }
+      resetGroupEditor();
+    } catch {
+      // Unexpected throw from onChange: keep modal open and clear loading.
+      setGroupSaving(false);
+    }
   }, [
-    closeGroupEditor,
     editingSystemDefaultGroup,
     groupDraft,
     groupDraftError,
     groupEditorId,
+    groupSaving,
     normalizedPrimaryRoutePath,
     primaryRoute,
+    resetGroupEditor,
     resolvedDraftChannels,
     update,
     values.routingChannelGroups,
@@ -1111,7 +1141,7 @@ export function RoutingConfigEditor({
                   {channels.map((channel) => (
                     <span
                       key={channel.id}
-                      className="inline-flex items-center rounded-md border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-700 dark:border-neutral-700/40 dark:bg-neutral-800/60 dark:text-white/80"
+                      className="inline-flex items-center rounded-md border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-xs text-slate-700 dark:border-neutral-700/40 dark:bg-neutral-800/60 dark:text-white/80"
                     >
                       {channel.name}
                       {channel.priority.trim()
@@ -1178,7 +1208,7 @@ export function RoutingConfigEditor({
                   {routePaths.map((path) => (
                     <span
                       key={path}
-                      className="inline-flex items-center rounded-md border border-slate-200/60 bg-slate-50 px-2 py-0.5 font-mono text-[11px] text-slate-700 dark:border-neutral-700/40 dark:bg-neutral-800/60 dark:text-white/80"
+                      className="inline-flex items-center rounded-md border border-slate-200/60 bg-slate-50 px-2 py-0.5 font-mono text-xs text-slate-700 dark:border-neutral-700/40 dark:bg-neutral-800/60 dark:text-white/80"
                     >
                       {path}
                     </span>
@@ -1254,12 +1284,12 @@ export function RoutingConfigEditor({
                 >
                   <span className="truncate">{channel.name}</span>
                   {isStale ? (
-                    <span className="inline-flex shrink-0 items-center rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-rose-50 px-2 py-0.5 text-2xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
                       {t("channel_groups_page.deleted_badge")}
                     </span>
                   ) : null}
                   {!isStale && isDisabled ? (
-                    <span className="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-white/10 dark:text-white/55">
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-2 py-0.5 text-2xs font-semibold text-slate-600 dark:bg-white/10 dark:text-white/55">
                       {t("channel_groups_page.disabled_badge")}
                     </span>
                   ) : null}
@@ -1269,7 +1299,7 @@ export function RoutingConfigEditor({
                     {displayTags.map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
+                        className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-2xs font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-200"
                       >
                         {tag}
                       </span>
@@ -1383,7 +1413,7 @@ export function RoutingConfigEditor({
               </OverflowTooltip>
               {model.description ? (
                 <OverflowTooltip content={model.description} className="block min-w-0">
-                  <span className="block min-w-0 truncate text-[11px] text-slate-500 dark:text-white/45">
+                  <span className="block min-w-0 truncate text-xs text-slate-500 dark:text-white/45">
                     {model.description}
                   </span>
                 </OverflowTooltip>
@@ -1441,8 +1471,17 @@ export function RoutingConfigEditor({
     let cancelled = false;
     setModelsLoading(true);
     setModelsError("");
-    const modelLoader = editingSystemDefaultGroup
-      ? loadModelsForChannels(resolvedDraftChannelValues, SYSTEM_DEFAULT_GROUP_NAME)
+    const savedGroupName =
+      !editingSystemDefaultGroup && groupEditorId
+        ? values.routingChannelGroups.find((group) => group.id === groupEditorId)?.name.trim()
+        : "";
+    // Existing groups need their saved backend scope for model availability; new
+    // drafts do not exist server-side yet, so they stay channel-scoped only.
+    const modelGroupName = editingSystemDefaultGroup
+      ? SYSTEM_DEFAULT_GROUP_NAME
+      : savedGroupName || undefined;
+    const modelLoader = modelGroupName
+      ? loadModelsForChannels(resolvedDraftChannelValues, modelGroupName)
       : loadModelsForChannels(resolvedDraftChannelValues);
     modelLoader
       .then((models) => {
@@ -1486,9 +1525,11 @@ export function RoutingConfigEditor({
     groupEditorTab,
     editingSystemDefaultGroup,
     loadModelsForChannels,
+    groupEditorId,
     modelsSelectionTouched,
     resolvedDraftChannelKey,
     t,
+    values.routingChannelGroups,
   ]);
 
   return (
@@ -1598,7 +1639,7 @@ export function RoutingConfigEditor({
                         {channel.name}
                       </span>
                     </OverflowTooltip>
-                    <span className="inline-flex justify-center rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-100">
+                    <span className="inline-flex justify-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-100">
                       {t("channel_groups_page.deleted_badge")}
                     </span>
                   </div>
@@ -1636,15 +1677,30 @@ export function RoutingConfigEditor({
                 {groupDraftError}
               </span>
             ) : null}
-            <Button variant="secondary" onClick={closeGroupEditor} disabled={disabled}>
+            <Button
+              variant="secondary"
+              onClick={closeGroupEditor}
+              disabled={disabled || groupSaving}
+            >
               {t("common.cancel")}
             </Button>
             <Button
               variant="primary"
-              onClick={saveGroupDraft}
-              disabled={disabled || Boolean(groupDraftError)}
+              onClick={() => void saveGroupDraft()}
+              disabled={disabled || Boolean(groupDraftError) || groupSaving}
+              aria-busy={groupSaving || undefined}
+              data-testid="group-editor-save-button"
             >
-              {groupEditorId ? t("common.save") : t("common.add")}
+              {groupSaving ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                  {t("common.saving")}
+                </>
+              ) : groupEditorId ? (
+                t("common.save")
+              ) : (
+                t("common.add")
+              )}
             </Button>
           </div>
         }
@@ -1671,7 +1727,7 @@ export function RoutingConfigEditor({
                         className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-white/80 px-2.5 py-1 text-xs font-medium text-rose-700 dark:border-rose-400/30 dark:bg-neutral-950/50 dark:text-rose-100"
                       >
                         <span>{channel.name}</span>
-                        <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
+                        <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-2xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
                           {t("channel_groups_page.deleted_badge")}
                         </span>
                       </span>

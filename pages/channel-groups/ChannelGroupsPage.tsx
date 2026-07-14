@@ -305,7 +305,12 @@ export function ChannelGroupsPage() {
       const ids = Array.isArray(data?.data)
         ? data.data.map((model) => String(model.id ?? "").trim()).filter(Boolean)
         : [];
-      const availability = await loadConfiguredModelAvailability();
+      // Group editors must use the same scope as the channel group; default
+      // availability can be narrower and would drop owner-mapped catalog models.
+      const availability =
+        normalizedGroup && normalizedGroup !== "default"
+          ? await loadConfiguredModelAvailability({ allowedChannelGroups: [normalizedGroup] })
+          : await loadConfiguredModelAvailability();
       const detailsForGroup =
         (normalizedGroup ? availableChannelDetailsByGroup[normalizedGroup.toLowerCase()] : undefined) ??
         availableChannelDetails;
@@ -400,7 +405,7 @@ export function ChannelGroupsPage() {
   }, [loadPage]);
 
   const persistValues = useCallback(
-    async (nextValues: VisualConfigValues) => {
+    async (nextValues: VisualConfigValues): Promise<boolean> => {
       setSaving(true);
       setError("");
       try {
@@ -419,6 +424,7 @@ export function ChannelGroupsPage() {
         setAvailableChannelDetails(channels.detailsByName);
         setAvailableChannelDetailsByGroup(channels.detailsByGroup);
         notify({ type: "success", message: t("channel_groups_page.saved") });
+        return true;
       } catch (err: unknown) {
         setVisualValues(visualValues);
         const message = err instanceof Error ? err.message : t("channel_groups_page.save_failed");
@@ -427,6 +433,9 @@ export function ChannelGroupsPage() {
           type: "error",
           message,
         });
+        // Return false so the group editor can keep the modal open without
+        // turning fire-and-forget updates (delete, etc.) into unhandled rejections.
+        return false;
       } finally {
         setSaving(false);
       }
@@ -443,10 +452,10 @@ export function ChannelGroupsPage() {
   );
 
   const handleEditorChange = useCallback(
-    (patch: Partial<VisualConfigValues>) => {
+    async (patch: Partial<VisualConfigValues>): Promise<boolean> => {
       const nextValues: VisualConfigValues = { ...visualValues, ...patch };
       setVisualValues(nextValues);
-      void persistValues(nextValues);
+      return persistValues(nextValues);
     },
     [persistValues, visualValues],
   );

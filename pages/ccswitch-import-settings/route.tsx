@@ -8,11 +8,17 @@ const { Page: CcSwitchImportSettingsPage, preload: preloadCcSwitchImportSettings
   );
 
 export const ccswitchImportSettingsRoute = {
-  path: "/ccswitch-import-settings",
+  path: "/access/ccswitch-import-settings",
+  component: "ccswitch-import-settings",
   element: <CcSwitchImportSettingsPage />,
   auth: true,
   layout: "dashboard",
   nav: { labelKey: "nav.ccswitchImportSettings" },
-  redirects: [{ from: "/manage/ccswitch-import-settings", to: "/ccswitch-import-settings" }],
+  redirects: [
+    { from: "/ccswitch-import-settings", to: "/access/ccswitch-import-settings" },
+    { from: "/manage/ccswitch-import-settings", to: "/access/ccswitch-import-settings" },
+  ],
+  // Tenant-scoped: aligns with management API auth for /ccswitch-import-configs (routing.read).
+  requiredPermission: "routing.read",
   preload: preloadCcSwitchImportSettingsPage,
 };

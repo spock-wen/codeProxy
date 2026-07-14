@@ -42,11 +42,20 @@ import {
   type RequestLogsRow,
   type StatusFilterValue,
 } from "@features/request-log-viewer";
+import {
+  clearTenantBucketMap,
+  getActiveCacheTenantId,
+  readTenantBucketMapEntry,
+  updateTenantBucketMapEntry,
+} from "@code-proxy/domain";
 
 const DEFAULT_PAGE_SIZE = 50;
 const LOOKUP_LAST_API_KEY_STORAGE_KEY = "apiKeyLookup.lastApiKey.v1";
-const LOOKUP_CHART_CACHE_STORAGE_KEY = "apiKeyLookup.chartCache.v1";
-const LOOKUP_MODELS_CACHE_STORAGE_KEY = "apiKeyLookup.modelsCache.v1";
+/** Tenant-scoped chart cache (v2). Legacy v1 migrates into the default tenant only. */
+const LOOKUP_CHART_CACHE_STORAGE_KEY = "apiKeyLookup.chartCache.v2";
+const LOOKUP_CHART_CACHE_STORAGE_KEY_V1 = "apiKeyLookup.chartCache.v1";
+const LOOKUP_MODELS_CACHE_STORAGE_KEY = "apiKeyLookup.modelsCache.v2";
+const LOOKUP_MODELS_CACHE_STORAGE_KEY_V1 = "apiKeyLookup.modelsCache.v1";
 const LOGOUT_SELECT_VALUE = "__api-key-lookup-logout__";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -88,49 +97,40 @@ function isChartDataResponse(value: unknown): value is ChartDataResponse {
 }
 
 const readStoredChartCache = (cacheKey: string): ChartDataResponse | null => {
-  try {
-    const raw = window.sessionStorage.getItem(LOOKUP_CHART_CACHE_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed)) return null;
-    const cached = parsed[cacheKey];
-    return isChartDataResponse(cached) ? cached : null;
-  } catch {
-    return null;
-  }
+  return readTenantBucketMapEntry({
+    key: LOOKUP_CHART_CACHE_STORAGE_KEY,
+    kind: "session",
+    tenantId: getActiveCacheTenantId(),
+    entryKey: cacheKey,
+    legacyKey: LOOKUP_CHART_CACHE_STORAGE_KEY_V1,
+    isEntry: isChartDataResponse,
+  });
 };
 
 const writeStoredChartCache = (
   cacheKey: string,
   data: ChartDataResponse,
 ): void => {
-  try {
-    const raw = window.sessionStorage.getItem(LOOKUP_CHART_CACHE_STORAGE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : {};
-    const entries = isRecord(parsed)
-      ? Object.entries(parsed).filter(
-          (entry): entry is [string, ChartDataResponse] =>
-            isChartDataResponse(entry[1]),
-        )
-      : [];
-    const next: Record<string, ChartDataResponse> = {};
-    const keptEntries = entries.filter(([key]) => key !== cacheKey);
-    const cacheEntry: [string, ChartDataResponse] = [cacheKey, data];
-    for (const [key, value] of [...keptEntries, cacheEntry].slice(-8)) {
-      next[key] = value;
-    }
-    window.sessionStorage.setItem(
-      LOOKUP_CHART_CACHE_STORAGE_KEY,
-      JSON.stringify(next),
-    );
-  } catch {
-    // ignore storage failures
-  }
+  updateTenantBucketMapEntry({
+    key: LOOKUP_CHART_CACHE_STORAGE_KEY,
+    kind: "session",
+    tenantId: getActiveCacheTenantId(),
+    entryKey: cacheKey,
+    entryValue: data,
+    maxEntries: 8,
+    legacyKey: LOOKUP_CHART_CACHE_STORAGE_KEY_V1,
+    legacyKeysToRemove: [LOOKUP_CHART_CACHE_STORAGE_KEY_V1],
+  });
 };
 
 const clearStoredChartCache = (): void => {
+  clearTenantBucketMap({
+    key: LOOKUP_CHART_CACHE_STORAGE_KEY,
+    kind: "session",
+    tenantId: getActiveCacheTenantId(),
+  });
   try {
-    window.sessionStorage.removeItem(LOOKUP_CHART_CACHE_STORAGE_KEY);
+    window.sessionStorage.removeItem(LOOKUP_CHART_CACHE_STORAGE_KEY_V1);
   } catch {
     // ignore storage failures
   }
@@ -144,42 +144,27 @@ const sameStringArray = (left: string[], right: string[]): boolean =>
   left.every((value, index) => value === right[index]);
 
 const readStoredModelsCache = (cacheKey: string): string[] | null => {
-  try {
-    const raw = window.sessionStorage.getItem(LOOKUP_MODELS_CACHE_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed)) return null;
-    const cached = parsed[cacheKey];
-    return isStringArray(cached) ? cached : null;
-  } catch {
-    return null;
-  }
+  return readTenantBucketMapEntry({
+    key: LOOKUP_MODELS_CACHE_STORAGE_KEY,
+    kind: "session",
+    tenantId: getActiveCacheTenantId(),
+    entryKey: cacheKey,
+    legacyKey: LOOKUP_MODELS_CACHE_STORAGE_KEY_V1,
+    isEntry: isStringArray,
+  });
 };
 
 const writeStoredModelsCache = (cacheKey: string, models: string[]): void => {
-  try {
-    const raw = window.sessionStorage.getItem(LOOKUP_MODELS_CACHE_STORAGE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : {};
-    const entries = isRecord(parsed)
-      ? Object.entries(parsed).filter((entry): entry is [string, string[]] =>
-          isStringArray(entry[1]),
-        )
-      : [];
-    const next: Record<string, string[]> = {};
-    const keptEntries = entries.filter(([key]) => key !== cacheKey);
-    for (const [key, value] of [
-      ...keptEntries,
-      [cacheKey, models] as const,
-    ].slice(-8)) {
-      next[key] = value;
-    }
-    window.sessionStorage.setItem(
-      LOOKUP_MODELS_CACHE_STORAGE_KEY,
-      JSON.stringify(next),
-    );
-  } catch {
-    // ignore storage failures
-  }
+  updateTenantBucketMapEntry({
+    key: LOOKUP_MODELS_CACHE_STORAGE_KEY,
+    kind: "session",
+    tenantId: getActiveCacheTenantId(),
+    entryKey: cacheKey,
+    entryValue: models,
+    maxEntries: 8,
+    legacyKey: LOOKUP_MODELS_CACHE_STORAGE_KEY_V1,
+    legacyKeysToRemove: [LOOKUP_MODELS_CACHE_STORAGE_KEY_V1],
+  });
 };
 
 const extractServerErrorMessage = (raw: unknown): string => {
@@ -253,6 +238,9 @@ function toLogRow(item: PublicLogItem): RequestLogsRow {
     apiKeyName: item.api_key_name || "",
     isSystemCall: false,
     channelName: item.channel_name || "",
+    // Public lookup logs do not currently expose provider/auth metadata.
+    channelProvider: undefined,
+    channelAuthType: undefined,
     maskedApiKey: maskRequestLogApiKey(item.api_key || ""),
     model: item.model,
     upstreamModel: item.upstream_model || "",
@@ -286,6 +274,33 @@ export function ApiKeyLookupPage() {
     setCompact(mq.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // 向上滚动内容时顶栏自然收起，给 sticky tabs 让出视口；回到顶部附近再展开。
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  useEffect(() => {
+    const HIDE_AFTER = 28;
+    const SHOW_BELOW = 12;
+    let frame = 0;
+    const syncHeader = () => {
+      frame = 0;
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      setHeaderCollapsed((prev) => {
+        if (y > HIDE_AFTER) return true;
+        if (y < SHOW_BELOW) return false;
+        return prev;
+      });
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(syncHeader);
+    };
+    syncHeader();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   const initialLookupKey = useMemo(
@@ -914,8 +929,19 @@ export function ApiKeyLookupPage() {
 
   return (
     <div className="relative min-h-dvh bg-gradient-to-br from-slate-50 via-white to-slate-100 pt-14 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
-      {/* Header */}
-      <header className="fixed inset-x-0 top-0 z-30 border-b border-slate-200/60 bg-white/70 backdrop-blur-xl dark:border-neutral-800/60 dark:bg-neutral-950/70">
+      {/* Header：滚动后上滑淡出，给 sticky tabs 让位 */}
+      <header
+        data-testid="apikey-lookup-header"
+        data-collapsed={headerCollapsed ? "true" : "false"}
+        aria-hidden={headerCollapsed || undefined}
+        className={[
+          "fixed inset-x-0 top-0 z-30 border-b border-slate-200/60 bg-white/70 backdrop-blur-xl dark:border-neutral-800/60 dark:bg-neutral-950/70",
+          "motion-safe:transition-[transform,opacity,border-color] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]",
+          headerCollapsed
+            ? "pointer-events-none -translate-y-full border-transparent opacity-0"
+            : "translate-y-0 opacity-100",
+        ].join(" ")}
+      >
         <div className="mx-auto flex h-14 max-w-screen-xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 shadow-sm dark:bg-white">

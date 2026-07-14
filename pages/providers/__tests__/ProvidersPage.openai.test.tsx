@@ -3,9 +3,15 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { ProviderSimpleConfig } from "@code-proxy/api-client";
+import {
+  DEFAULT_CACHE_TENANT_ID,
+  setActiveCacheTenantId,
+  setCacheTenantResolver,
+} from "@code-proxy/domain";
 import { ProvidersPage } from "@pages/providers/ProvidersPage";
 import { ThemeProvider } from "@code-proxy/ui";
 import { ToastProvider } from "@code-proxy/ui";
+import { setCachedData } from "../provider-cache";
 
 const mocks = vi.hoisted(() => ({
   getGeminiKeys: vi.fn(async (): Promise<unknown[]> => []),
@@ -76,6 +82,10 @@ describe("ProvidersPage openai tab", () => {
   });
 
   beforeEach(() => {
+    localStorage.clear();
+    setCacheTenantResolver(null);
+    setActiveCacheTenantId(DEFAULT_CACHE_TENANT_ID);
+
     mocks.getGeminiKeys.mockReset();
     mocks.getClaudeConfigs.mockReset();
     mocks.getCodexConfigs.mockReset();
@@ -157,11 +167,11 @@ describe("ProvidersPage openai tab", () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={["/ai-providers"]}>
+      <MemoryRouter initialEntries={["/access/ai-providers"]}>
         <ThemeProvider>
           <ToastProvider>
             <Routes>
-              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
             </Routes>
           </ToastProvider>
         </ThemeProvider>
@@ -172,8 +182,11 @@ describe("ProvidersPage openai tab", () => {
     const openCodeGoTab = screen.getByRole("tab", { name: /OpenCode Go/ });
     const geminiTab = screen.getByRole("tab", { name: /Gemini/ });
 
-    expect(within(codexTab).getByText("2")).toBeInTheDocument();
-    expect(within(openCodeGoTab).getByText("1")).toBeInTheDocument();
+    const codexBadge = within(codexTab).getByText("2");
+    const openCodeGoBadge = within(openCodeGoTab).getByText("1");
+
+    expect(codexBadge).toHaveClass("inline-flex", "items-center", "justify-center");
+    expect(openCodeGoBadge).toHaveClass("inline-flex", "items-center", "justify-center");
     expect(within(geminiTab).queryByText("0")).not.toBeInTheDocument();
   });
 
@@ -188,11 +201,11 @@ describe("ProvidersPage openai tab", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/ai-providers"]}>
+      <MemoryRouter initialEntries={["/access/ai-providers"]}>
         <ThemeProvider>
           <ToastProvider>
             <Routes>
-              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
             </Routes>
           </ToastProvider>
         </ThemeProvider>
@@ -206,6 +219,78 @@ describe("ProvidersPage openai tab", () => {
     expect(await screen.findByText("No configuration")).toBeInTheDocument();
   });
 
+  test("paints tenant-cached gemini cards immediately without skeleton (warm remount SWR)", async () => {
+    localStorage.setItem("providers-page:tab", "gemini");
+    setActiveCacheTenantId("tenant-warm");
+    setCachedData<ProviderSimpleConfig[]>("gemini", [
+      { name: "Cached Gemini", apiKey: "sk-cached-gemini" },
+    ]);
+
+    let resolveGemini: (value: ProviderSimpleConfig[]) => void = () => {};
+    mocks.getGeminiKeys.mockImplementationOnce(
+      () =>
+        new Promise<ProviderSimpleConfig[]>((resolve) => {
+          resolveGemini = resolve;
+        }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/access/ai-providers"]}>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
+            </Routes>
+          </ToastProvider>
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Cached Gemini")).toBeInTheDocument();
+    expect(screen.queryByTestId("providers-list-skeleton")).not.toBeInTheDocument();
+    expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
+
+    resolveGemini([{ name: "Fresh Gemini", apiKey: "sk-fresh-gemini" }]);
+    expect(await screen.findByText("Fresh Gemini")).toBeInTheDocument();
+    expect(screen.queryByText("Cached Gemini")).not.toBeInTheDocument();
+  });
+
+  test("does not paint another tenant's cached gemini list on remount", async () => {
+    localStorage.setItem("providers-page:tab", "gemini");
+    setActiveCacheTenantId("tenant-a");
+    setCachedData<ProviderSimpleConfig[]>("gemini", [
+      { name: "Tenant A Gemini", apiKey: "sk-a" },
+    ]);
+    setActiveCacheTenantId("tenant-b");
+
+    let resolveGemini: (value: ProviderSimpleConfig[]) => void = () => {};
+    mocks.getGeminiKeys.mockImplementationOnce(
+      () =>
+        new Promise<ProviderSimpleConfig[]>((resolve) => {
+          resolveGemini = resolve;
+        }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/access/ai-providers"]}>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
+            </Routes>
+          </ToastProvider>
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText("Tenant A Gemini")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("providers-list-skeleton")).toBeInTheDocument();
+
+    resolveGemini([{ name: "Tenant B Gemini", apiKey: "sk-b" }]);
+    expect(await screen.findByText("Tenant B Gemini")).toBeInTheDocument();
+    expect(screen.queryByText("Tenant A Gemini")).not.toBeInTheDocument();
+  });
+
   test("keeps existing provider cards visible during toolbar refresh", async () => {
     const user = userEvent.setup();
     const geminiProvider: ProviderSimpleConfig = {
@@ -216,11 +301,11 @@ describe("ProvidersPage openai tab", () => {
     mocks.getGeminiKeys.mockImplementationOnce(async () => [geminiProvider]);
 
     render(
-      <MemoryRouter initialEntries={["/ai-providers"]}>
+      <MemoryRouter initialEntries={["/access/ai-providers"]}>
         <ThemeProvider>
           <ToastProvider>
             <Routes>
-              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
             </Routes>
           </ToastProvider>
         </ThemeProvider>
@@ -251,11 +336,11 @@ describe("ProvidersPage openai tab", () => {
 
   test("renders openai provider card with masked key and aggregated status", async () => {
     render(
-      <MemoryRouter initialEntries={["/ai-providers/openai"]}>
+      <MemoryRouter initialEntries={["/access/ai-providers/openai"]}>
         <ThemeProvider>
           <ToastProvider>
             <Routes>
-              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
             </Routes>
           </ToastProvider>
         </ThemeProvider>
@@ -284,11 +369,11 @@ describe("ProvidersPage openai tab", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/ai-providers"]}>
+      <MemoryRouter initialEntries={["/access/ai-providers"]}>
         <ThemeProvider>
           <ToastProvider>
             <Routes>
-              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
             </Routes>
           </ToastProvider>
         </ThemeProvider>
@@ -332,11 +417,11 @@ describe("ProvidersPage openai tab", () => {
     mocks.getOpenAIProviders.mockImplementation(async () => [provider] as any);
 
     render(
-      <MemoryRouter initialEntries={["/ai-providers/openai"]}>
+      <MemoryRouter initialEntries={["/access/ai-providers/openai"]}>
         <ThemeProvider>
           <ToastProvider>
             <Routes>
-              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
             </Routes>
           </ToastProvider>
         </ThemeProvider>
@@ -384,11 +469,11 @@ describe("ProvidersPage openai tab", () => {
     mocks.getOpenAIProviders.mockImplementation(async () => [provider] as any);
 
     render(
-      <MemoryRouter initialEntries={["/ai-providers/openai"]}>
+      <MemoryRouter initialEntries={["/access/ai-providers/openai"]}>
         <ThemeProvider>
           <ToastProvider>
             <Routes>
-              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
             </Routes>
           </ToastProvider>
         </ThemeProvider>
@@ -428,11 +513,11 @@ describe("ProvidersPage openai tab", () => {
     mocks.getOpenAIProviders.mockImplementation(async () => [provider] as any);
 
     render(
-      <MemoryRouter initialEntries={["/ai-providers/openai"]}>
+      <MemoryRouter initialEntries={["/access/ai-providers/openai"]}>
         <ThemeProvider>
           <ToastProvider>
             <Routes>
-              <Route path="/ai-providers/*" element={<ProvidersPage />} />
+              <Route path="/access/ai-providers/*" element={<ProvidersPage />} />
             </Routes>
           </ToastProvider>
         </ThemeProvider>

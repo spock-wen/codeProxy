@@ -319,6 +319,7 @@ export function DateTimePicker({
               role="dialog"
               aria-label={labels.picker}
               data-placement={placement}
+              data-side={placement}
               className={cn(selectPanel, "p-3 text-[#18181B] dark:text-white")}
               style={panelStyle}
               {...getSelectDropdownMotion(placement)}
@@ -344,7 +345,7 @@ export function DateTimePicker({
                 </button>
               </div>
 
-              <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase text-[#96969B] dark:text-[#9F9FA8]">
+              <div className="mt-3 grid grid-cols-7 gap-1 text-center text-2xs font-semibold uppercase text-[#96969B] dark:text-[#9F9FA8]">
                 {weekdayLabels.map((day) => (
                   <span key={day}>{day}</span>
                 ))}
@@ -383,7 +384,7 @@ export function DateTimePicker({
 
               <div className="mt-3 grid grid-cols-2 gap-2 border-t border-black/[0.06] pt-3 dark:border-white/10">
                 <label className="space-y-1">
-                  <span className="text-[10px] font-semibold uppercase text-[#96969B] dark:text-[#9F9FA8]">
+                  <span className="text-2xs font-semibold uppercase text-[#96969B] dark:text-[#9F9FA8]">
                     {labels.hour}
                   </span>
                   <input
@@ -393,11 +394,11 @@ export function DateTimePicker({
                     value={parsedValue ? pad2(parsedValue.getHours()) : ""}
                     onChange={(event) => updateTime("hour", event.currentTarget.value)}
                     aria-label={labels.hour}
-                    className="h-9 w-full rounded-2xl border border-black/[0.04] bg-white px-3 text-sm font-semibold tabular-nums text-[#18181B] shadow-[2px_2px_6px_rgb(0_0_0_/_0.055)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-black/10 dark:border-transparent dark:bg-[#303036] dark:text-white dark:shadow-none dark:focus-visible:ring-white/15"
+                    className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold tabular-nums text-[#18181B] shadow-none outline-none transition-colors focus-visible:border-slate-400 focus-visible:ring-0 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus-visible:border-neutral-500"
                   />
                 </label>
                 <label className="space-y-1">
-                  <span className="text-[10px] font-semibold uppercase text-[#96969B] dark:text-[#9F9FA8]">
+                  <span className="text-2xs font-semibold uppercase text-[#96969B] dark:text-[#9F9FA8]">
                     {labels.minute}
                   </span>
                   <input
@@ -407,7 +408,7 @@ export function DateTimePicker({
                     value={parsedValue ? pad2(parsedValue.getMinutes()) : ""}
                     onChange={(event) => updateTime("minute", event.currentTarget.value)}
                     aria-label={labels.minute}
-                    className="h-9 w-full rounded-2xl border border-black/[0.04] bg-white px-3 text-sm font-semibold tabular-nums text-[#18181B] shadow-[2px_2px_6px_rgb(0_0_0_/_0.055)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-black/10 dark:border-transparent dark:bg-[#303036] dark:text-white dark:shadow-none dark:focus-visible:ring-white/15"
+                    className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold tabular-nums text-[#18181B] shadow-none outline-none transition-colors focus-visible:border-slate-400 focus-visible:ring-0 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus-visible:border-neutral-500"
                   />
                 </label>
               </div>

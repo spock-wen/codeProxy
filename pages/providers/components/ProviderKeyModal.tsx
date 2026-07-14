@@ -10,7 +10,6 @@ import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import {
   apiCallApi,
-  authFilesApi,
   getApiCallErrorMessage,
   modelsApi,
 } from "@code-proxy/api-client";
@@ -18,30 +17,27 @@ import type { ProxyPoolEntry } from "@code-proxy/api-client/endpoints/proxies";
 import { Button } from "@code-proxy/ui";
 import { Modal } from "@code-proxy/ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@code-proxy/ui";
+import { useToast } from "@code-proxy/ui";
 import type { ProviderKeyDraft } from "../providers-helpers";
 import {
+  buildProviderModelsEndpoint,
   excludedModelsFromText,
   hasDisableAllModelsRule,
   normalizeDiscoveredModels,
-  stripDisableAllModelsRule,
 } from "../providers-helpers";
-import type { ModelEntryDraft } from "../ModelInputList";
+import { keyValueEntriesToRecord } from "../KeyValueInputList";
+import { createEmptyModelEntry, type ModelEntryDraft } from "../ModelInputList";
 import { ProviderKeyStatusBadges } from "./ProviderKeyStatusBadges";
 import { ProviderKeyBasicTab } from "./ProviderKeyBasicTab";
 import { ProviderKeyRequestTab } from "./ProviderKeyRequestTab";
 import { ProviderKeyModelsTab } from "./ProviderKeyModelsTab";
+import {
+  fetchModelAccessCatalog,
+  isModelAllowedForProvider,
+  type ModelAccessProvider,
+} from "../provider-model-access";
 
 type ProviderKeyModalTab = "basic" | "request" | "models";
-
-const OPENCODE_GO_MODELS_URL = "https://opencode.ai/zen/go/v1/models";
-
-const createModelEntryDraft = (name: string): ModelEntryDraft => ({
-  id: `model-${Date.now()}-${Math.random().toString(16).slice(2)}-${name}`,
-  name,
-  alias: "",
-  priorityText: "",
-  testModel: "",
-});
 
 const isOpenCodeGoVisionModel = (modelId: string): boolean => {
   const normalized = modelId.trim().toLowerCase();
@@ -50,14 +46,17 @@ const isOpenCodeGoVisionModel = (modelId: string): boolean => {
     ? normalized.slice(normalized.lastIndexOf("/") + 1)
     : normalized;
   const candidates = [normalized, baseModel];
-  const KNOWN = new Set([
+  // OpenCode Go and Cline model lists do not expose capability metadata, so keep
+  // the known visual models plus conservative name tokens used by both catalogs.
+  const knownVisionModels = new Set([
     "qwen3.5-plus",
     "qwen3.6-plus",
     "mimo-v2-omni",
     "mimo-v2.5",
     "mimo-v2.5-pro",
   ]);
-  if (candidates.some((candidate) => KNOWN.has(candidate))) return true;
+  if (candidates.some((candidate) => knownVisionModels.has(candidate)))
+    return true;
   if (
     candidates.some(
       (candidate) =>
@@ -121,24 +120,44 @@ export function ProviderKeyModal({
   maskApiKey,
 }: ProviderKeyModalProps) {
   const { t } = useTranslation();
+  const { notify } = useToast();
   const [modalTab, setModalTab] = useState<ProviderKeyModalTab>("basic");
-  const [openCodeModels, setOpenCodeModels] = useState<{ id: string; owned_by?: string }[]>([]);
-  const [openCodeStaticModels, setOpenCodeStaticModels] = useState<
+  const [openCodeModels, setOpenCodeModels] = useState<
     { id: string; owned_by?: string }[]
   >([]);
-  const [openCodeModelsSeeded, setOpenCodeModelsSeeded] = useState(false);
   const [openCodeModelsLoading, setOpenCodeModelsLoading] = useState(false);
-  const [openCodeModelsError, setOpenCodeModelsError] = useState<string | null>(null);
+  const [openCodeModelsError, setOpenCodeModelsError] = useState<string | null>(
+    null,
+  );
   const [openCodeModelQuery, setOpenCodeModelQuery] = useState("");
+  // Live /models discovery for Claude & Codex provider keys (issue #492).
+  const [discoveredModels, setDiscoveredModels] = useState<
+    { id: string; owned_by?: string }[]
+  >([]);
+  const [discovering, setDiscovering] = useState(false);
+  const [discoverSelected, setDiscoverSelected] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const isBedrock = editKeyType === "bedrock";
   const isOpenCodeGo = editKeyType === "opencode-go";
   const isCline = editKeyType === "cline";
   const isOllamaCloud = editKeyType === "ollama-cloud";
-  const isModelAccessProvider = isOpenCodeGo || isCline;
-  const modelAccessChannel = isCline ? "cline" : "opencode-go";
+  const isModelAccessProvider = isOpenCodeGo || isCline || isOllamaCloud;
+  const supportsLiveDiscovery =
+    editKeyType === "claude" || editKeyType === "codex";
+  const modelAccessProvider: ModelAccessProvider | null = isCline
+    ? "cline"
+    : isOllamaCloud
+      ? "ollama-cloud"
+      : isOpenCodeGo
+        ? "opencode-go"
+        : null;
+  const showModelsTab = true;
 
-  const [modelConfigs, setModelConfigs] = useState<{ id: string; owned_by: string }[]>([]);
+  const [modelConfigs, setModelConfigs] = useState<
+    { id: string; owned_by: string }[]
+  >([]);
   const [modelConfigsLoading, setModelConfigsLoading] = useState(false);
   const [selectedModelGroup, setSelectedModelGroup] = useState("");
 
@@ -154,11 +173,15 @@ export function ProviderKeyModal({
 
   const loadModelsFromGroup = useCallback(() => {
     if (!selectedModelGroup) return;
-    const models = modelConfigs.filter((m) => m.owned_by === selectedModelGroup);
+    const models = modelConfigs.filter(
+      (m) => m.owned_by === selectedModelGroup,
+    );
     if (!models.length) return;
 
     const existingNames = new Set(
-      keyDraft.modelEntries.map((e) => e.name.trim().toLowerCase()).filter(Boolean),
+      keyDraft.modelEntries
+        .map((e) => e.name.trim().toLowerCase())
+        .filter(Boolean),
     );
 
     const newEntries: ModelEntryDraft[] = [];
@@ -187,18 +210,149 @@ export function ProviderKeyModal({
     setModalTab("basic");
     setOpenCodeModelQuery("");
     setSelectedModelGroup("");
-    setOpenCodeModelsSeeded(false);
+    setDiscoveredModels([]);
+    setDiscoverSelected(new Set());
+    setDiscovering(false);
   }, [editKeyIndex, editKeyType, open]);
 
+  const discoverModels = useCallback(async () => {
+    if (!supportsLiveDiscovery) return;
+    const providerType = editKeyType === "claude" ? "claude" : "codex";
+    const endpoint = buildProviderModelsEndpoint(
+      providerType,
+      keyDraft.baseUrl,
+    );
+    if (!endpoint) {
+      notify({ type: "info", message: t("providers.fill_base_url_first") });
+      return;
+    }
+
+    setDiscovering(true);
+    setDiscoveredModels([]);
+    setDiscoverSelected(new Set());
+    try {
+      const customHeaders =
+        keyValueEntriesToRecord(keyDraft.headersEntries) ?? {};
+      const headers: Record<string, string> = { ...customHeaders };
+      const apiKey = keyDraft.apiKey.trim();
+
+      if (providerType === "claude") {
+        // Anthropic official + most compatible gateways accept x-api-key.
+        // Also send Authorization for gateways that only accept Bearer.
+        if (apiKey) {
+          if (
+            !Object.keys(headers).some(
+              (key) => key.toLowerCase() === "x-api-key",
+            )
+          ) {
+            headers["x-api-key"] = apiKey;
+          }
+          if (
+            !Object.keys(headers).some(
+              (key) => key.toLowerCase() === "authorization",
+            )
+          ) {
+            headers.Authorization = `Bearer ${apiKey}`;
+          }
+        }
+        if (
+          !Object.keys(headers).some(
+            (key) => key.toLowerCase() === "anthropic-version",
+          )
+        ) {
+          headers["anthropic-version"] = "2023-06-01";
+        }
+        if (
+          !Object.keys(headers).some((key) => key.toLowerCase() === "accept")
+        ) {
+          headers.Accept = "application/json";
+        }
+      } else {
+        // Codex / OpenAI-compatible: Bearer API key.
+        if (
+          apiKey &&
+          !Object.keys(headers).some(
+            (key) => key.toLowerCase() === "authorization",
+          )
+        ) {
+          headers.Authorization = `Bearer ${apiKey}`;
+        }
+        if (
+          !Object.keys(headers).some((key) => key.toLowerCase() === "accept")
+        ) {
+          headers.Accept = "application/json";
+        }
+      }
+
+      const result = await apiCallApi.request({
+        method: "GET",
+        url: endpoint,
+        header: Object.keys(headers).length ? headers : undefined,
+      });
+      if (result.statusCode < 200 || result.statusCode >= 300) {
+        throw new Error(getApiCallErrorMessage(result));
+      }
+      const list = normalizeDiscoveredModels(result.body ?? result.bodyText);
+      setDiscoveredModels(list);
+      setDiscoverSelected(new Set(list.map((model) => model.id)));
+      if (list.length === 0) {
+        notify({ type: "info", message: t("providers.no_discovered_models") });
+      }
+    } catch (err: unknown) {
+      notify({
+        type: "error",
+        message:
+          err instanceof Error ? err.message : t("providers.fetch_models_failed"),
+      });
+    } finally {
+      setDiscovering(false);
+    }
+  }, [
+    editKeyType,
+    keyDraft.apiKey,
+    keyDraft.baseUrl,
+    keyDraft.headersEntries,
+    notify,
+    supportsLiveDiscovery,
+    t,
+  ]);
+
+  const applyDiscoveredModels = useCallback(() => {
+    const selected = new Set(discoverSelected);
+    const picked = discoveredModels.filter((model) => selected.has(model.id));
+    if (picked.length === 0) {
+      notify({ type: "info", message: t("providers.no_models_selected") });
+      return;
+    }
+    setKeyDraft((prev) => {
+      const seen = new Set(
+        prev.modelEntries
+          .map((model) => model.name.trim().toLowerCase())
+          .filter(Boolean),
+      );
+      const merged = [...prev.modelEntries];
+      for (const model of picked) {
+        const key = model.id.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push({ ...createEmptyModelEntry(), name: model.id });
+      }
+      return { ...prev, modelEntries: merged };
+    });
+    notify({ type: "success", message: t("providers.models_merged") });
+  }, [discoverSelected, discoveredModels, notify, setKeyDraft, t]);
+
   useEffect(() => {
-    if (!open || isModelAccessProvider) return;
+    if (!open || !showModelsTab) return;
     let cancelled = false;
     setModelConfigsLoading(true);
     modelsApi
       .getModelConfigs("library")
       .then((items) => {
         if (cancelled) return;
-        setModelConfigs(items.map((item) => ({ id: item.id, owned_by: item.owned_by })));
+        setModelConfigs(
+          items.map((item) => ({ id: item.id, owned_by: item.owned_by })),
+        );
       })
       .catch(() => {
         if (cancelled) return;
@@ -210,28 +364,14 @@ export function ProviderKeyModal({
     return () => {
       cancelled = true;
     };
-  }, [open, isModelAccessProvider]);
+  }, [open, showModelsTab]);
 
   const fetchOpenCodeModels = useCallback(async () => {
-    if (!isModelAccessProvider) return;
+    if (!modelAccessProvider) return;
     setOpenCodeModelsLoading(true);
     setOpenCodeModelsError(null);
     try {
-      if (isCline) {
-        const items = await authFilesApi.getModelDefinitions("cline");
-        setOpenCodeModels(
-          normalizeDiscoveredModels({ data: items.map((item) => ({ ...item, object: "model" })) }),
-        );
-        return;
-      }
-      const result = await apiCallApi.request({
-        method: "GET",
-        url: OPENCODE_GO_MODELS_URL,
-      });
-      if (result.statusCode < 200 || result.statusCode >= 300) {
-        throw new Error(getApiCallErrorMessage(result));
-      }
-      setOpenCodeModels(normalizeDiscoveredModels(result.body ?? result.bodyText));
+      setOpenCodeModels(await fetchModelAccessCatalog(modelAccessProvider));
     } catch (err: unknown) {
       setOpenCodeModelsError(
         err instanceof Error ? err.message : t("providers.fetch_models_failed"),
@@ -239,47 +379,36 @@ export function ProviderKeyModal({
     } finally {
       setOpenCodeModelsLoading(false);
     }
-  }, [isCline, isModelAccessProvider, t]);
+  }, [modelAccessProvider, t]);
 
   useEffect(() => {
     if (!open || !isModelAccessProvider) return;
     void fetchOpenCodeModels();
   }, [fetchOpenCodeModels, isModelAccessProvider, open]);
 
-  useEffect(() => {
-    if (!open || !isModelAccessProvider) return;
-    let cancelled = false;
-    authFilesApi
-      .getModelDefinitions(modelAccessChannel)
-      .then((items) => {
-        if (cancelled) return;
-        setOpenCodeStaticModels(
-          normalizeDiscoveredModels({ data: items.map((item) => ({ ...item, object: "model" })) }),
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setOpenCodeStaticModels([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isModelAccessProvider, modelAccessChannel, open]);
-
   const excludedModels = useMemo(
     () => excludedModelsFromText(keyDraft.excludedModelsText),
     [keyDraft.excludedModelsText],
   );
   const disableAllModels = hasDisableAllModelsRule(excludedModels);
-  const excludedModelIds = useMemo(
-    () => new Set(stripDisableAllModelsRule(excludedModels).map((model) => model.toLowerCase())),
-    [excludedModels],
-  );
+  const excludedModelIds = useMemo(() => new Set<string>(), []);
   const enabledOpenCodeModelIds = useMemo(
     () =>
       new Set(
-        keyDraft.modelEntries.map((entry) => entry.name.trim().toLowerCase()).filter(Boolean),
+        keyDraft.modelEntries
+          .map((model) => model.name.trim().toLowerCase())
+          .filter(Boolean),
       ),
     [keyDraft.modelEntries],
+  );
+  const openCodeModelIds = useMemo(
+    () =>
+      new Set(
+        openCodeModels
+          .map((model) => model.id.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    [openCodeModels],
   );
   const isOpenCodeModelAllowed = useCallback(
     (modelId: string) => {
@@ -287,11 +416,10 @@ export function ProviderKeyModal({
       return (
         normalized !== "" &&
         !disableAllModels &&
-        enabledOpenCodeModelIds.has(normalized) &&
-        !excludedModelIds.has(normalized)
+        enabledOpenCodeModelIds.has(normalized)
       );
     },
-    [disableAllModels, enabledOpenCodeModelIds, excludedModelIds],
+    [disableAllModels, enabledOpenCodeModelIds],
   );
   const filteredOpenCodeModels = useMemo(() => {
     const query = openCodeModelQuery.trim().toLowerCase();
@@ -304,125 +432,198 @@ export function ProviderKeyModal({
   const allowedOpenCodeCount = openCodeModels.filter((model) =>
     isOpenCodeModelAllowed(model.id),
   ).length;
+  const allOpenCodeModelsAllowed =
+    openCodeModels.length > 0 && allowedOpenCodeCount === openCodeModels.length;
+  const someOpenCodeModelsAllowed =
+    allowedOpenCodeCount > 0 && allowedOpenCodeCount < openCodeModels.length;
   const openCodeVisionFallbackOptions = useMemo(() => {
-    const allowedModels = openCodeModels.filter(
-      (model) => isOpenCodeGoVisionModel(model.id) && isOpenCodeModelAllowed(model.id),
-    );
-    const modelOptions = allowedModels.map((model) => ({
-      value: model.id,
-      label: model.owned_by ? `${model.id} · ${model.owned_by}` : model.id,
-    }));
-    return [{ value: "", label: t("providers.opencode_go_vision_fallback_none") }, ...modelOptions];
-  }, [isOpenCodeModelAllowed, openCodeModels, t]);
-
-  useEffect(() => {
-    if (!open || !isModelAccessProvider || openCodeModelsSeeded) return;
-    if (disableAllModels || keyDraft.modelEntries.some((entry) => entry.name.trim())) {
-      setOpenCodeModelsSeeded(true);
-      return;
+    const optionMap = new Map<string, { value: string; label: string }>();
+    for (const model of openCodeModels) {
+      if (
+        !isOpenCodeGoVisionModel(model.id) ||
+        !isOpenCodeModelAllowed(model.id)
+      )
+        continue;
+      optionMap.set(model.id.toLowerCase(), {
+        value: model.id,
+        label: model.owned_by ? `${model.id} · ${model.owned_by}` : model.id,
+      });
     }
-    if (openCodeStaticModels.length === 0) return;
-
-    const entries = openCodeStaticModels
-      .map((model) => model.id.trim())
-      .filter((id) => id && !excludedModelIds.has(id.toLowerCase()))
-      .map(createModelEntryDraft);
-    setOpenCodeModelsSeeded(true);
-    if (entries.length === 0) return;
-    setKeyDraft((prev) =>
-      prev.modelEntries.some((entry) => entry.name.trim())
-        ? prev
-        : { ...prev, modelEntries: entries },
+    for (const model of modelConfigs) {
+      const id = model.id.trim();
+      if (!id) continue;
+      optionMap.set(id.toLowerCase(), {
+        value: id,
+        label: model.owned_by ? `${id} · ${model.owned_by}` : id,
+      });
+    }
+    const modelOptions = Array.from(optionMap.values()).sort((a, b) =>
+      a.value.localeCompare(b.value),
     );
-  }, [
-    disableAllModels,
-    excludedModelIds,
-    isModelAccessProvider,
-    keyDraft.modelEntries,
-    open,
-    openCodeModelsSeeded,
-    openCodeStaticModels,
-    setKeyDraft,
-  ]);
-
-  useEffect(() => {
-    if (!open || !isModelAccessProvider || openCodeModels.length === 0) return;
-    const fallback = keyDraft.visionFallbackModel.trim();
-    if (!fallback) return;
-    const fallbackLower = fallback.toLowerCase();
-    const allowed = openCodeModels.some(
-      (model) =>
-        model.id.toLowerCase() === fallbackLower &&
-        isOpenCodeGoVisionModel(model.id) &&
-        isOpenCodeModelAllowed(model.id),
-    );
-    if (allowed) return;
-    setKeyDraft((prev) =>
-      prev.visionFallbackModel.trim().toLowerCase() === fallbackLower
-        ? { ...prev, visionFallbackModel: "" }
-        : prev,
-    );
+    const currentFallback = keyDraft.visionFallbackModel.trim();
+    const hasCurrentFallback =
+      currentFallback !== "" &&
+      !modelOptions.some(
+        (model) => model.value.toLowerCase() === currentFallback.toLowerCase(),
+      );
+    // Preserve existing configs even when "*" or a catalog refresh makes the model unavailable.
+    const currentFallbackOption = hasCurrentFallback
+      ? [
+          {
+            value: currentFallback,
+            label: t("providers.opencode_go_vision_fallback_unavailable", {
+              model: currentFallback,
+            }),
+          },
+        ]
+      : [];
+    return [
+      { value: "", label: t("providers.opencode_go_vision_fallback_none") },
+      ...currentFallbackOption,
+      ...modelOptions,
+    ];
   }, [
     isOpenCodeModelAllowed,
-    isModelAccessProvider,
     keyDraft.visionFallbackModel,
-    open,
+    modelConfigs,
     openCodeModels,
-    setKeyDraft,
+    t,
   ]);
 
   const setOpenCodeModelAllowed = useCallback(
     (modelId: string, allowed: boolean) => {
       const normalized = modelId.trim().toLowerCase();
-      if (!normalized) return;
+      if (!normalized || !modelAccessProvider) return;
       setKeyDraft((prev) => {
-        const currentExcluded = stripDisableAllModelsRule(
-          excludedModelsFromText(prev.excludedModelsText),
+        const exists = prev.modelEntries.some(
+          (entry) => entry.name.trim().toLowerCase() === normalized,
         );
-        const nextExcluded = currentExcluded.filter(
-          (model) => model.trim().toLowerCase() !== normalized,
+        const currentExcluded = excludedModelsFromText(prev.excludedModelsText);
+        const baseEntries =
+          allowed && hasDisableAllModelsRule(currentExcluded)
+            ? prev.modelEntries.filter(
+                (entry) =>
+                  !isModelAllowedForProvider(modelAccessProvider, entry.name),
+              )
+            : prev.modelEntries;
+        const existingEntry = prev.modelEntries.find(
+          (entry) => entry.name.trim().toLowerCase() === normalized,
         );
-        const modelEntries = prev.modelEntries.filter(
-          (entry) => entry.name.trim().toLowerCase() !== normalized,
-        );
+        const nextEntries = allowed
+          ? exists &&
+            baseEntries.some(
+              (entry) => entry.name.trim().toLowerCase() === normalized,
+            )
+            ? baseEntries
+            : [
+                ...baseEntries,
+                existingEntry ?? { ...createEmptyModelEntry(), name: modelId },
+              ]
+          : baseEntries.filter(
+              (entry) => entry.name.trim().toLowerCase() !== normalized,
+            );
+        const hasAllowedEntry = nextEntries.some((entry) => {
+          const key = entry.name.trim().toLowerCase();
+          return (
+            key !== "" &&
+            openCodeModelIds.has(key) &&
+            isModelAllowedForProvider(modelAccessProvider, entry.name)
+          );
+        });
+        const nextExcluded = allowed
+          ? currentExcluded.filter((model) => model.trim() !== "*")
+          : hasAllowedEntry
+            ? currentExcluded
+            : ["*"];
         return {
           ...prev,
-          modelEntries: allowed ? [...modelEntries, createModelEntryDraft(modelId)] : modelEntries,
-          excludedModelsText: (allowed ? nextExcluded : [...nextExcluded, modelId]).join("\n"),
+          excludedModelsText: nextExcluded.join("\n"),
+          modelEntries: nextEntries,
         };
       });
     },
-    [setKeyDraft],
+    [modelAccessProvider, openCodeModelIds, setKeyDraft],
   );
 
   const setAllFetchedOpenCodeModelsAllowed = useCallback(
     (allowed: boolean) => {
-      const fetchedIds = new Set(openCodeModels.map((model) => model.id.toLowerCase()));
+      if (!modelAccessProvider) return;
       setKeyDraft((prev) => {
-        const currentExcluded = stripDisableAllModelsRule(
-          excludedModelsFromText(prev.excludedModelsText),
+        const currentExcluded = excludedModelsFromText(prev.excludedModelsText);
+        const existingByName = new Map(
+          prev.modelEntries
+            .map((entry) => [entry.name.trim().toLowerCase(), entry] as const)
+            .filter(([name]) => name !== ""),
         );
-        const unknownExcluded = currentExcluded.filter(
-          (model) => !fetchedIds.has(model.toLowerCase()),
+        const preservedEntries = prev.modelEntries.filter(
+          (entry) => !isModelAllowedForProvider(modelAccessProvider, entry.name),
         );
-        const unknownEntries = prev.modelEntries.filter(
-          (entry) => !fetchedIds.has(entry.name.trim().toLowerCase()),
-        );
+        const nextEntries = allowed
+          ? [
+              ...preservedEntries,
+              ...openCodeModels
+                .filter((model) =>
+                  isModelAllowedForProvider(modelAccessProvider, model.id),
+                )
+                .map((model) => {
+                  const key = model.id.trim().toLowerCase();
+                  return (
+                    existingByName.get(key) ?? {
+                      ...createEmptyModelEntry(),
+                      name: model.id,
+                    }
+                  );
+                }),
+            ]
+          : preservedEntries;
         return {
           ...prev,
-          modelEntries: allowed
-            ? [...unknownEntries, ...openCodeModels.map((model) => createModelEntryDraft(model.id))]
-            : unknownEntries,
-          excludedModelsText: (allowed
-            ? unknownExcluded
-            : [...unknownExcluded, ...openCodeModels.map((model) => model.id)]
-          ).join("\n"),
+          excludedModelsText: allowed
+            ? currentExcluded.filter((model) => model.trim() !== "*").join("\n")
+            : "*",
+          modelEntries: nextEntries,
         };
       });
     },
-    [openCodeModels, setKeyDraft],
+    [modelAccessProvider, openCodeModels, setKeyDraft],
   );
 
+  useEffect(() => {
+    if (!open || !modelAccessProvider || openCodeModels.length === 0) return;
+    setKeyDraft((prev) => {
+      if (hasDisableAllModelsRule(excludedModelsFromText(prev.excludedModelsText)))
+        return prev;
+      if (
+        prev.modelEntries.some((entry) =>
+          isModelAllowedForProvider(modelAccessProvider, entry.name),
+        )
+      ) {
+        return prev;
+      }
+      const existingNames = new Set(
+        prev.modelEntries
+          .map((entry) => entry.name.trim().toLowerCase())
+          .filter(Boolean),
+      );
+      const nextEntries = [...prev.modelEntries];
+      for (const model of openCodeModels) {
+        const name = model.id.trim();
+        const key = name.toLowerCase();
+        if (!key || existingNames.has(key)) continue;
+        if (!isModelAllowedForProvider(modelAccessProvider, name)) continue;
+        existingNames.add(key);
+        nextEntries.push({ ...createEmptyModelEntry(), name });
+      }
+      return nextEntries.length === prev.modelEntries.length
+        ? prev
+        : { ...prev, modelEntries: nextEntries };
+    });
+  }, [
+    modelAccessProvider,
+    open,
+    openCodeModels,
+    setKeyDraft,
+  ]);
   const statusBadges = (
     <ProviderKeyStatusBadges
       editKeyEnabled={editKeyEnabled}
@@ -430,9 +631,7 @@ export function ProviderKeyModal({
       editKeyModelCount={editKeyModelCount}
       editKeyExcludedCount={editKeyExcludedCount}
       editKeyType={editKeyType}
-      isModelAccessProvider={isModelAccessProvider}
-      allowedOpenCodeCount={allowedOpenCodeCount}
-      totalOpenCodeModels={openCodeModels.length}
+      showModelBadges={showModelsTab}
       authMode={keyDraft.authMode}
     />
   );
@@ -477,12 +676,23 @@ export function ProviderKeyModal({
         </div>
       }
     >
-      <Tabs value={modalTab} onValueChange={(next) => setModalTab(next as ProviderKeyModalTab)}>
+      <Tabs
+        value={modalTab}
+        onValueChange={(next) => setModalTab(next as ProviderKeyModalTab)}
+      >
         <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-5 py-3 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
           <TabsList>
-            <TabsTrigger value="basic">{t("providers.modal_tab_basic")}</TabsTrigger>
-            <TabsTrigger value="request">{t("providers.modal_tab_request")}</TabsTrigger>
-            <TabsTrigger value="models">{t("providers.modal_tab_models")}</TabsTrigger>
+            <TabsTrigger value="basic">
+              {t("providers.modal_tab_basic")}
+            </TabsTrigger>
+            <TabsTrigger value="request">
+              {t("providers.modal_tab_request")}
+            </TabsTrigger>
+            {showModelsTab ? (
+              <TabsTrigger value="models">
+                {t("providers.modal_tab_models")}
+              </TabsTrigger>
+            ) : null}
           </TabsList>
         </div>
 
@@ -514,35 +724,53 @@ export function ProviderKeyModal({
             />
           </TabsContent>
 
-          <TabsContent value="models">
-            <ProviderKeyModelsTab
-              isOpenCodeGo={isOpenCodeGo}
-              isCline={isCline}
-              openCodeModels={openCodeModels}
-              openCodeModelsLoading={openCodeModelsLoading}
-              openCodeModelsError={openCodeModelsError}
-              openCodeModelQuery={openCodeModelQuery}
-              setOpenCodeModelQuery={setOpenCodeModelQuery}
-              filteredOpenCodeModels={filteredOpenCodeModels}
-              allowedOpenCodeCount={allowedOpenCodeCount}
-              excludeAll={disableAllModels}
-              excludedModelIds={excludedModelIds}
-              enabledOpenCodeModelIds={enabledOpenCodeModelIds}
-              fetchOpenCodeModels={fetchOpenCodeModels}
-              setAllFetchedOpenCodeModelsAllowed={setAllFetchedOpenCodeModelsAllowed}
-              setOpenCodeModelAllowed={setOpenCodeModelAllowed}
-              selectedModelGroup={selectedModelGroup}
-              setSelectedModelGroup={setSelectedModelGroup}
-              modelGroupOptions={modelGroupOptions}
-              modelConfigsLoading={modelConfigsLoading}
-              loadModelsFromGroup={loadModelsFromGroup}
-              editKeyType={editKeyType}
-              keyDraft={keyDraft}
-              setKeyDraft={setKeyDraft}
-              editKeyExcludedCount={editKeyExcludedCount}
-              editKeyEnabledToggle={editKeyEnabledToggle}
-            />
-          </TabsContent>
+          {showModelsTab ? (
+            <TabsContent value="models">
+              <ProviderKeyModelsTab
+                isOpenCodeGo={isOpenCodeGo}
+                isCline={isCline}
+                openCodeModels={openCodeModels}
+                openCodeModelsLoading={openCodeModelsLoading}
+                openCodeModelsError={openCodeModelsError}
+                openCodeModelQuery={openCodeModelQuery}
+                setOpenCodeModelQuery={setOpenCodeModelQuery}
+                filteredOpenCodeModels={filteredOpenCodeModels}
+                allowedOpenCodeCount={allowedOpenCodeCount}
+                allOpenCodeModelsAllowed={allOpenCodeModelsAllowed}
+                someOpenCodeModelsAllowed={someOpenCodeModelsAllowed}
+                excludeAll={disableAllModels}
+                excludedModelIds={excludedModelIds}
+                enabledOpenCodeModelIds={enabledOpenCodeModelIds}
+                fetchOpenCodeModels={fetchOpenCodeModels}
+                setAllFetchedOpenCodeModelsAllowed={
+                  setAllFetchedOpenCodeModelsAllowed
+                }
+                setOpenCodeModelAllowed={setOpenCodeModelAllowed}
+                selectedModelGroup={selectedModelGroup}
+                setSelectedModelGroup={setSelectedModelGroup}
+                modelGroupOptions={modelGroupOptions}
+                modelConfigsLoading={modelConfigsLoading}
+                loadModelsFromGroup={loadModelsFromGroup}
+                editKeyType={editKeyType}
+                keyDraft={keyDraft}
+                setKeyDraft={setKeyDraft}
+                editKeyExcludedCount={editKeyExcludedCount}
+                editKeyEnabledToggle={editKeyEnabledToggle}
+                discovering={discovering}
+                discoverModels={
+                  supportsLiveDiscovery ? discoverModels : undefined
+                }
+                applyDiscoveredModels={
+                  supportsLiveDiscovery ? applyDiscoveredModels : undefined
+                }
+                discoveredModels={discoveredModels}
+                discoverSelected={discoverSelected}
+                setDiscoverSelected={
+                  supportsLiveDiscovery ? setDiscoverSelected : undefined
+                }
+              />
+            </TabsContent>
+          ) : null}
         </div>
       </Tabs>
     </Modal>

@@ -45,8 +45,14 @@ export interface SelectProps {
   options: SelectOption[];
   /** Optional placeholder shown when value is empty */
   placeholder?: ReactNode;
+  /** Optional control id (used by FormField label association) */
+  id?: string;
   /** Optional aria-label */
   "aria-label"?: string;
+  /** Optional invalid state for form fields */
+  "aria-invalid"?: boolean | "true" | "false";
+  /** Optional describedby ids for form description/error */
+  "aria-describedby"?: string;
   /** Optional HTML name attribute */
   name?: string;
   /** Extra className on the trigger button */
@@ -68,7 +74,10 @@ export function Select({
   onChange,
   options,
   placeholder = "",
+  id,
   "aria-label": ariaLabel,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
   name,
   className,
   disabled = false,
@@ -159,11 +168,14 @@ export function Select({
       {/* Trigger */}
       <button
         ref={triggerRef}
+        id={id}
         type="button"
         role="combobox"
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={ariaLabel}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
@@ -188,6 +200,7 @@ export function Select({
             <motion.div
               ref={listRef}
               role="listbox"
+              data-side={pos.placement}
               aria-label={ariaLabel}
               className={selectPanel}
               {...getSelectDropdownMotion(pos.placement)}

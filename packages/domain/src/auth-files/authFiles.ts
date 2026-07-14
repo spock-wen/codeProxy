@@ -15,6 +15,12 @@ import { resolveCodexPlanType } from "../quota/resolvers";
 import { normalizePlanType } from "../quota/parsers";
 import type { QuotaItem, QuotaState, QuotaStatus } from "../quota/types";
 import type { StatusBarData, StatusBlockDetail, StatusBlockState } from "../usage";
+import {
+  getActiveCacheTenantId,
+  normalizeCacheTenantId,
+  readTenantBucket,
+  writeTenantBucket,
+} from "../tenant-cache";
 
 export type AuthFileModelItem = {
   id: string;
@@ -43,8 +49,11 @@ export type OAuthDialogTab =
 export const AUTH_FILES_PAGE_SIZE = 9;
 export const MAX_AUTH_FILE_SIZE = 50 * 1024;
 
+/** Tenant-scoped auth-files UI filters (file group / status / search / page). */
 export const AUTH_FILES_UI_STATE_KEY = "authFilesPage.uiState.v3";
-export const AUTH_FILES_DATA_CACHE_KEY = "authFilesPage.dataCache.v2";
+/** Tenant-scoped auth-files list/quota cache (v3). Legacy v2 is read only for migration. */
+export const AUTH_FILES_DATA_CACHE_KEY = "authFilesPage.dataCache.v3";
+export const AUTH_FILES_DATA_CACHE_KEY_V2 = "authFilesPage.dataCache.v2";
 export const AUTH_FILES_QUOTA_PREVIEW_KEY = "authFilesPage.quotaPreview.v1";
 export const AUTH_FILES_QUOTA_AUTO_REFRESH_KEY = "authFilesPage.quotaAutoRefreshMs.v1";
 export const AUTH_FILES_FILES_VIEW_MODE_KEY = "authFilesPage.filesViewMode.v1";
@@ -81,11 +90,15 @@ export type AuthFilesUiState = {
 };
 
 export type AuthFilesDataCache = {
+  /** Effective tenant id that owns this cache bucket. Required to prevent cross-tenant reuse. */
+  tenantId: string;
   savedAtMs: number;
   files: AuthFileItem[];
   usageData?: EntityStatsResponse | null;
   quotaByFileName?: Record<string, QuotaState>;
 };
+
+type AuthFilesDataCacheBucket = Omit<AuthFilesDataCache, "tenantId">;
 
 const sanitizeDecodedIdToken = (value: unknown): unknown => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
@@ -232,7 +245,14 @@ const sanitizeIdentityFingerprintSummaryForCache = (
 ): AuthFileIdentityFingerprintSummary | undefined => {
   if (!isPlainRecord(value)) return undefined;
   const provider = readOptionalString(value.provider);
-  if (provider !== "claude" && provider !== "codex" && provider !== "gemini") return undefined;
+  if (
+    provider !== "claude" &&
+    provider !== "codex" &&
+    provider !== "gemini" &&
+    provider !== "xai"
+  ) {
+    return undefined;
+  }
   const primarySource =
     sanitizeIdentityFingerprintSourceForCache(value.primary_source) ?? "builtin_default";
   const sourceCounts = sanitizeIdentityFingerprintSourceCountsForCache(value.source_counts) ?? {};
@@ -247,6 +267,8 @@ const sanitizeIdentityFingerprintSummaryForCache = (
   };
   const accountKey = readOptionalString(value.account_key);
   const authSubjectId = readOptionalString(value.auth_subject_id);
+  const profileKey = readOptionalString(value.profile_key);
+  const profileFamily = readOptionalString(value.profile_family);
   const clientProduct = readOptionalString(value.client_product);
   const clientVariant = readOptionalString(value.client_variant);
   const version = readOptionalString(value.version);
@@ -255,6 +277,8 @@ const sanitizeIdentityFingerprintSummaryForCache = (
 
   if (accountKey) summary.account_key = accountKey;
   if (authSubjectId) summary.auth_subject_id = authSubjectId;
+  if (profileKey) summary.profile_key = profileKey;
+  if (profileFamily) summary.profile_family = profileFamily;
   if (clientProduct) summary.client_product = clientProduct;
   if (clientVariant) summary.client_variant = clientVariant;
   if (version) summary.version = version;
@@ -313,25 +337,65 @@ const sanitizeAuthFileRestrictionsForCache = (
   return restrictions.length > 0 ? restrictions : undefined;
 };
 
-export const readAuthFilesUiState = (): AuthFilesUiState | null => {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(AUTH_FILES_UI_STATE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as AuthFilesUiState;
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch {
+const parseAuthFilesUiStateBucket = (value: unknown): AuthFilesUiState | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  // Reject tenant-store wrappers so only real UI-state objects are accepted.
+  if ("byTenant" in record && !("filter" in record) && !("tab" in record) && !("page" in record)) {
     return null;
   }
+  const output: AuthFilesUiState = {};
+  if (record.tab === "files" || record.tab === "excluded" || record.tab === "alias") {
+    output.tab = record.tab;
+  }
+  if (typeof record.filter === "string") output.filter = record.filter;
+  if (typeof record.tagFilter === "string") output.tagFilter = record.tagFilter;
+  if (
+    typeof record.statusFilter === "string" &&
+    AUTH_FILE_STATUS_FILTERS.includes(record.statusFilter as AuthFileStatusFilter)
+  ) {
+    output.statusFilter = record.statusFilter as AuthFileStatusFilter;
+  }
+  if (typeof record.search === "string") output.search = record.search;
+  if (typeof record.page === "number" && Number.isFinite(record.page)) {
+    output.page = Math.max(1, Math.round(record.page));
+  }
+  return output;
 };
 
-export const writeAuthFilesUiState = (state: AuthFilesUiState) => {
+/**
+ * Read auth-files UI filters for a tenant (file group, status, search, page).
+ * Prefer explicit tenantId; fall back to the active cache tenant from AuthProvider.
+ * Legacy unscoped v3 payloads migrate into the default tenant bucket on first write.
+ */
+export const readAuthFilesUiState = (
+  tenantId?: string | null,
+): AuthFilesUiState | null => {
+  if (typeof window === "undefined") return null;
+  const tenantKey = normalizeCacheTenantId(tenantId ?? getActiveCacheTenantId());
+  return readTenantBucket({
+    key: AUTH_FILES_UI_STATE_KEY,
+    tenantId: tenantKey,
+    parseBucket: parseAuthFilesUiStateBucket,
+    // v3 may still hold a single unscoped UI-state object mid-migration.
+    acceptUnscopedCurrent: true,
+  });
+};
+
+export const writeAuthFilesUiState = (
+  state: AuthFilesUiState,
+  tenantId?: string | null,
+) => {
   if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(AUTH_FILES_UI_STATE_KEY, JSON.stringify(state));
-  } catch {
-    // ignore
-  }
+  const tenantKey = normalizeCacheTenantId(tenantId ?? getActiveCacheTenantId());
+  const bucket = parseAuthFilesUiStateBucket(state) ?? {};
+  writeTenantBucket({
+    key: AUTH_FILES_UI_STATE_KEY,
+    tenantId: tenantKey,
+    parseBucket: parseAuthFilesUiStateBucket,
+    acceptUnscopedCurrent: true,
+    bucket,
+  });
 };
 
 const sanitizeModelOwnerGroupMap = (value: unknown): AuthFilesModelOwnerGroupMap => {
@@ -507,55 +571,76 @@ const sanitizeQuotaByFileNameForCache = (
   return Object.keys(output).length > 0 ? output : undefined;
 };
 
-export const readAuthFilesDataCache = (): AuthFilesDataCache | null => {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(AUTH_FILES_DATA_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<AuthFilesDataCache>;
-    const files = Array.isArray(parsed?.files) ? (parsed.files as AuthFileItem[]) : null;
-    if (!files) return null;
-    const savedAtMs =
-      typeof parsed?.savedAtMs === "number" && Number.isFinite(parsed.savedAtMs)
-        ? parsed.savedAtMs
-        : Date.now();
+const parseAuthFilesDataCacheBucket = (
+  value: unknown,
+): AuthFilesDataCacheBucket | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const parsed = value as Partial<AuthFilesDataCacheBucket> & { tenantId?: string };
+  const files = Array.isArray(parsed.files) ? (parsed.files as AuthFileItem[]) : null;
+  if (!files) return null;
+  const savedAtMs =
+    typeof parsed.savedAtMs === "number" && Number.isFinite(parsed.savedAtMs)
+      ? parsed.savedAtMs
+      : Date.now();
+  return {
+    savedAtMs,
+    files,
+    usageData:
+      parsed.usageData && typeof parsed.usageData === "object"
+        ? (parsed.usageData as EntityStatsResponse)
+        : undefined,
+    quotaByFileName: sanitizeQuotaByFileNameForCache(parsed.quotaByFileName),
+  };
+};
 
-    return {
-      savedAtMs,
-      files,
-      usageData:
-        parsed?.usageData && typeof parsed.usageData === "object"
-          ? (parsed.usageData as EntityStatsResponse)
-          : undefined,
-      quotaByFileName: sanitizeQuotaByFileNameForCache(parsed?.quotaByFileName),
-    };
-  } catch {
-    return null;
-  }
+/**
+ * Read auth-files list/quota cache for a tenant.
+ * Prefer explicit tenantId; fall back to the active cache tenant from AuthProvider.
+ */
+export const readAuthFilesDataCache = (
+  tenantId?: string | null,
+): AuthFilesDataCache | null => {
+  const tenantKey = normalizeCacheTenantId(tenantId ?? getActiveCacheTenantId());
+  const bucket = readTenantBucket({
+    key: AUTH_FILES_DATA_CACHE_KEY,
+    tenantId: tenantKey,
+    legacyKey: AUTH_FILES_DATA_CACHE_KEY_V2,
+    parseBucket: parseAuthFilesDataCacheBucket,
+    // v3 may still hold a single unscoped bucket mid-migration.
+    acceptUnscopedCurrent: true,
+  });
+  if (!bucket) return null;
+  return { tenantId: tenantKey, ...bucket };
 };
 
 export const writeAuthFilesDataCache = (cache: AuthFilesDataCache) => {
-  if (typeof window === "undefined") return;
-  try {
-    const raw = window.localStorage.getItem(AUTH_FILES_DATA_CACHE_KEY);
-    const previous = raw ? (JSON.parse(raw) as Partial<AuthFilesDataCache>) : null;
-    const fileNames = new Set(cache.files.map((file) => file.name).filter(Boolean));
-    const quotaByFileName = sanitizeQuotaByFileNameForCache(
-      cache.quotaByFileName ?? previous?.quotaByFileName,
-      fileNames,
-    );
-    window.localStorage.setItem(
-      AUTH_FILES_DATA_CACHE_KEY,
-      JSON.stringify({
-        savedAtMs: cache.savedAtMs,
-        files: cache.files,
-        usageData: cache.usageData ?? previous?.usageData,
-        quotaByFileName,
-      }),
-    );
-  } catch {
-    // ignore
-  }
+  const tenantKey = normalizeCacheTenantId(cache.tenantId || getActiveCacheTenantId());
+  writeTenantBucket({
+    key: AUTH_FILES_DATA_CACHE_KEY,
+    tenantId: tenantKey,
+    legacyKey: AUTH_FILES_DATA_CACHE_KEY_V2,
+    parseBucket: parseAuthFilesDataCacheBucket,
+    acceptUnscopedCurrent: true,
+    legacyKeysToRemove: [AUTH_FILES_DATA_CACHE_KEY_V2],
+    bucket: {
+      savedAtMs: cache.savedAtMs,
+      files: cache.files,
+      usageData: cache.usageData,
+      quotaByFileName: cache.quotaByFileName,
+    },
+    merge: (previous, next) => {
+      const fileNames = new Set(next.files.map((file) => file.name).filter(Boolean));
+      return {
+        savedAtMs: next.savedAtMs,
+        files: next.files,
+        usageData: next.usageData ?? previous?.usageData,
+        quotaByFileName: sanitizeQuotaByFileNameForCache(
+          next.quotaByFileName ?? previous?.quotaByFileName,
+          fileNames,
+        ),
+      };
+    },
+  });
 };
 
 export const formatFileSize = (bytes?: number): string => {
@@ -888,12 +973,24 @@ const resolveRestrictionReason = (restriction: AuthFileRestriction): string => {
           const type = String(errorRecord.type ?? "").trim();
           if (type && type !== "usage_limit_reached") return type;
         }
+        const topMessage = String(record.message ?? "").trim();
+        if (topMessage) return topMessage;
       }
     } catch {
+      // Keep raw non-JSON upstream bodies (often the full 429 text).
       return rawMessage;
     }
   }
-  return String(restriction.reason || restriction.code || "").trim();
+  const reason = String(restriction.reason || restriction.code || "").trim();
+  if (reason && reason !== "quota") return reason;
+  const status = Number(restriction.http_status);
+  if (status === 429) {
+    // quota reason alone is not user-facing; surface a clear rate-limit label.
+    return "rate limited (HTTP 429)";
+  }
+  if (reason) return reason;
+  if (Number.isFinite(status) && status > 0) return `HTTP ${Math.round(status)}`;
+  return "";
 };
 
 export const resolveAuthFileRestrictionBadges = (
@@ -1349,6 +1446,24 @@ export const resolveAuthFilePlanType = (
   resolveCodexPlanType(file) ??
   readCodexFilenamePlanType(String(file.name || "")) ??
   normalizePlanType(quotaState?.planType);
+
+/**
+ * Plan badges may come from auth-file tags (Codex plus/pro) or quota state (xAI SuperGrok).
+ * Only enforce display_tags visibility when the plan is part of the file's default tags;
+ * quota-derived plans are always shown when resolved.
+ */
+export const shouldShowAuthFilePlanBadge = (
+  file: AuthFileItem,
+  planType: string | null | undefined,
+): boolean => {
+  const normalized = normalizeTagValue(planType);
+  if (!normalized) return false;
+  const defaultTags = readAuthFileDefaultTags(file);
+  if (defaultTags.includes(normalized)) {
+    return shouldShowAuthFileDisplayTag(file, normalized);
+  }
+  return true;
+};
 
 export const resolveAuthFileSupplementalTags = (
   file: AuthFileItem,

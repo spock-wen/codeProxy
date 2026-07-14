@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   getDashboardSummary: vi.fn(),
   notify: vi.fn(),
   useSystemStats: vi.fn(),
+  can: vi.fn((permission: string) => permission === "system.status.read" || permission === "dashboard.read"),
+  principal: null as null | { platform_admin?: boolean },
   intervalCallback: null as null | (() => void),
 }));
 
@@ -14,6 +16,14 @@ vi.mock("@code-proxy/api-client/endpoints/usage", () => ({
   usageApi: {
     getDashboardSummary: mocks.getDashboardSummary,
   },
+}));
+
+vi.mock("@app/providers/AuthProvider", () => ({
+  useAuth: () => ({
+    can: mocks.can,
+    state: { principal: mocks.principal },
+    actions: {},
+  }),
 }));
 
 vi.mock("../useSystemStats", () => ({
@@ -113,11 +123,16 @@ describe("DashboardPage", () => {
     await i18n.changeLanguage("en");
     mocks.notify.mockReset();
     mocks.getDashboardSummary.mockReset();
+    mocks.can.mockReset();
+    mocks.can.mockImplementation(
+      (permission: string) => permission === "system.status.read" || permission === "dashboard.read",
+    );
+    mocks.principal = null;
     mocks.intervalCallback = null;
     mocks.useSystemStats.mockReturnValue({
       stats: {
-        total_rpm: 12,
-        total_tpm: 345,
+        total_rpm: 99,
+        total_tpm: 999,
       },
       connected: true,
       error: null,
@@ -191,5 +206,66 @@ describe("DashboardPage", () => {
     expect(tooltipValues).toContain("2,819,900,000.00");
     expect(tooltipValues).toContain("13,100,000.00");
     expect(tooltipValues).toContain("$12,345.6789");
+  });
+
+  test("hides system monitor without system.status.read but still shows tenant throughput", async () => {
+    mocks.can.mockImplementation((permission: string) => permission === "dashboard.read");
+    mocks.getDashboardSummary.mockResolvedValueOnce(summary);
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Throughput Trend")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("system-monitor-section")).toBeNull();
+    // RPM/TPM cards use the latest tenant-scoped series point, not host system-stats.
+    expect(screen.getByText("12")).toBeInTheDocument();
+    expect(screen.getByText("345")).toBeInTheDocument();
+    expect(mocks.useSystemStats).toHaveBeenCalledWith(5, false);
+  });
+
+  test("shows system monitor when system.status.read is granted", async () => {
+    mocks.getDashboardSummary.mockResolvedValueOnce(summary);
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("system-monitor-section")).toBeInTheDocument();
+    });
+    expect(mocks.useSystemStats).toHaveBeenCalledWith(5, true);
+  });
+
+  test("shows all-tenants throughput hint for platform super-admin", async () => {
+    mocks.principal = { platform_admin: true };
+    mocks.getDashboardSummary.mockResolvedValueOnce({
+      ...summary,
+      meta: {
+        ...summary.meta,
+        throughput_scope: "all_tenants",
+      },
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByLabelText("Shows request throughput across all tenants"),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByText("Throughput Trend")).toBeInTheDocument();
+  });
+
+  test("hides all-tenants throughput hint for ordinary tenant users", async () => {
+    mocks.getDashboardSummary.mockResolvedValueOnce(summary);
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Throughput Trend")).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByLabelText("Shows request throughput across all tenants"),
+    ).toBeNull();
   });
 });

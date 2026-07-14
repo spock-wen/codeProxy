@@ -45,7 +45,11 @@ const basePrefixProxyEditor: DetailModalProps["prefixProxyEditor"] = {
   loading: false,
   saving: false,
   error: null,
-  json: { prefix: "team-a", proxy_id: "primary", proxy_url: "http://127.0.0.1:7890" },
+  json: {
+    prefix: "team-a",
+    proxy_id: "primary",
+    proxy_url: "http://127.0.0.1:7890",
+  },
   prefix: "team-a",
   proxyUrl: "http://127.0.0.1:7890",
   proxyId: "primary",
@@ -203,7 +207,11 @@ const renderDetailModal = (overrides: Partial<DetailModalProps> = {}) => {
     },
     identityFingerprintDetail: null,
     identityFingerprintLoading: false,
+    identityFingerprintSaving: false,
     identityFingerprintError: null,
+    selectIdentityFingerprintProfile: vi.fn(async () => undefined),
+    useIdentityFingerprintCLIPreferred: vi.fn(async () => undefined),
+    deleteIdentityFingerprintProfile: vi.fn(async () => undefined),
     refreshDetailTrend: vi.fn(async () => undefined),
     loadModelsForDetail: vi.fn(async () => undefined),
     loadModelOwnerGroups: vi.fn(async () => undefined),
@@ -372,6 +380,173 @@ describe("AuthFileDetailModal", () => {
     expect(screen.queryByText(/resets/)).not.toBeInTheDocument();
   });
 
+  test("shows SuperGrok plan badge and falls back cycle totals for xAI when cycle is unknown", () => {
+    renderDetailModal({
+      detailFile: {
+        name: "xai-user.json",
+        label: "xAI Grok",
+        type: "xai",
+        provider: "xai",
+        size: 256,
+      },
+      modelsFileType: "xai",
+      quotaState: {
+        status: "success",
+        planType: "supergrok",
+        items: [],
+        updatedAt: Date.now(),
+      },
+      detailTrend: {
+        auth_index: "xai-auth",
+        days: 7,
+        hours: 5,
+        request_total: 116,
+        cycle_request_total: 0,
+        cycle_cost_total: 0,
+        weekly_quota_used_percent: null,
+        cycle_known: false,
+        cycle_start: "",
+        daily_usage: [{ date: "2026-07-08", requests: 116, cost: 0.12 }],
+        hourly_usage: [],
+        quota_series: [
+          {
+            quota_key: "weekly_limit",
+            quota_label: "xai_quota.weekly_limit",
+            window_seconds: 604800,
+            points: [{ timestamp: "2026-07-08T12:00:00Z", percent: 75 }],
+          },
+        ],
+      },
+    });
+
+    expect(screen.getByText("SuperGrok")).toBeInTheDocument();
+    expectSummaryCard("Last 7 days requests", "116");
+    // When cycle_known is false, fall back to request_total instead of showing 0.
+    expectSummaryCard("Current weekly cycle", "116");
+    // Remaining snapshot percent 75% => used 25%.
+    expectSummaryCard("Weekly quota used", "25%");
+    // xAI shows weekly prediction (zero when cycle cost is missing), never the Codex 5h card.
+    expectSummaryCard("Predicted weekly window quota", "$0.0000");
+    expect(screen.queryByText("Predicted 5-hour window quota")).not.toBeInTheDocument();
+  });
+
+  test("predicts xAI weekly window quota from cycle cost and used percent", () => {
+    renderDetailModal({
+      detailFile: {
+        name: "xai-user.json",
+        label: "xAI Grok",
+        type: "xai",
+        provider: "xai",
+        size: 256,
+      },
+      modelsFileType: "xai",
+      quotaState: {
+        status: "success",
+        planType: "supergrok-heavy",
+        items: [],
+        updatedAt: Date.now(),
+      },
+      detailTrend: {
+        auth_index: "xai-auth",
+        days: 7,
+        hours: 5,
+        request_total: 180,
+        cycle_request_total: 180,
+        cycle_cost_total: 7.352,
+        weekly_quota_used_percent: 6,
+        cycle_known: true,
+        cycle_start: "2026-07-12T05:05:02Z",
+        daily_usage: [],
+        hourly_usage: [],
+        quota_series: [],
+      },
+    });
+
+    expectSummaryCard("Current cycle cost", "$7.3520");
+    expectSummaryCard("Weekly quota used", "6%");
+    // $7.352 / 6% ≈ $122.5333 full weekly window budget.
+    expectSummaryCard("Predicted weekly window quota", "$122.5333");
+    expect(screen.queryByText("Predicted 5-hour window quota")).not.toBeInTheDocument();
+  });
+
+  test("hides empty identity fingerprint field rows", () => {
+    renderDetailModal({
+      detailTab: "identity",
+      detailFile: {
+        name: "xai-user.json",
+        label: "xAI Grok",
+        type: "xai",
+        provider: "xai",
+        size: 256,
+        identity_fingerprint_summary: {
+          provider: "xai",
+          account_key: "xai-account",
+          enabled: true,
+          primary_source: "learned",
+          learned: true,
+          learned_fields: 1,
+          effective_fields: 2,
+          source_counts: { learned: 1 },
+          client_product: "grok-cli",
+          version: "0.3.1",
+        },
+      },
+      identityFingerprintDetail: {
+        summary: {
+          provider: "xai",
+          account_key: "xai-account",
+          enabled: true,
+          primary_source: "learned",
+          learned: true,
+          learned_fields: 1,
+          effective_fields: 2,
+          source_counts: { learned: 1 },
+          client_product: "grok-cli",
+          version: "0.3.1",
+        },
+        effective: {
+          provider: "xai",
+          account_key: "xai-account",
+          enabled: true,
+          client_product: "grok-cli",
+          version: "0.3.1",
+          fields: {
+            "user-agent": { value: "grok-cli/0.3.1", source: "learned" },
+            "x-empty-header": { value: "", source: "preset" },
+            "x-blank-header": { value: "   ", source: "builtin_default" },
+          },
+        },
+        learned: {
+          provider: "xai",
+          account_key: "xai-account",
+          client_product: "grok-cli",
+          version: "0.3.1",
+          fields: {
+            "user-agent": "grok-cli/0.3.1",
+            "x-empty-learned": "",
+          },
+          observed_headers: {
+            "user-agent": "grok-cli/0.3.1",
+            "x-empty-observed": "  ",
+          },
+          created_at: "2026-07-01T00:00:00Z",
+          updated_at: "2026-07-08T00:00:00Z",
+          last_seen_at: "2026-07-08T01:00:00Z",
+        },
+        preset: {},
+        builtin_default: {},
+      },
+    });
+
+    const fields = screen.getByTestId("auth-file-identity-fields");
+    expect(within(fields).getAllByText("user-agent").length).toBeGreaterThanOrEqual(1);
+    expect(within(fields).getAllByText("grok-cli/0.3.1").length).toBeGreaterThanOrEqual(1);
+    expect(within(fields).queryByText("x-empty-header")).not.toBeInTheDocument();
+    expect(within(fields).queryByText("x-blank-header")).not.toBeInTheDocument();
+    expect(within(fields).queryByText("x-empty-learned")).not.toBeInTheDocument();
+    expect(within(fields).queryByText("x-empty-observed")).not.toBeInTheDocument();
+  });
+
   test("renders account identity fingerprint sources and learned request headers in mobile flow", () => {
     renderDetailModal({
       detailTab: "identity",
@@ -429,6 +604,176 @@ describe("AuthFileDetailModal", () => {
     ).not.toBeInTheDocument();
     expect(fields.querySelector("[data-vt-natural-flow]")).toBeInTheDocument();
     expect(fields.querySelector('[data-scrollbar-visibility="hover"]')).toBeNull();
+  });
+
+  test("lists isolated Codex identities and selects exactly one outbound profile", async () => {
+    const selectProfile = vi.fn(async () => undefined);
+    const useCliPreferred = vi.fn(async () => undefined);
+    const cliProfile = {
+      summary: {
+        ...codexIdentityFingerprintDetail.summary,
+        profile_key: "codex_cli_rs",
+        profile_family: "cli",
+        client_product: "codex_cli_rs",
+        client_variant: "codex_cli_rs",
+        effective_fields: 3,
+        source_counts: { learned: 3 },
+      },
+      effective: {
+        ...codexIdentityFingerprintDetail.effective,
+        profile_key: "codex_cli_rs",
+        profile_family: "cli",
+        client_product: "codex_cli_rs",
+        client_variant: "codex_cli_rs",
+        fields: {
+          "user-agent": {
+            value: "codex_cli_rs/0.144.1",
+            source: "learned" as const,
+          },
+          originator: { value: "codex_cli_rs", source: "learned" as const },
+          version: { value: "0.144.1", source: "learned" as const },
+        },
+      },
+      learned: {
+        ...codexIdentityFingerprintDetail.learned!,
+        profile_key: "codex_cli_rs",
+        profile_family: "cli",
+        client_product: "codex_cli_rs",
+        client_variant: "codex_cli_rs",
+        version: "0.144.1",
+        fields: {
+          "user-agent": "codex_cli_rs/0.144.1",
+          originator: "codex_cli_rs",
+          version: "0.144.1",
+        },
+      },
+    };
+    const desktopProfile = {
+      summary: {
+        ...codexIdentityFingerprintDetail.summary,
+        profile_key: "codex_desktop",
+        profile_family: "desktop",
+        client_product: "codex",
+        client_variant: "Codex Desktop",
+        version: "0.144.0",
+        effective_fields: 4,
+        source_counts: { learned: 4 },
+      },
+      effective: {
+        ...codexIdentityFingerprintDetail.effective,
+        profile_key: "codex_desktop",
+        profile_family: "desktop",
+        client_product: "codex",
+        client_variant: "Codex Desktop",
+        version: "0.144.0",
+        fields: {
+          "user-agent": {
+            value: "Codex Desktop/0.144.0-alpha.4",
+            source: "learned" as const,
+          },
+          originator: { value: "Codex Desktop", source: "learned" as const },
+          version: { value: "0.144.0", source: "learned" as const },
+          "x-codex-beta-features": {
+            value: "remote_compaction_v2",
+            source: "learned" as const,
+          },
+        },
+      },
+      learned: {
+        ...codexIdentityFingerprintDetail.learned!,
+        profile_key: "codex_desktop",
+        profile_family: "desktop",
+        client_product: "codex",
+        client_variant: "Codex Desktop",
+        version: "0.144.0",
+        fields: {
+          "user-agent": "Codex Desktop/0.144.0-alpha.4",
+          originator: "Codex Desktop",
+          version: "0.144.0",
+          "x-codex-beta-features": "remote_compaction_v2",
+        },
+      },
+    };
+
+    const mixedProfile = {
+      ...desktopProfile,
+      selectable: false,
+      selection_block_reason: "conflicting_identity_fields",
+      summary: {
+        ...desktopProfile.summary,
+        profile_key: "codex_quarantined",
+        profile_family: "unknown",
+        client_product: "quarantined",
+        client_variant: "conflicting",
+      },
+      effective: {
+        ...desktopProfile.effective,
+        profile_key: "codex_quarantined",
+        profile_family: "unknown",
+      },
+      learned: {
+        ...desktopProfile.learned,
+        profile_key: "codex_quarantined",
+        profile_family: "unknown",
+      },
+    };
+
+    renderDetailModal({
+      detailTab: "identity",
+      detailFile: {
+        name: "codex.json",
+        label: "Codex Primary",
+        type: "codex",
+        size: 256,
+        account_type: "oauth",
+        identity_fingerprint_summary: cliProfile.summary,
+      },
+      identityFingerprintDetail: {
+        ...codexIdentityFingerprintDetail,
+        summary: cliProfile.summary,
+        effective: cliProfile.effective,
+        learned: cliProfile.learned,
+        profiles: [cliProfile, desktopProfile, mixedProfile],
+        policy: {
+          provider: "codex",
+          account_key: "codex-account-1",
+          strategy: "cli_preferred",
+          revision: 0,
+        },
+        selected_profile_key: "codex_cli_rs",
+        selection_reason: "cli_preferred",
+      },
+      selectIdentityFingerprintProfile: selectProfile,
+      useIdentityFingerprintCLIPreferred: useCliPreferred,
+    });
+
+    expect(screen.getByTestId("identity-profile-codex_cli_rs")).toHaveTextContent("In use");
+    expect(screen.getByTestId("auth-file-identity-fields")).toHaveTextContent(
+      "codex_cli_rs/0.144.1",
+    );
+
+    fireEvent.click(screen.getByTestId("identity-profile-codex_desktop"));
+    expect(screen.getByText(/Current outbound identity:/)).toHaveTextContent(
+      "codex_cli_rs / codex_cli_rs",
+    );
+    expect(screen.getByTestId("auth-file-identity-fields")).toHaveTextContent(
+      "Codex Desktop/0.144.0-alpha.4",
+    );
+    expect(screen.getByTestId("auth-file-identity-fields")).not.toHaveTextContent(
+      "codex_cli_rs/0.144.1",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Use for outbound" }));
+    expect(selectProfile).toHaveBeenCalledWith("codex_desktop");
+
+    fireEvent.click(screen.getByTestId("identity-profile-codex_quarantined"));
+    expect(screen.getByTestId("identity-profile-codex_quarantined")).toHaveTextContent(
+      "Observe only",
+    );
+    expect(screen.getByRole("button", { name: "Use for outbound" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Prefer CLI" }));
+    expect(useCliPreferred).toHaveBeenCalledTimes(1);
   });
 
   test("keeps identity fingerprint table scroll owned by the table on desktop", () => {
@@ -583,7 +928,9 @@ describe("AuthFileDetailModal", () => {
     const panel = screen.getByTestId("codex-oauth-admission-panel");
     expect(within(panel).getByText("Official Codex client admission")).toBeInTheDocument();
     expect(
-      within(panel).getByRole("switch", { name: "Only allow official Codex clients" }),
+      within(panel).getByRole("switch", {
+        name: "Only allow official Codex clients",
+      }),
     ).toHaveAttribute("aria-checked", "true");
     expect(screen.getByTestId("codex-oauth-admission-preset-claude_code")).toBeChecked();
     expect(panel).toHaveTextContent("Claude Code");

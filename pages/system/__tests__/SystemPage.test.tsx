@@ -2,7 +2,6 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import i18n from "@code-proxy/i18n";
-import { invalidateConfiguredModelAvailability } from "@features/model-availability";
 import { SystemPage } from "../SystemPage";
 import { ThemeProvider } from "@code-proxy/ui";
 import { ToastProvider } from "@code-proxy/ui";
@@ -13,30 +12,13 @@ const mocks = vi.hoisted(() => ({
   current: vi.fn(),
   apply: vi.fn(),
   progress: vi.fn(),
+  events: vi.fn(),
+  eventCallback: null as null | ((progress: Record<string, unknown>) => void),
 }));
 
 vi.mock("@code-proxy/api-client", () => ({
   apiClient: {
     get: mocks.apiGet,
-  },
-  authFilesApi: {
-    list: () => mocks.apiGet("/auth-files"),
-    getModelsForAuthFile: async (name: string) => {
-      const payload = await mocks.apiGet("/auth-files/models", { params: { name } });
-      const record =
-        payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-      return Array.isArray(record.models) ? record.models : [];
-    },
-  },
-  providersApi: {
-    getGeminiKeys: async () => [],
-    getClaudeConfigs: async () => [],
-    getCodexConfigs: async () => [],
-    getOpenCodeGoConfigs: async () => [],
-    getOllamaCloudConfigs: async () => [],
-    getVertexConfigs: async () => [],
-    getOpenAIProviders: async () =>
-      normalizeOpenAIProviders(await mocks.apiGet("/openai-compatibility")),
   },
 }));
 
@@ -46,6 +28,7 @@ vi.mock("@code-proxy/api-client/endpoints/update", () => ({
     current: mocks.current,
     apply: mocks.apply,
     progress: mocks.progress,
+    events: mocks.events,
   },
 }));
 
@@ -66,66 +49,17 @@ function renderPage() {
   return render(
     <ThemeProvider>
       <ToastProvider>
-        <SystemPage updateHeartbeatIntervalMs={1} updateHeartbeatTimeoutMs={200} />
+        <SystemPage updateHeartbeatIntervalMs={1} updateHeartbeatTimeoutMs={2000} />
       </ToastProvider>
     </ThemeProvider>,
   );
-}
-
-function extractList(payload: unknown, key: string): unknown[] {
-  if (Array.isArray(payload)) return payload;
-  const record = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const value = record[key] ?? record.items ?? record.data;
-  return Array.isArray(value) ? value : [];
-}
-
-function normalizeOpenAIProviders(payload: unknown) {
-  return extractList(payload, "openai-compatibility").map((entry) => {
-    const item = entry && typeof entry === "object" ? (entry as Record<string, unknown>) : {};
-    const rawEntries = Array.isArray(item["api-key-entries"])
-      ? item["api-key-entries"]
-      : Array.isArray(item.apiKeyEntries)
-        ? item.apiKeyEntries
-        : [];
-    return {
-      name: String(item.name ?? ""),
-      disabled: item.disabled === true,
-      prefix: typeof item.prefix === "string" ? item.prefix : undefined,
-      models: Array.isArray(item.models) ? item.models : [],
-      apiKeyEntries: rawEntries
-        .map((raw) => {
-          const keyEntry = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
-          const apiKey = String(keyEntry["api-key"] ?? keyEntry.apiKey ?? "").trim();
-          if (!apiKey) return null;
-          return {
-            apiKey,
-            disabled: keyEntry.disabled === true,
-          };
-        })
-        .filter(Boolean),
-    };
-  });
 }
 
 describe("SystemPage", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
     window.localStorage.clear();
-    invalidateConfiguredModelAvailability();
     mocks.apiGet.mockImplementation((path: string) => {
-      if (path === "/auth-group-model-owner-mappings") return Promise.resolve({ items: [] });
-      if (path === "/model-path-availability") return Promise.resolve({ data: [] });
-      if (path === "/model-configs?scope=library") return Promise.resolve({ data: [] });
-      if (path === "/auth-files") return Promise.resolve({ files: [] });
-      if (
-        path === "/gemini-api-key" ||
-        path === "/claude-api-key" ||
-        path === "/codex-api-key" ||
-        path === "/vertex-api-key" ||
-        path === "/openai-compatibility"
-      ) {
-        return Promise.resolve<unknown[]>([]);
-      }
       if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
       return Promise.resolve({});
     });
@@ -153,12 +87,39 @@ describe("SystemPage", () => {
       docker_tag: "latest",
       updater_available: true,
     });
-    mocks.apply.mockResolvedValue({ status: "accepted" });
+    mocks.apply.mockResolvedValue({ status: "accepted", run_id: 1 });
+    mocks.eventCallback = null;
+    mocks.events.mockImplementation(
+      (
+        onProgress: (progress: Record<string, unknown>) => void,
+        options?: { signal?: AbortSignal },
+      ) =>
+        new Promise<void>((resolve) => {
+          mocks.eventCallback = onProgress;
+          const signal = options?.signal;
+          if (signal?.aborted) {
+            resolve();
+            return;
+          }
+          signal?.addEventListener("abort", () => resolve(), { once: true });
+        }),
+    );
     mocks.progress.mockResolvedValue({
       status: "idle",
       stage: "idle",
       logs: [],
     });
+  });
+
+  test("renders connection and version fields without available models", async () => {
+    renderPage();
+
+    expect(await screen.findByText("System Info")).toBeInTheDocument();
+    expect(screen.getByText("http://localhost:8317")).toBeInTheDocument();
+    expect(screen.getByText("/v0/management")).toBeInTheDocument();
+    expect(screen.getByText("main-1111111")).toBeInTheDocument();
+    expect(screen.queryByText("Available Models")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("system-models-scroll-area")).not.toBeInTheDocument();
   });
 
   test("checks update details and applies updates from system info", async () => {
@@ -188,11 +149,22 @@ describe("SystemPage", () => {
       expect(mocks.apply).toHaveBeenCalledTimes(1);
     });
     await waitFor(() => {
-      expect(mocks.apiGet).toHaveBeenCalledWith("/system-stats", expect.any(Object));
+      expect(mocks.eventCallback).not.toBeNull();
+    });
+    mocks.eventCallback?.({
+      run_id: 1,
+      status: "completed",
+      stage: "completed",
+      message_code: "completed",
+      message: "update completed",
+      progress_percent: 100,
     });
     await waitFor(() => {
-      expect(mocks.current).toHaveBeenCalled();
+      expect(
+        within(dialog).getByRole("heading", { name: /update completed/i }),
+      ).toBeInTheDocument();
     });
+    expect(mocks.current).not.toHaveBeenCalled();
     expect(mocks.check).toHaveBeenCalledTimes(1);
   });
 
@@ -235,771 +207,5 @@ describe("SystemPage", () => {
     expect(mocks.progress).not.toHaveBeenCalled();
     expect(within(dialog).getByText(/docker image for dev is not ready/i)).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: /update now/i })).toBeDisabled();
-  });
-
-  test("shows only default root v1 model discovery results", async () => {
-    mocks.apiGet.mockImplementation((path: string) => {
-      if (path === "/auth-group-model-owner-mappings") return Promise.resolve({ items: [] });
-      if (path === "/model-path-availability") {
-        return Promise.resolve({
-          data: [
-            {
-              id: "gpt-root-model",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-            {
-              id: "gpt-group-only",
-              paths: [{ scope: "group", method: "GET", path: "/team-a/v1/models" }],
-            },
-            {
-              id: "gemini-v1beta-only",
-              paths: [{ scope: "root", method: "GET", path: "/v1beta/models" }],
-            },
-          ],
-        });
-      }
-      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
-      if (
-        path === "/gemini-api-key" ||
-        path === "/claude-api-key" ||
-        path === "/codex-api-key" ||
-        path === "/vertex-api-key" ||
-        path === "/openai-compatibility"
-      ) {
-        return Promise.resolve<unknown[]>([]);
-      }
-      return Promise.resolve({});
-    });
-
-    renderPage();
-
-    expect(await screen.findByText("gpt-root-model")).toBeInTheDocument();
-    expect(screen.queryByText("gpt-group-only")).not.toBeInTheDocument();
-    expect(screen.queryByText("gemini-v1beta-only")).not.toBeInTheDocument();
-    expect(mocks.apiGet).toHaveBeenCalledWith("/model-path-availability");
-  });
-
-  test("filters available models by vendor tab and uses the shared scroll area", async () => {
-    mocks.apiGet.mockImplementation((path: string) => {
-      if (path === "/auth-group-model-owner-mappings") return Promise.resolve({ items: [] });
-      if (path === "/model-path-availability") {
-        return Promise.resolve({
-          data: [
-            {
-              id: "gpt-5.4",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-            {
-              id: "qwen3.5-plus",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-            {
-              id: "deepseek-chat",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-          ],
-        });
-      }
-      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
-      if (
-        path === "/gemini-api-key" ||
-        path === "/claude-api-key" ||
-        path === "/codex-api-key" ||
-        path === "/vertex-api-key" ||
-        path === "/openai-compatibility"
-      ) {
-        return Promise.resolve<unknown[]>([]);
-      }
-      return Promise.resolve({});
-    });
-
-    const { container } = renderPage();
-
-    expect(await screen.findByText("gpt-5.4")).toBeInTheDocument();
-    expect(screen.getByText("qwen3.5-plus")).toBeInTheDocument();
-    expect(screen.getByText("deepseek-chat")).toBeInTheDocument();
-
-    const viewport = container.querySelector(
-      '[data-testid="system-models-scroll-area"] [data-scroll-area-viewport]',
-    );
-    expect(viewport).toHaveAttribute("data-scrollbar-visibility", "track-hover");
-
-    await userEvent.click(screen.getByRole("button", { name: /^qwen 1$/i }));
-
-    expect(screen.getByText("qwen3.5-plus")).toBeInTheDocument();
-    expect(screen.queryByText("gpt-5.4")).not.toBeInTheDocument();
-    expect(screen.queryByText("deepseek-chat")).not.toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: /^All 3$/i }));
-
-    expect(screen.getByText("gpt-5.4")).toBeInTheDocument();
-    expect(screen.getByText("qwen3.5-plus")).toBeInTheDocument();
-    expect(screen.getByText("deepseek-chat")).toBeInTheDocument();
-  });
-
-  test("keeps configured Cline models when root v1 discovery has other models", async () => {
-    mocks.apiGet.mockImplementation((path: string) => {
-      if (path === "/auth-group-model-owner-mappings") return Promise.resolve({ items: [] });
-      if (path === "/models/configured-availability") {
-        return Promise.resolve({
-          scoped: true,
-          data: [
-            {
-              id: "mimo-v2.5-pro",
-              sources: [
-                {
-                  label: "cline · ClinePass",
-                  provider: "cline",
-                  model_id: "mimo-v2.5-pro",
-                  upstream_model_id: "cline-pass/mimo-v2.5-pro",
-                },
-              ],
-            },
-            {
-              id: "cline-pass/deepseek-v4-pro",
-              sources: [
-                {
-                  label: "cline · ClinePass",
-                  provider: "cline",
-                  model_id: "cline-pass/deepseek-v4-pro",
-                  upstream_model_id: "cline-pass/deepseek-v4-pro",
-                },
-              ],
-            },
-          ],
-        });
-      }
-      if (path === "/model-path-availability") {
-        return Promise.resolve({
-          data: [
-            {
-              id: "gpt-root-model",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-          ],
-        });
-      }
-      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
-      return Promise.resolve({});
-    });
-
-    const { container } = renderPage();
-
-    expect(await screen.findByText("gpt-root-model")).toBeInTheDocument();
-    const clineModel = await screen.findByText("mimo-v2.5-pro");
-    expect(clineModel).toBeInTheDocument();
-    const realClineModel = await screen.findByText("cline-pass/deepseek-v4-pro");
-    expect(realClineModel).toBeInTheDocument();
-
-    await userEvent.hover(clineModel);
-
-    expect(container.querySelectorAll('[data-model-source-marker="true"]')).toHaveLength(1);
-    expect(await screen.findByText(/ClinePass · cline/)).toBeInTheDocument();
-    expect(screen.getByText("Actual ID")).toBeInTheDocument();
-    expect(screen.getByText("cline-pass/mimo-v2.5-pro")).toBeInTheDocument();
-
-    await userEvent.unhover(clineModel);
-    await userEvent.hover(realClineModel);
-
-    expect(await screen.findByText(/ClinePass · cline/)).toBeInTheDocument();
-    expect(screen.queryByText("Actual ID")).not.toBeInTheDocument();
-  });
-
-  test("shows model sources in the model tag tooltip", async () => {
-    mocks.apiGet.mockImplementation((path: string) => {
-      if (path === "/auth-group-model-owner-mappings") return Promise.resolve({ items: [] });
-      if (path === "/models/configured-availability") {
-        return Promise.resolve({
-          scoped: true,
-          data: [
-            {
-              id: "gpt-root-model",
-              sources: [
-                { label: "codex · Codex Pro", provider: "codex" },
-                { label: "opencode-go · OpenCode Go", provider: "opencode-go" },
-              ],
-            },
-          ],
-        });
-      }
-      if (path === "/model-path-availability") {
-        return Promise.resolve({
-          data: [
-            {
-              id: "gpt-root-model",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-          ],
-        });
-      }
-      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
-      return Promise.resolve({});
-    });
-
-    renderPage();
-
-    await userEvent.hover(await screen.findByText("gpt-root-model"));
-
-    expect(await screen.findByText(/Codex Pro · codex/)).toBeInTheDocument();
-    expect(screen.getByText(/OpenCode Go · opencode-go/)).toBeInTheDocument();
-    expect(screen.queryByText("Actual ID")).not.toBeInTheDocument();
-  });
-
-  test("shows persisted mapped owner models on the system page", async () => {
-    mocks.apiGet.mockImplementation((path: string) => {
-      if (path === "/auth-group-model-owner-mappings") {
-        return Promise.resolve({
-          items: [{ auth_group: "codex", owner: "codex" }],
-        });
-      }
-      if (path === "/model-path-availability") {
-        return Promise.resolve({
-          data: [
-            {
-              id: "gpt-5.5",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-            {
-              id: "gpt-5-codex",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-          ],
-        });
-      }
-      if (path === "/model-configs?scope=library") {
-        return Promise.resolve({
-          data: [{ id: "gpt-5.5", owned_by: "codex", description: "Mapped Codex model" }],
-        });
-      }
-      if (path === "/auth-files") {
-        return Promise.resolve({
-          files: [{ name: "codex-main.json", type: "codex", disabled: false }],
-        });
-      }
-      if (
-        path === "/gemini-api-key" ||
-        path === "/claude-api-key" ||
-        path === "/codex-api-key" ||
-        path === "/vertex-api-key" ||
-        path === "/openai-compatibility"
-      ) {
-        return Promise.resolve<unknown[]>([]);
-      }
-      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
-      return Promise.resolve({});
-    });
-
-    renderPage();
-
-    expect(await screen.findByText("gpt-5.5")).toBeInTheDocument();
-    expect(screen.queryByText("gpt-5-codex")).not.toBeInTheDocument();
-  });
-
-  test("uses backend mapped owner availability instead of root path registry models", async () => {
-    mocks.apiGet.mockImplementation((path: string) => {
-      if (path === "/models/configured-availability") {
-        return Promise.resolve({
-          scoped: true,
-          uses_mapped_owners: true,
-          data: [{ id: "gpt-5.5", owned_by: "codex" }],
-        });
-      }
-      if (path === "/model-path-availability") {
-        return Promise.resolve({
-          data: [
-            {
-              id: "gpt-5.5",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-            {
-              id: "gpt-5-codex",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-          ],
-        });
-      }
-      if (path === "/auth-group-model-owner-mappings") return Promise.resolve({ items: [] });
-      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
-      return Promise.resolve({});
-    });
-
-    renderPage();
-
-    expect(await screen.findByText("gpt-5.5")).toBeInTheDocument();
-    expect(screen.queryByText("gpt-5-codex")).not.toBeInTheDocument();
-  });
-
-  test("keeps provider models returned with mapped owner availability", async () => {
-    mocks.apiGet.mockImplementation((path: string) => {
-      if (path === "/models/configured-availability") {
-        return Promise.resolve({
-          scoped: true,
-          uses_mapped_owners: true,
-          data: [
-            { id: "gpt-5.5", owned_by: "codex" },
-            { id: "qwen3.7-max", owned_by: "opencode" },
-          ],
-        });
-      }
-      if (path === "/model-path-availability") {
-        return Promise.resolve({
-          data: [
-            {
-              id: "gpt-5-codex",
-              paths: [{ scope: "root", method: "GET", path: "/v1/models" }],
-            },
-          ],
-        });
-      }
-      if (path === "/auth-group-model-owner-mappings") return Promise.resolve({ items: [] });
-      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
-      return Promise.resolve({});
-    });
-
-    renderPage();
-
-    expect(await screen.findByText("gpt-5.5")).toBeInTheDocument();
-    expect(screen.getByText("qwen3.7-max")).toBeInTheDocument();
-    expect(screen.queryByText("gpt-5-codex")).not.toBeInTheDocument();
-  });
-
-  test("hides disabled OpenAI compatible provider models in mapped owner mode", async () => {
-    mocks.apiGet.mockImplementation((path: string) => {
-      if (path === "/auth-group-model-owner-mappings") {
-        return Promise.resolve({
-          items: [{ auth_group: "codex", owner: "codex" }],
-        });
-      }
-      if (path === "/model-path-availability") return Promise.resolve({ data: [] });
-      if (path === "/model-configs?scope=library") return Promise.resolve({ data: [] });
-      if (path === "/auth-files") return Promise.resolve({ files: [] });
-      if (path === "/openai-compatibility") {
-        return Promise.resolve({
-          "openai-compatibility": [
-            {
-              name: "Disabled Compat",
-              disabled: true,
-              "api-key-entries": [{ "api-key": "sk-disabled" }],
-              models: [{ name: "upstream-disabled", alias: "disabled-provider-model" }],
-            },
-            {
-              name: "Disabled Key Compat",
-              "api-key-entries": [{ "api-key": "sk-entry-disabled", disabled: true }],
-              models: [{ name: "upstream-entry-disabled", alias: "disabled-key-model" }],
-            },
-            {
-              name: "Active Compat",
-              "api-key-entries": [{ "api-key": "sk-active" }],
-              models: [{ name: "upstream-active", alias: "active-compat-model" }],
-            },
-          ],
-        });
-      }
-      if (
-        path === "/gemini-api-key" ||
-        path === "/claude-api-key" ||
-        path === "/codex-api-key" ||
-        path === "/vertex-api-key"
-      ) {
-        return Promise.resolve<unknown[]>([]);
-      }
-      if (path === "/system-stats") return Promise.resolve({ uptime: 10 });
-      return Promise.resolve({});
-    });
-
-    renderPage();
-
-    expect(await screen.findByText("active-compat-model")).toBeInTheDocument();
-    expect(screen.queryByText("disabled-provider-model")).not.toBeInTheDocument();
-    expect(screen.queryByText("disabled-key-model")).not.toBeInTheDocument();
-  });
-
-  test("rechecks the target version before treating the update as successful", async () => {
-    mocks.check.mockResolvedValueOnce({
-      enabled: true,
-      update_available: true,
-      current_version: "main-1111111",
-      current_commit: "1111111",
-      current_ui_version: "panel-dev-1111111",
-      current_ui_commit: "1111111",
-      latest_version: "dev-abcdef1",
-      latest_commit: "abcdef123456",
-      latest_ui_version: "panel-dev-abcdef1",
-      latest_ui_commit: "abcdef123456",
-      target_channel: "dev",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "dev",
-      release_notes: "Fixes and improvements",
-      updater_available: true,
-    });
-    mocks.current.mockResolvedValue({
-      enabled: true,
-      update_available: true,
-      current_version: "main-1111111",
-      current_commit: "1111111",
-      current_ui_version: "panel-dev-abcdef1",
-      current_ui_commit: "abcdef123456",
-      latest_version: "dev-abcdef1",
-      latest_commit: "abcdef123456",
-      latest_ui_version: "panel-dev-abcdef1",
-      latest_ui_commit: "abcdef123456",
-      target_channel: "dev",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "dev",
-      release_notes: "Fixes and improvements",
-      updater_available: true,
-    });
-
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-    const dialog = await screen.findByRole("dialog");
-    await userEvent.click(within(dialog).getByRole("button", { name: /update now/i }));
-
-    await waitFor(() => {
-      expect(mocks.apply).toHaveBeenCalledTimes(1);
-    });
-    await waitFor(() => {
-      expect(mocks.current.mock.calls.length).toBeGreaterThan(1);
-    });
-    expect(mocks.check).toHaveBeenCalledTimes(1);
-    expect(
-      await screen.findByText(/running version is still not dev-abcdef1/i),
-    ).toBeInTheDocument();
-  });
-
-  test("shows backend and management ui versions separately inside update details", async () => {
-    mocks.check.mockResolvedValue({
-      enabled: true,
-      update_available: true,
-      current_version: "main-a0ed5c6",
-      current_commit: "a0ed5c63a118412d5b4da8d57ec6d049111b7888",
-      current_ui_version: "panel-main-1111111",
-      current_ui_commit: "1111111",
-      latest_version: "main-a0ed5c6",
-      latest_commit: "a0ed5c63a118412d5b4da8d57ec6d049111b7888",
-      latest_ui_version: "panel-main-9477958",
-      latest_ui_commit: "94779588adb784b1ceff19c662d3ab55155997e1",
-      target_channel: "main",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "latest",
-      release_notes: "Fixes and improvements",
-      updater_available: true,
-    });
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-    const dialog = await screen.findByRole("dialog");
-
-    expect(within(dialog).getByText("Service version")).toBeInTheDocument();
-    expect(within(dialog).getAllByText("main-a0ed5c6")).toHaveLength(2);
-    expect(within(dialog).getByText("Management UI version")).toBeInTheDocument();
-    expect(within(dialog).getByText("panel-main-9477958")).toBeInTheDocument();
-  });
-
-  test("shows degraded update check messages returned by the backend", async () => {
-    mocks.check.mockResolvedValue({
-      enabled: true,
-      update_available: false,
-      current_version: "dev-1111111",
-      current_commit: "1111111",
-      current_ui_version: "panel-dev-1111111",
-      current_ui_commit: "1111111",
-      latest_version: "dev-1111111",
-      latest_commit: "1111111",
-      latest_ui_version: "panel-dev-1111111",
-      latest_ui_commit: "1111111",
-      target_channel: "dev",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "dev",
-      updater_available: true,
-      message: "service update check degraded: github rate limit exceeded",
-    });
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-    const dialog = await screen.findByRole("dialog");
-
-    expect(
-      within(dialog).getByText(/service update check degraded: github rate limit exceeded/i),
-    ).toBeInTheDocument();
-    expect(within(dialog).queryByText("You are already on the latest Docker image.")).toBeNull();
-  });
-
-  test("keeps long update details contained inside the user-opened dialog", async () => {
-    mocks.check.mockResolvedValue({
-      enabled: true,
-      update_available: true,
-      current_version: "main-1111111-with-an-extra-long-build-identifier",
-      current_commit: "1111111",
-      latest_version: "dev-abcdef1234567890-with-an-extra-long-build-identifier",
-      latest_commit: "abcdef1234567890",
-      target_channel: "dev",
-      docker_image:
-        "ghcr.io/kittors/clirelay-with-a-very-long-image-name-that-should-not-overflow-the-dialog",
-      docker_tag: "dev-abcdef1234567890-extra-long-tag",
-      release_notes: "Fixes and improvements\n".repeat(80),
-      updater_available: true,
-    });
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-
-    const dialog = await screen.findByRole("dialog");
-    expect(dialog).toHaveClass("max-w-[min(92vw,900px)]");
-    expect(screen.getByTestId("update-details-modal-body")).toHaveClass(
-      "max-h-[min(72vh,640px)]",
-      "overflow-y-auto",
-      "overscroll-contain",
-    );
-    expect(screen.getByTestId("update-release-notes")).toHaveClass(
-      "max-h-60",
-      "overflow-y-auto",
-      "break-words",
-    );
-    expect(screen.getByTestId("update-image-value")).toHaveClass("break-words");
-  });
-
-  test("shows updater sidecar unavailable warning only once", async () => {
-    mocks.check.mockResolvedValue({
-      enabled: true,
-      update_available: true,
-      current_version: "dev-1111111",
-      current_commit: "1111111",
-      latest_version: "v1.2.3",
-      latest_commit: "abcdef123456",
-      target_channel: "main",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "latest",
-      release_notes: "Fixes and improvements",
-      updater_available: false,
-    });
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-    const dialog = await screen.findByRole("dialog");
-
-    expect(within(dialog).getAllByText(/updater sidecar/i, { exact: false })).toHaveLength(1);
-    expect(within(dialog).getByRole("button", { name: /update now/i })).toBeDisabled();
-  });
-
-  test("renders update release notes as markdown", async () => {
-    mocks.check.mockResolvedValue({
-      enabled: true,
-      update_available: true,
-      current_version: "dev-1111111",
-      current_commit: "1111111",
-      latest_version: "v1.2.3",
-      latest_commit: "abcdef123456",
-      target_channel: "main",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "latest",
-      release_notes:
-        "## Changes\n\n- Fix duplicate updater notice\n- Render release notes as **Markdown**",
-      updater_available: true,
-    });
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-    const dialog = await screen.findByRole("dialog");
-
-    expect(await within(dialog).findByRole("heading", { name: "Changes" })).toBeInTheDocument();
-    expect(within(dialog).getByText("Markdown")).toBeInTheDocument();
-    expect(within(dialog).getAllByRole("listitem")).toHaveLength(2);
-  });
-
-  test("shows only a short release-notes preview until expanded", async () => {
-    mocks.check.mockResolvedValue({
-      enabled: true,
-      update_available: true,
-      current_version: "dev-1111111",
-      current_commit: "1111111",
-      latest_version: "v1.2.3",
-      latest_commit: "abcdef123456",
-      target_channel: "main",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "latest",
-      release_url: "https://github.com/kittors/CliRelay/releases/tag/v1.2.3",
-      release_notes: `## Changelog
-
-- Change 1
-- Change 2
-- Change 3
-- Change 4
-- Change 5
-- Change 6
-- Change 7`,
-      updater_available: true,
-    });
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-    const dialog = await screen.findByRole("dialog");
-
-    expect(within(dialog).getByText("Change 5")).toBeInTheDocument();
-    expect(within(dialog).queryByText("Change 6")).toBeNull();
-    expect(within(dialog).getByRole("button", { name: /show all changes/i })).toBeInTheDocument();
-
-    await userEvent.click(within(dialog).getByRole("button", { name: /show all changes/i }));
-
-    expect(await within(dialog).findByText("Change 7")).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: /show fewer changes/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole("link", { name: /view full release notes/i })).toHaveAttribute(
-      "href",
-      "https://github.com/kittors/CliRelay/releases/tag/v1.2.3",
-    );
-  });
-
-  test("shows concrete docker versions without release notes when already up to date", async () => {
-    mocks.check.mockResolvedValue({
-      enabled: true,
-      update_available: false,
-      current_version: "main-de96948",
-      current_commit: "de96948c21de3f0a47a8e1e08cb1b859c73069ba",
-      latest_version: "main-de96948",
-      latest_commit: "de96948c21de3f0a47a8e1e08cb1b859c73069ba",
-      latest_commit_url:
-        "https://github.com/kittors/CliRelay/commit/de96948c21de3f0a47a8e1e08cb1b859c73069ba",
-      target_channel: "main",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "latest",
-      release_notes: "## Changelog\n\n- Older release note that should not be shown",
-      updater_available: true,
-    });
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-    const dialog = await screen.findByRole("dialog");
-
-    expect(
-      within(dialog).getByRole("heading", { name: /already updated to latest/i }),
-    ).toBeInTheDocument();
-    expect(within(dialog).getAllByText("main-de96948")).toHaveLength(2);
-    expect(within(dialog).queryByText(/older release note/i)).not.toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: /update now/i })).toBeDisabled();
-  });
-
-  test("uses localized success toast instead of raw already up to date message", async () => {
-    mocks.check.mockResolvedValueOnce({
-      enabled: true,
-      update_available: false,
-      current_version: "main-de96948",
-      current_commit: "de96948c21de3f0a47a8e1e08cb1b859c73069ba",
-      latest_version: "main-de96948",
-      latest_commit: "de96948c21de3f0a47a8e1e08cb1b859c73069ba",
-      target_channel: "main",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "latest",
-      message: "already up to date",
-      updater_available: true,
-    });
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-
-    expect(await screen.findAllByText(/already updated to latest/i)).not.toHaveLength(0);
-    expect(screen.queryByText("already up to date")).not.toBeInTheDocument();
-  });
-
-  test("switches to an update console while updating and hides release notes", async () => {
-    mocks.current.mockResolvedValue({
-      enabled: true,
-      current_version: "main-abcdef1",
-      current_commit: "abcdef123456",
-      current_ui_version: "panel-main-fedcba9",
-      current_ui_commit: "fedcba987654",
-      target_channel: "main",
-      docker_image: "ghcr.io/kittors/clirelay",
-      docker_tag: "latest",
-      updater_available: true,
-    });
-    mocks.progress
-      .mockResolvedValueOnce({
-        status: "running",
-        stage: "pulling",
-        started_at: "2026-04-20T07:30:00Z",
-        target_version: "main-abcdef1",
-        target_commit: "abcdef123456",
-        target_ui_version: "panel-main-fedcba9",
-        target_ui_commit: "fedcba987654",
-        logs: [
-          {
-            timestamp: "2026-04-20T07:30:01Z",
-            stream: "stdout",
-            message: "docker compose pull clirelay",
-          },
-          {
-            timestamp: "2026-04-20T07:30:02Z",
-            stream: "stdout",
-            message: "Pulling clirelay ... done",
-          },
-        ],
-      })
-      .mockResolvedValueOnce({
-        status: "completed",
-        stage: "completed",
-        message: "update completed",
-        started_at: "2026-04-20T07:30:00Z",
-        finished_at: "2026-04-20T07:30:05Z",
-        target_version: "main-abcdef1",
-        target_commit: "abcdef123456",
-        target_ui_version: "panel-main-fedcba9",
-        target_ui_commit: "fedcba987654",
-        logs: [
-          {
-            timestamp: "2026-04-20T07:30:01Z",
-            stream: "stdout",
-            message: "docker compose pull clirelay",
-          },
-          {
-            timestamp: "2026-04-20T07:30:05Z",
-            stream: "stderr",
-            message: "Container clirelay Started",
-          },
-        ],
-      });
-
-    renderPage();
-
-    await userEvent.click(await screen.findByRole("button", { name: /check docker update/i }));
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText(/Fixes and improvements/i)).toBeInTheDocument();
-
-    await userEvent.click(within(dialog).getByRole("button", { name: /update now/i }));
-
-    await waitFor(() => {
-      expect(mocks.apply).toHaveBeenCalledTimes(1);
-    });
-    await waitFor(() => {
-      expect(mocks.progress).toHaveBeenCalled();
-    });
-    await waitFor(() => {
-      expect(within(dialog).queryByTestId("update-release-notes")).toBeNull();
-    });
-
-    expect(within(dialog).getByTestId("update-progress-console")).toBeInTheDocument();
-    await waitFor(() => {
-      expect(
-        within(dialog).getByRole("heading", { name: /update completed/i }),
-      ).toBeInTheDocument();
-    });
-    expect(within(dialog).getByText(/The updater finished all steps\./i)).toBeInTheDocument();
-    expect(within(dialog).queryByText(/docker compose pull clirelay/i)).toBeNull();
-    expect(within(dialog).queryByTestId("update-log-stream")).toBeNull();
-    expect(within(dialog).getByTestId("update-progress-percent")).toHaveTextContent(
-      "100%",
-    );
-    expect(within(dialog).getByTestId("update-progress-fill")).toHaveStyle({
-      width: "100%",
-    });
-    expect(within(dialog).getByText(/main-1111111/i)).toBeInTheDocument();
-    expect(within(dialog).getByText(/main-abcdef1/i)).toBeInTheDocument();
-    expect(within(dialog).getAllByText("Completed").length).toBeGreaterThan(0);
-
-    await waitFor(() => {
-      expect(within(dialog).queryByRole("button", { name: /updating/i })).toBeNull();
-    });
-    expect(within(dialog).getAllByRole("button", { name: /close/i }).at(-1)).toBeEnabled();
-    expect(within(dialog).getByTestId("update-progress-console")).toBeInTheDocument();
   });
 });

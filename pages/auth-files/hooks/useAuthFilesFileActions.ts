@@ -4,7 +4,14 @@ import { authFilesApi } from "@code-proxy/api-client";
 import type { AuthFileItem } from "@code-proxy/api-client";
 import { invalidateConfiguredModelAvailability } from "@features/model-availability";
 import { useToast } from "@code-proxy/ui";
-import { formatFileSize, MAX_AUTH_FILE_SIZE, readAuthFileDefaultTags } from "@code-proxy/domain";
+import {
+  buildAuthFilesBatchZipName,
+  createStoreZipBlob,
+  downloadBlobAsFile,
+  formatFileSize,
+  MAX_AUTH_FILE_SIZE,
+  readAuthFileDefaultTags,
+} from "@code-proxy/domain";
 
 const AUTH_FILES_UPLOAD_CONCURRENCY = 4;
 
@@ -73,6 +80,103 @@ export function useAuthFilesFileActions({
 
       try {
         await authFilesApi.downloadFile(file.name);
+      } catch (err: unknown) {
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.download_failed"),
+        });
+      }
+    },
+    [notify, t],
+  );
+
+  const handleDownloadSelection = useCallback(
+    async (names: string[]) => {
+      const targets = Array.from(new Set(names.map((name) => name.trim()).filter(Boolean)));
+      if (targets.length === 0) return;
+
+      const confirmed = window.confirm(
+        t("auth_files.batch_download_sensitive_confirm", {
+          count: targets.length,
+          defaultValue:
+            "This downloads {{count}} full auth file(s) and may include sensitive credentials. Continue?",
+        }),
+      );
+      if (!confirmed) return;
+
+      // Single selection: keep one-file download UX.
+      if (targets.length === 1) {
+        try {
+          await authFilesApi.downloadFile(targets[0]!);
+          notify({
+            type: "success",
+            message: t("auth_files.batch_download_success", { count: 1 }),
+          });
+        } catch (err: unknown) {
+          notify({
+            type: "error",
+            message: err instanceof Error ? err.message : t("auth_files.download_failed"),
+          });
+        }
+        return;
+      }
+
+      // Multiple selection: pack into one zip so the browser gets a single artifact.
+      const zipEntries: { name: string; data: Uint8Array }[] = [];
+      let failed = 0;
+      const usedNames = new Set<string>();
+
+      for (const name of targets) {
+        try {
+          const blob = await authFilesApi.downloadBlob(name);
+          const buffer = new Uint8Array(await blob.arrayBuffer());
+          let entryName = name;
+          if (usedNames.has(entryName)) {
+            const extIndex = entryName.lastIndexOf(".");
+            const base = extIndex > 0 ? entryName.slice(0, extIndex) : entryName;
+            const ext = extIndex > 0 ? entryName.slice(extIndex) : "";
+            let i = 2;
+            while (usedNames.has(`${base} (${i})${ext}`)) i += 1;
+            entryName = `${base} (${i})${ext}`;
+          }
+          usedNames.add(entryName);
+          zipEntries.push({ name: entryName, data: buffer });
+        } catch {
+          failed += 1;
+        }
+      }
+
+      const success = zipEntries.length;
+      if (success === 0) {
+        notify({
+          type: "error",
+          message: t("auth_files.batch_download_partial", { success: 0, failed }),
+        });
+        return;
+      }
+
+      try {
+        const zipBlob = createStoreZipBlob(zipEntries);
+        downloadBlobAsFile(zipBlob, buildAuthFilesBatchZipName(success));
+        if (failed === 0) {
+          notify({
+            type: "success",
+            message: t("auth_files.batch_download_zip_success", {
+              count: success,
+              defaultValue: "Downloaded {{count}} auth file(s) as a zip archive",
+            }),
+          });
+        } else {
+          notify({
+            type: "error",
+            message: t("auth_files.batch_download_zip_partial", {
+              success,
+              failed,
+              defaultValue:
+                "Zip download finished: {{success}} packed, {{failed}} failed",
+            }),
+          });
+        }
       } catch (err: unknown) {
         notify({
           type: "error",
@@ -349,6 +453,7 @@ export function useAuthFilesFileActions({
     statusUpdating,
     tagSavingByName,
     downloadAuthFile,
+    handleDownloadSelection,
     handleUpload,
     handleDeleteSelection,
     setFileEnabled,

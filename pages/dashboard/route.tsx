@@ -6,9 +6,11 @@ const { Page: DashboardPage, preload: preloadDashboardPage } = preloadablePage((
 
 export const dashboardRoute = {
   path: "/dashboard",
+  component: "dashboard",
   element: <DashboardPage />,
   auth: true,
   layout: "dashboard",
   nav: { labelKey: "nav.dashboard" },
+  requiredPermission: "dashboard.read",
   preload: preloadDashboardPage,
 };

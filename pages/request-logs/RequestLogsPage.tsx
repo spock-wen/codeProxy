@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LoaderCircle, Download, RefreshCw, ScrollText, Trash2 } from "lucide-react";
-import { usageApi } from "@code-proxy/api-client";
+import { configApi, usageApi } from "@code-proxy/api-client";
 import type {
   ClearUsageLogsPayload,
+  UsageChannelFilterOption,
   UsageLogItem,
   UsageLogsResponse,
 } from "@code-proxy/api-client/endpoints/usage";
@@ -30,6 +31,7 @@ import type { SearchableCheckboxMultiSelectOption } from "@code-proxy/ui";
 import {
   buildRequestLogKeyOptions,
   buildRequestLogsColumns,
+  ChannelIdentityLabel,
   DEFAULT_REQUEST_LOG_PAGE_SIZE,
   hasActiveFilterSelection,
   normalizeFilterSelection,
@@ -98,6 +100,20 @@ export function RequestLogsPage() {
   const [contentModalTab, setContentModalTab] = useState<"input" | "output">(
     "input",
   );
+  const [requestBodyStorageEnabled, setRequestBodyStorageEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void configApi
+      .getRequestLogBodyStorage()
+      .then((enabled) => {
+        if (!cancelled) setRequestBodyStorageEnabled(enabled);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleContentClick = useCallback(
     (logId: number, tab: "input" | "output") => {
@@ -140,12 +156,14 @@ export function RequestLogsPage() {
     api_key_names: Record<string, string>;
     models: string[];
     channels: string[];
+    channel_options: UsageChannelFilterOption[];
     statuses: string[];
   }>({
     api_keys: [],
     api_key_names: {},
     models: [],
     channels: [],
+    channel_options: [],
     statuses: ["success", "failed"],
   });
   const [stats, setStats] = useState<{
@@ -205,12 +223,37 @@ export function RequestLogsPage() {
   }, [filterOptions.models]);
 
   const channelOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
-    return filterOptions.channels.map((ch) => ({
-      value: ch,
-      label: ch,
-      searchText: ch,
-    }));
-  }, [filterOptions.channels]);
+    const source: UsageChannelFilterOption[] =
+      filterOptions.channel_options.length > 0
+        ? filterOptions.channel_options
+        : filterOptions.channels.map((ch) => ({
+            value: ch,
+            label: ch,
+          }));
+    const apiLabel = t("request_logs.auth_type_api");
+    const oauthLabel = t("request_logs.auth_type_oauth");
+    return source.map((option) => {
+      const provider = String(option.provider ?? "").trim();
+      const authType = String(option.auth_type ?? "").trim();
+      return {
+        value: option.value,
+        label: (
+          <ChannelIdentityLabel
+            name={option.label}
+            provider={option.provider}
+            authType={option.auth_type}
+            apiLabel={apiLabel}
+            oauthLabel={oauthLabel}
+            className="w-full"
+            nameClassName="text-sm font-normal text-inherit"
+          />
+        ),
+        searchText: [option.label, provider, authType, option.value]
+          .filter(Boolean)
+          .join(" "),
+      };
+    });
+  }, [filterOptions.channel_options, filterOptions.channels, t]);
 
   const statusOptions = useMemo<SearchableCheckboxMultiSelectOption[]>(() => {
     return (filterOptions.statuses ?? ["success", "failed"]).map((status) => ({
@@ -348,7 +391,14 @@ export function RequestLogsPage() {
         setRawItems(resp.items ?? []);
         setTotalCount(resp.total ?? 0);
         setCurrentPage(page);
-        setFilterOptions(resp.filters);
+        setFilterOptions({
+          api_keys: resp.filters?.api_keys ?? [],
+          api_key_names: resp.filters?.api_key_names ?? {},
+          models: resp.filters?.models ?? [],
+          channels: resp.filters?.channels ?? [],
+          channel_options: resp.filters?.channel_options ?? [],
+          statuses: resp.filters?.statuses ?? ["success", "failed"],
+        });
         setStats({
           ...DEFAULT_LOG_STATS,
           ...resp.stats,
@@ -665,6 +715,8 @@ export function RequestLogsPage() {
             minHeight="min-h-full"
             caption={t("request_logs.table_caption")}
             emptyText={t("request_logs.no_data")}
+            emptyDescription={t("request_logs.no_data_desc")}
+            emptyIcon={<ScrollText size={20} strokeWidth={1.5} aria-hidden />}
             showAllLoadedMessage={false}
           />
 
@@ -699,6 +751,7 @@ export function RequestLogsPage() {
         initialTab={contentModalTab}
         onClose={() => setContentModalOpen(false)}
         showRequestDetails
+        showBodyContent={requestBodyStorageEnabled}
       />
       <ErrorDetailModal
         open={errorModalOpen}

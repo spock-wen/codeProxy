@@ -59,7 +59,7 @@ export interface AuthFileTagDisplayFields {
   display_tags?: string[];
 }
 
-export type AuthFileIdentityFingerprintProvider = "claude" | "codex" | "gemini";
+export type AuthFileIdentityFingerprintProvider = "claude" | "codex" | "gemini" | "xai";
 export type AuthFileIdentityFingerprintSource = "learned" | "preset" | "builtin_default";
 
 export interface AuthFileIdentityFingerprintSummary {
@@ -72,6 +72,8 @@ export interface AuthFileIdentityFingerprintSummary {
   learned_fields: number;
   effective_fields: number;
   source_counts: Partial<Record<AuthFileIdentityFingerprintSource, number>>;
+  profile_key?: string;
+  profile_family?: string;
   client_product?: string;
   client_variant?: string;
   version?: string;

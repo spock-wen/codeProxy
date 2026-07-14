@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import i18n from "@code-proxy/i18n";
 import { RequestLogsPage } from "@pages/request-logs/RequestLogsPage";
 import { ThemeProvider } from "@code-proxy/ui";
@@ -27,6 +27,7 @@ const emptyLogsResponse = {
     api_key_names: {},
     models: [],
     channels: [],
+    channel_options: [],
     statuses: [],
   },
   stats: {
@@ -50,6 +51,22 @@ const responseWithFilterOptions = {
     },
     models: ["gpt-5.4", "gpt-4.1"],
     channels: ["Codex", "Relay"],
+    channel_options: [
+      {
+        value: "auth-codex",
+        label: "Codex",
+        provider: "codex",
+        auth_type: "oauth",
+        auth_index: "auth-codex",
+      },
+      {
+        value: "auth-relay",
+        label: "Relay",
+        provider: "openai",
+        auth_type: "api",
+        auth_index: "auth-relay",
+      },
+    ],
     statuses: ["success", "failed"],
   },
   stats: {
@@ -68,6 +85,8 @@ const buildUsageLogItem = (overrides: Partial<UsageLogItem> = {}): UsageLogItem 
   model: "gpt-5.4",
   source: "codex",
   channel_name: "Codex",
+  provider: "codex",
+  auth_type: "oauth",
   auth_index: "auth-1",
   failed: false,
   latency_ms: 1200,
@@ -98,6 +117,7 @@ const mocks = vi.hoisted(() => ({
   getUsageLogs: vi.fn(),
   getLogContent: vi.fn(),
   clearUsageLogs: vi.fn(),
+  getRequestLogBodyStorage: vi.fn(),
 }));
 
 const expectSignalOptions = () =>
@@ -142,6 +162,10 @@ vi.mock("@code-proxy/api-client", async (importOriginal) => {
       getLogContent: mocks.getLogContent,
       clearUsageLogs: mocks.clearUsageLogs,
     },
+    configApi: {
+      ...mod.configApi,
+      getRequestLogBodyStorage: mocks.getRequestLogBodyStorage,
+    },
   };
 });
 
@@ -150,12 +174,17 @@ describe("RequestLogsPage", () => {
     installLocalStorageMock();
   });
 
+  beforeEach(() => {
+    mocks.getRequestLogBodyStorage.mockResolvedValue(false);
+  });
+
   afterEach(async () => {
     await i18n.changeLanguage("zh-CN");
     window.localStorage.clear();
     mocks.getUsageLogs.mockReset();
     mocks.getLogContent.mockReset();
     mocks.clearUsageLogs.mockReset();
+    mocks.getRequestLogBodyStorage.mockReset();
   });
 
   test("renders first token latency value in the response metrics column", async () => {
@@ -172,6 +201,8 @@ describe("RequestLogsPage", () => {
           model: "gpt-5.4",
           source: "codex",
           channel_name: "Codex",
+          provider: "codex",
+          auth_type: "oauth",
           auth_index: "auth-1",
           failed: false,
           streaming: true,
@@ -221,6 +252,40 @@ describe("RequestLogsPage", () => {
 
     await user.hover(within(table).getByLabelText("Duration: 1.20s"));
     expect(await screen.findByRole("tooltip")).toHaveTextContent("First Token Latency: 183ms");
+  });
+
+  test("renders channel column with vendor identity and auth-type badge", async () => {
+    await i18n.changeLanguage("en");
+
+    mocks.getUsageLogs.mockResolvedValue(
+      responseWithRows([
+        buildUsageLogItem({
+          channel_name: "asherandersenloqv@outlook.com",
+          provider: "xai",
+          auth_type: "oauth",
+        }),
+        buildUsageLogItem({
+          id: 2,
+          channel_name: "Relay",
+          provider: "openai",
+          auth_type: "api",
+        }),
+      ]),
+    );
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    const table = await screen.findByRole("table", { name: "Request Logs Table" });
+    expect(within(table).getByText("asherandersenloqv@outlook.com")).toBeInTheDocument();
+    expect(within(table).getByText("Relay")).toBeInTheDocument();
+    expect(within(table).getAllByText("OAuth").length).toBeGreaterThanOrEqual(1);
+    expect(within(table).getByText("API")).toBeInTheDocument();
   });
 
   test("labels non-streaming logs without rendering a first token placeholder", async () => {

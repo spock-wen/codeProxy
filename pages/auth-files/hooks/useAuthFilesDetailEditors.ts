@@ -185,7 +185,7 @@ const mergeSavedCodexOAuthAdmissionFields = (
 
 const supportsAuthFileTrend = (file: AuthFileItem): boolean => {
   const provider = normalizeProviderKey(resolveFileType(file));
-  return provider === "kimi" || provider === "codex";
+  return provider === "kimi" || provider === "codex" || provider === "xai";
 };
 
 const identityFingerprintDetailKey = (file: AuthFileItem): string => {
@@ -197,10 +197,16 @@ const identityFingerprintDetailKey = (file: AuthFileItem): string => {
 export function useAuthFilesDetailEditors(
   loadAll: () => Promise<AuthFileItem[]>,
   setFiles?: Dispatch<SetStateAction<AuthFileItem[]>>,
+  identityFingerprintEnabled = true,
 ) {
   const { t } = useTranslation();
   const { notify } = useToast();
+  // Per-auth-file list cache (any provider).
   const modelsCacheRef = useRef<Map<string, AuthFileModelItem[]>>(new Map());
+  // Shared live discovery list for claude/codex/xai (same-type accounts reuse).
+  const providerDiscoveryCacheRef = useRef<Map<string, AuthFileModelItem[]>>(
+    new Map(),
+  );
   const detailTrendInFlightRef = useRef<Map<string, Promise<void>>>(new Map());
   const identityFingerprintDetailKeyRef = useRef("");
 
@@ -216,6 +222,7 @@ export function useAuthFilesDetailEditors(
   const [identityFingerprintDetail, setIdentityFingerprintDetail] =
     useState<IdentityFingerprintAccountDetail | null>(null);
   const [identityFingerprintLoading, setIdentityFingerprintLoading] = useState(false);
+  const [identityFingerprintSaving, setIdentityFingerprintSaving] = useState(false);
   const [identityFingerprintError, setIdentityFingerprintError] = useState<string | null>(null);
 
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -246,23 +253,57 @@ export function useAuthFilesDetailEditors(
   const loadModelsForDetail = useCallback(
     async (file: AuthFileItem, options?: { force?: boolean }) => {
       const force = Boolean(options?.force);
-      setModelsFileType(resolveFileType(file));
-      setModelsLoading(true);
-      setModelsList([]);
+      const fileType = resolveFileType(file);
+      const provider = normalizeProviderKey(fileType);
+      // Align with backend normalizeDiscoveryProvider (x-ai/grok → xai).
+      const discoveryProvider =
+        provider === "x-ai" || provider === "grok" ? "xai" : provider;
+      const sharedDiscovery =
+        discoveryProvider === "claude" ||
+        discoveryProvider === "codex" ||
+        discoveryProvider === "xai";
+      setModelsFileType(fileType);
       setModelsError(null);
 
-      if (!force) {
-        const cached = modelsCacheRef.current.get(file.name);
-        if (cached) {
-          setModelsList(cached);
+      // Prefer shared provider discovery cache so reopening the modal keeps the
+      // live list (not the static registry) after a successful warm/refresh.
+      if (!force && sharedDiscovery) {
+        const providerCached =
+          providerDiscoveryCacheRef.current.get(discoveryProvider);
+        if (providerCached && providerCached.length > 0) {
+          setModelsList(providerCached);
           setModelsLoading(false);
           return;
         }
       }
 
+      if (!force) {
+        const cached = modelsCacheRef.current.get(file.name);
+        if (cached && cached.length > 0) {
+          setModelsList(cached);
+          // For non-discovery providers, file cache is enough.
+          // For claude/codex/xai, still call the API so backend can auto-warm the
+          // shared provider cache; keep showing the file cache meanwhile.
+          if (!sharedDiscovery) {
+            setModelsLoading(false);
+            return;
+          }
+        } else {
+          setModelsList([]);
+        }
+      }
+
+      setModelsLoading(true);
+
       try {
-        const list = await authFilesApi.getModelsForAuthFile(file.name);
+        const { models: list, source } = await authFilesApi.getModelsForAuthFile(
+          file.name,
+          { force },
+        );
         modelsCacheRef.current.set(file.name, list);
+        if (sharedDiscovery && source === "upstream" && list.length > 0) {
+          providerDiscoveryCacheRef.current.set(discoveryProvider, list);
+        }
         setModelsList(list);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "";
@@ -270,7 +311,10 @@ export function useAuthFilesDetailEditors(
           setModelsError("unsupported");
           return;
         }
-        notify({ type: "error", message: message || t("auth_files.failed_get_models") });
+        notify({
+          type: "error",
+          message: message || t("auth_files.failed_get_models"),
+        });
       } finally {
         setModelsLoading(false);
       }
@@ -313,7 +357,10 @@ export function useAuthFilesDetailEditors(
       setDetailTrendError(null);
 
       const request = (async () => {
-        const trend = await usageApi.getAuthFileTrend(authIndex, { days: 7, hours: 5 });
+        const trend = await usageApi.getAuthFileTrend(authIndex, {
+          days: 7,
+          hours: 5,
+        });
         if (shouldShowLoading) {
           setDetailTrendLoading(false);
         }
@@ -339,8 +386,32 @@ export function useAuthFilesDetailEditors(
     [detailFile, detailTrend, t],
   );
 
+  const applyIdentityFingerprintDetail = useCallback(
+    (detail: IdentityFingerprintAccountDetail) => {
+      setIdentityFingerprintDetail(detail);
+      const accountKey = detail.summary.account_key;
+      const provider = detail.summary.provider;
+      if (!accountKey) return;
+      const applySummary = (file: AuthFileItem): AuthFileItem => {
+        const summary = file.identity_fingerprint_summary;
+        if (summary?.provider !== provider || summary.account_key !== accountKey) return file;
+        return { ...file, identity_fingerprint_summary: detail.summary };
+      };
+      setFiles?.((prev) => prev.map(applySummary));
+      setDetailFile((prev) => (prev ? applySummary(prev) : prev));
+    },
+    [setFiles],
+  );
+
   const loadIdentityFingerprintForDetail = useCallback(
     async (file: AuthFileItem) => {
+      if (!identityFingerprintEnabled) {
+        identityFingerprintDetailKeyRef.current = "";
+        setIdentityFingerprintDetail(null);
+        setIdentityFingerprintLoading(false);
+        setIdentityFingerprintError(null);
+        return;
+      }
       const summary = file.identity_fingerprint_summary;
       const key = identityFingerprintDetailKey(file);
       if (!summary?.account_key || !key) {
@@ -375,7 +446,7 @@ export function useAuthFilesDetailEditors(
           auth_subject_id: summary.auth_subject_id,
         });
         if (identityFingerprintDetailKeyRef.current !== key) return;
-        setIdentityFingerprintDetail(detail);
+        applyIdentityFingerprintDetail(detail);
       } catch (err: unknown) {
         if (identityFingerprintDetailKeyRef.current !== key) return;
         setIdentityFingerprintDetail(null);
@@ -388,13 +459,111 @@ export function useAuthFilesDetailEditors(
         }
       }
     },
-    [identityFingerprintDetail, identityFingerprintError, identityFingerprintLoading, t],
+    [
+      applyIdentityFingerprintDetail,
+      identityFingerprintDetail,
+      identityFingerprintEnabled,
+      identityFingerprintError,
+      identityFingerprintLoading,
+      t,
+    ],
+  );
+
+  const selectIdentityFingerprintProfile = useCallback(
+    async (profileKey: string) => {
+      const detail = identityFingerprintDetail;
+      const accountKey = detail?.summary.account_key;
+      if (!detail || detail.summary.provider !== "codex" || !accountKey || !profileKey) return;
+      setIdentityFingerprintSaving(true);
+      setIdentityFingerprintError(null);
+      try {
+        const next = await identityFingerprintApi.updateAccountPolicy({
+          provider: "codex",
+          account_key: accountKey,
+          strategy: "active_profile",
+          active_profile_key: profileKey,
+          revision: detail.policy?.revision ?? 0,
+        });
+        applyIdentityFingerprintDetail(next);
+        notify({
+          type: "success",
+          message: t("auth_files.identity_profile_saved"),
+        });
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : t("auth_files.identity_profile_save_failed");
+        setIdentityFingerprintError(message);
+        notify({ type: "error", message });
+      } finally {
+        setIdentityFingerprintSaving(false);
+      }
+    },
+    [applyIdentityFingerprintDetail, identityFingerprintDetail, notify, t],
+  );
+
+  const useIdentityFingerprintCLIPreferred = useCallback(async () => {
+    const detail = identityFingerprintDetail;
+    const accountKey = detail?.summary.account_key;
+    if (!detail || detail.summary.provider !== "codex" || !accountKey) return;
+    setIdentityFingerprintSaving(true);
+    setIdentityFingerprintError(null);
+    try {
+      const next = await identityFingerprintApi.updateAccountPolicy({
+        provider: "codex",
+        account_key: accountKey,
+        strategy: "cli_preferred",
+        revision: detail.policy?.revision ?? 0,
+      });
+      applyIdentityFingerprintDetail(next);
+      notify({
+        type: "success",
+        message: t("auth_files.identity_profile_saved"),
+      });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : t("auth_files.identity_profile_save_failed");
+      setIdentityFingerprintError(message);
+      notify({ type: "error", message });
+    } finally {
+      setIdentityFingerprintSaving(false);
+    }
+  }, [applyIdentityFingerprintDetail, identityFingerprintDetail, notify, t]);
+
+  const deleteIdentityFingerprintProfile = useCallback(
+    async (profileKey: string) => {
+      const detail = identityFingerprintDetail;
+      const accountKey = detail?.summary.account_key;
+      if (!detail || detail.summary.provider !== "codex" || !accountKey || !profileKey) return;
+      setIdentityFingerprintSaving(true);
+      setIdentityFingerprintError(null);
+      try {
+        const response = await identityFingerprintApi.deleteAccountProfile(
+          "codex",
+          accountKey,
+          profileKey,
+        );
+        applyIdentityFingerprintDetail(response.detail);
+        notify({
+          type: "success",
+          message: t("auth_files.identity_profile_deleted"),
+        });
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : t("auth_files.identity_profile_delete_failed");
+        setIdentityFingerprintError(message);
+        notify({ type: "error", message });
+      } finally {
+        setIdentityFingerprintSaving(false);
+      }
+    },
+    [applyIdentityFingerprintDetail, identityFingerprintDetail, notify, t],
   );
 
   const openDetail = useCallback(
     async (file: AuthFileItem) => {
       const hasTrend = supportsAuthFileTrend(file);
-      const hasIdentity = Boolean(file.identity_fingerprint_summary?.account_key);
+      const hasIdentity =
+        identityFingerprintEnabled && Boolean(file.identity_fingerprint_summary?.account_key);
       setDetailOpen(true);
       setDetailTab(hasTrend ? "usage" : hasIdentity ? "identity" : "fields");
       setDetailTrendWindow("5h");
@@ -424,7 +593,7 @@ export function useAuthFilesDetailEditors(
         setDetailLoading(false);
       }
     },
-    [loadIdentityFingerprintForDetail, notify, refreshDetailTrend, t],
+    [identityFingerprintEnabled, loadIdentityFingerprintForDetail, notify, refreshDetailTrend, t],
   );
 
   const openPrefixProxyEditor = useCallback(
@@ -524,7 +693,10 @@ export function useAuthFilesDetailEditors(
     const label = channelEditor.label.trim();
     if (!fileName) return false;
     if (!label) {
-      setChannelEditor((prev) => ({ ...prev, error: t("auth_files.channel_name_required") }));
+      setChannelEditor((prev) => ({
+        ...prev,
+        error: t("auth_files.channel_name_required"),
+      }));
       return false;
     }
 
@@ -570,7 +742,11 @@ export function useAuthFilesDetailEditors(
       allowedClients: normalizeCodexAllowedClientIds(codexOAuthAdmissionEditor.allowedClients),
     };
 
-    setCodexOAuthAdmissionEditor((prev) => ({ ...prev, saving: true, error: null }));
+    setCodexOAuthAdmissionEditor((prev) => ({
+      ...prev,
+      saving: true,
+      error: null,
+    }));
     try {
       await authFilesApi.patchFields({
         name: fileName,
@@ -592,7 +768,11 @@ export function useAuthFilesDetailEditors(
       return true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("auth_files.save_failed");
-      setCodexOAuthAdmissionEditor((prev) => ({ ...prev, saving: false, error: message }));
+      setCodexOAuthAdmissionEditor((prev) => ({
+        ...prev,
+        saving: false,
+        error: message,
+      }));
       notify({ type: "error", message });
       return false;
     }
@@ -716,7 +896,10 @@ export function useAuthFilesDetailEditors(
       prefixProxyEditor.subscriptionStartedAt.trim() &&
       dateTimeLocalInputToIso(prefixProxyEditor.subscriptionStartedAt) === null
     ) {
-      notify({ type: "error", message: t("auth_files.subscription_started_at_invalid") });
+      notify({
+        type: "error",
+        message: t("auth_files.subscription_started_at_invalid"),
+      });
       return;
     }
 
@@ -725,7 +908,9 @@ export function useAuthFilesDetailEditors(
     if (fileSize > MAX_AUTH_FILE_SIZE) {
       notify({
         type: "error",
-        message: t("auth_files.save_too_large", { size: formatFileSize(fileSize) }),
+        message: t("auth_files.save_too_large", {
+          size: formatFileSize(fileSize),
+        }),
       });
       return;
     }
@@ -788,8 +973,12 @@ export function useAuthFilesDetailEditors(
     detailTrendError,
     identityFingerprintDetail,
     identityFingerprintLoading,
+    identityFingerprintSaving,
     identityFingerprintError,
     loadIdentityFingerprintForDetail,
+    selectIdentityFingerprintProfile,
+    useIdentityFingerprintCLIPreferred,
+    deleteIdentityFingerprintProfile,
     refreshDetailTrend,
     modelsLoading,
     modelsFileType,

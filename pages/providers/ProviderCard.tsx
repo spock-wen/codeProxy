@@ -1,14 +1,7 @@
 import { useState, type ReactNode } from "react";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { DropdownMenu } from "@code-proxy/ui";
 import { EllipsisVertical, Power, Settings2, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-
-const ACTION_MENU_CONTENT_CLASS =
-  "z-[220] min-w-36 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-black/35";
-const ACTION_MENU_ITEM_CLASS =
-  "flex w-full cursor-default select-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 outline-none transition-colors focus:bg-slate-100 data-[highlighted]:bg-slate-100 dark:text-white/75 dark:focus:bg-white/10 dark:data-[highlighted]:bg-white/10";
-const ACTION_MENU_DANGER_ITEM_CLASS =
-  "flex w-full cursor-default select-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-rose-600 outline-none transition-colors focus:bg-rose-50 data-[highlighted]:bg-rose-50 dark:text-rose-300 dark:focus:bg-rose-500/10 dark:data-[highlighted]:bg-rose-500/10";
 
 export interface ProviderCardProps {
   /** Card title (provider name) */
@@ -61,8 +54,10 @@ export function ProviderCard({
   return (
     <div
       className={[
-        "group relative flex flex-col rounded-xl border px-4 py-3 shadow-sm transition-all duration-200 ease-out",
-        naturalHeight ? "h-fit self-start min-h-0" : "min-h-[220px] max-h-[260px]",
+        "group relative flex min-w-0 flex-col rounded-xl border px-4 py-3 shadow-sm transition-all duration-200 ease-out",
+        naturalHeight
+          ? "h-fit self-start min-h-0"
+          : "min-h-[220px] max-h-[260px]",
         selected
           ? "border-blue-400 bg-blue-50/50 ring-1 ring-blue-200 dark:border-blue-500/50 dark:bg-blue-950/20 dark:ring-blue-500/20"
           : "border-slate-200 bg-white/70 hover:border-slate-300 hover:bg-white hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950/60 dark:hover:border-neutral-700 dark:hover:bg-neutral-950/80 dark:hover:shadow-lg dark:hover:shadow-black/20",
@@ -74,16 +69,14 @@ export function ProviderCard({
     >
       {/* Header */}
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center">
           {onToggleSelected ? (
             <div
               className={[
-                "flex shrink-0 items-center justify-center overflow-hidden transition-[width,opacity] duration-200 ease-out",
+                "flex shrink-0 items-center justify-center overflow-hidden transition-[width,opacity,margin] duration-200 ease-out",
                 selected
-                  ? "w-7 opacity-100"
-                  : naturalHeight
-                    ? "w-7 opacity-0 group-hover:opacity-100 max-md:opacity-100"
-                    : "w-0 opacity-0 group-hover:w-7 group-hover:opacity-100 max-md:w-7 max-md:opacity-100",
+                  ? "mr-2 w-7 opacity-100"
+                  : "mr-0 w-0 opacity-0 group-hover:mr-2 group-hover:w-7 group-hover:opacity-100 max-md:mr-2 max-md:w-7 max-md:opacity-100",
               ].join(" ")}
             >
               <input
@@ -102,7 +95,7 @@ export function ProviderCard({
             {title}
           </p>
           {hasHeaderExtra ? (
-            <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+            <div className="ml-2 flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
               {headerExtra}
             </div>
           ) : null}
@@ -126,29 +119,24 @@ export function ProviderCard({
               </button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                align="end"
-                sideOffset={8}
-                className={ACTION_MENU_CONTENT_CLASS}
-              >
+              <DropdownMenu.Content align="end" sideOffset={8}>
                 {onToggleEnabled ? (
-                  <DropdownMenu.Item
-                    className={ACTION_MENU_ITEM_CLASS}
-                    onSelect={() => onToggleEnabled(!enabled)}
-                  >
+                  <DropdownMenu.Item onSelect={() => onToggleEnabled(!enabled)}>
                     <Power size={15} />
-                    <span>{enabled ? t("providers.disable") : t("providers.enable")}</span>
+                    <span>
+                      {enabled ? t("providers.disable") : t("providers.enable")}
+                    </span>
                   </DropdownMenu.Item>
                 ) : null}
                 {onEdit ? (
-                  <DropdownMenu.Item className={ACTION_MENU_ITEM_CLASS} onSelect={() => onEdit()}>
+                  <DropdownMenu.Item onSelect={() => onEdit()}>
                     <Settings2 size={15} />
                     <span>{t("providers.edit")}</span>
                   </DropdownMenu.Item>
                 ) : null}
                 {onDelete ? (
                   <DropdownMenu.Item
-                    className={ACTION_MENU_DANGER_ITEM_CLASS}
+                    className="text-rose-600 focus:text-rose-700 dark:text-rose-300"
                     onSelect={() => onDelete()}
                   >
                     <Trash2 size={15} />
@@ -163,16 +151,27 @@ export function ProviderCard({
 
       {/* Content */}
       {children ? (
-        <div className={["mt-2 min-w-0 flex-1", naturalHeight ? "" : "overflow-y-auto"].join(" ")}>
+        <div
+          className={[
+            "mt-2 min-w-0 flex-1",
+            naturalHeight ? "" : "overflow-y-auto",
+          ].join(" ")}
+        >
           {children}
         </div>
       ) : null}
-      {footer ? <div className={naturalHeight ? "pt-3" : "mt-auto pt-3"}>{footer}</div> : null}
+      {footer ? (
+        <div className={naturalHeight ? "pt-3" : "mt-auto pt-3"}>{footer}</div>
+      ) : null}
     </div>
   );
 }
 
-export function ProviderCardSkeleton({ naturalHeight = false }: { naturalHeight?: boolean }) {
+export function ProviderCardSkeleton({
+  naturalHeight = false,
+}: {
+  naturalHeight?: boolean;
+}) {
   return (
     <div
       className={[
