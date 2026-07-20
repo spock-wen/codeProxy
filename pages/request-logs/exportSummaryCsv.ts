@@ -15,7 +15,6 @@ function escapeCsvField(value: string | number): string {
 
 const DEFAULT_HEADERS = [
   "人员名",
-  "API Key",
   "请求数",
   "输入Token",
   "输出Token",
@@ -31,7 +30,6 @@ export function exportSummaryCsv(items: UsageSummaryItem[], headers?: string[]):
   const rows = items.map((item) =>
     [
       item.person_name,
-      item.api_key,
       item.request_count,
       item.input_tokens,
       item.output_tokens,

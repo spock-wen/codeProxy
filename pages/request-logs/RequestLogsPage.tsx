@@ -488,7 +488,6 @@ export function RequestLogsPage() {
       }
       exportSummaryCsv(data, [
         t("request_logs.csv_person_name"),
-        t("request_logs.csv_api_key"),
         t("request_logs.csv_request_count"),
         t("request_logs.csv_input_tokens"),
         t("request_logs.csv_output_tokens"),
